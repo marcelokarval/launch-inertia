@@ -1,0 +1,44 @@
+{% load django_vite %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title inertia>{% block title %}Launch{% endblock %}</title>
+
+    {# Theme initialization - runs BEFORE CSS/JS to prevent flash #}
+    <script>
+    (function(){
+      try {
+        var t = localStorage.getItem('launch-theme');
+        var isDark = t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      } catch(e) {}
+    })();
+    </script>
+
+    {# Favicon #}
+    {% load static %}
+    <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
+
+    {# Fonts #}
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+
+    {# Vite HMR client - only in development #}
+    {% vite_hmr_client %}
+
+    {# React Fast Refresh for HMR - only in development #}
+    {% vite_react_refresh %}
+
+    {# Main entry point - loads JS and CSS #}
+    {% vite_asset "src/main.tsx" %}
+
+    {% block inertia_head %}{% endblock inertia_head %}
+</head>
+<body class="min-h-screen bg-background font-sans antialiased">
+    {% block inertia %}{% endblock inertia %}
+</body>
+</html>

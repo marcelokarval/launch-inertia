@@ -1,0 +1,323 @@
+{
+  "auth": {
+    "login": {
+      "pageTitle": "Login",
+      "welcomeBack": "Welcome back",
+      "description": "Enter your credentials to access the dashboard",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "rememberMe": "Remember me",
+      "rememberMeHelp": "Your login will be kept for 30 days",
+      "submitting": "Signing in...",
+      "submit": "Sign in to Dashboard",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "copyright": "© {{year}} BotREI Systems. All rights reserved."
+    },
+    "register": {
+      "pageTitle": "Register",
+      "title": "Create your account",
+      "subtitle": "Start managing your launches with our platform",
+      "firstNameLabel": "First name",
+      "firstNamePlaceholder": "John",
+      "lastNameLabel": "Last name",
+      "lastNamePlaceholder": "Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm password",
+      "termsAgree": "I agree to the",
+      "termsOfService": "Terms of Service",
+      "and": "and",
+      "privacyPolicy": "Privacy Policy",
+      "submitting": "Creating account...",
+      "submit": "Create account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "forgotPassword": {
+      "pageTitle": "Forgot Password",
+      "title": "Recover Password",
+      "description": "Enter your email to receive recovery instructions",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@email.com",
+      "submitting": "Sending...",
+      "submit": "Send Recovery Link",
+      "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "pageTitle": "Reset Password",
+      "title": "Set new password",
+      "subtitle": "Enter your new password below",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "submitting": "Resetting...",
+      "submit": "Reset password",
+      "backToLogin": "Back to login"
+    }
+  },
+  "onboarding": {
+    "steps": {
+      "email": "Email",
+      "terms": "Terms",
+      "profile": "Profile",
+      "plan": "Plan"
+    },
+    "brand": "Launch",
+    "subtitle": "Complete your account setup",
+    "progress": "Step {{current}} of {{total}}",
+    "verifyEmail": {
+      "pageTitle": "Verify Email",
+      "title": "Verify your email",
+      "instruction": "We sent a 6-digit code to",
+      "submitting": "Verifying...",
+      "submit": "Verify Email",
+      "resendCountdown": "Resend code in {{seconds}}s",
+      "resendPrompt": "Didn't receive a code? Resend"
+    },
+    "legal": {
+      "pageTitle": "Legal Agreements",
+      "title": "Legal Agreements",
+      "instruction": "Please review and accept the following agreements to continue.",
+      "termsTitle": "Terms of Use",
+      "termsDescription": "By using our service, you agree to our terms of use which outline your rights and responsibilities.",
+      "readTerms": "Read full Terms of Use",
+      "agreeTerms": "I agree to the Terms of Use",
+      "privacyTitle": "Privacy Policy",
+      "privacyDescription": "We take your privacy seriously. Learn how we collect, use, and protect your data.",
+      "readPrivacy": "Read full Privacy Policy",
+      "agreePrivacy": "I agree to the Privacy Policy",
+      "marketingLabel": "I'd like to receive product updates and marketing emails",
+      "marketingHelp": "Optional. You can unsubscribe at any time.",
+      "submitting": "Saving...",
+      "submit": "Accept & Continue"
+    },
+    "profile": {
+      "pageTitle": "Complete Profile",
+      "title": "Complete your profile",
+      "instruction": "Tell us a bit about yourself so we can personalize your experience.",
+      "firstNameLabel": "First name",
+      "firstNamePlaceholder": "John",
+      "lastNameLabel": "Last name",
+      "lastNamePlaceholder": "Doe",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "(00) 00000-0000",
+      "companyLabel": "Company",
+      "companyPlaceholder": "Your company name",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Tell us a bit about yourself...",
+      "submitting": "Saving...",
+      "submit": "Save & Continue"
+    },
+    "plan": {
+      "pageTitle": "Choose Plan",
+      "title": "Choose your plan",
+      "instruction": "Select the plan that best fits your needs. You can always upgrade later.",
+      "popular": "Popular",
+      "free": "Free",
+      "pricePerMonth": "/mo",
+      "submitting": "Setting up...",
+      "submitFree": "Get Started for Free",
+      "submitPlan": "Continue with {{name}} Plan",
+      "selected": "Selected",
+      "footer": "You can change your plan anytime from Settings."
+    }
+  },
+  "dashboard": {
+    "pageTitle": "Dashboard",
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}!",
+    "subtitle": "Here's what's happening with your account today.",
+    "stats": {
+      "totalContacts": "Total Contacts",
+      "activeSubscriptions": "Active Subscriptions",
+      "unreadNotifications": "Unread Notifications",
+      "conversionRate": "Conversion Rate"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "addContact": "Add Contact",
+      "manageBilling": "Manage Billing",
+      "viewSettings": "View Settings"
+    }
+  },
+  "contacts": {
+    "index": {
+      "pageTitle": "Contacts",
+      "title": "Contacts",
+      "totalCount": "{{total}} contacts total",
+      "addContact": "Add Contact",
+      "searchPlaceholder": "Search contacts...",
+      "table": {
+        "name": "Name",
+        "contact": "Contact",
+        "company": "Company",
+        "status": "Status",
+        "tags": "Tags",
+        "actions": "Actions",
+        "edit": "Edit"
+      },
+      "empty": "No contacts found.",
+      "addFirst": "Add your first contact",
+      "pagination": {
+        "showing": "Showing {{from}} to {{to}} of {{total}} results",
+        "previous": "Previous",
+        "next": "Next"
+      }
+    },
+    "create": {
+      "pageTitle": "New Contact",
+      "title": "New Contact",
+      "description": "Add a new contact to your list",
+      "nameLabel": "Name *",
+      "namePlaceholder": "Full name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@example.com",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "(00) 00000-0000",
+      "companyLabel": "Company",
+      "companyPlaceholder": "Company name",
+      "positionLabel": "Position",
+      "positionPlaceholder": "Job title or role",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Notes about the contact...",
+      "submitting": "Saving...",
+      "submit": "Create Contact",
+      "cancel": "Cancel"
+    },
+    "edit": {
+      "pageTitle": "Edit {{name}}",
+      "title": "Edit Contact",
+      "description": "Update information for {{name}}",
+      "submitting": "Saving...",
+      "submit": "Save Changes",
+      "cancel": "Cancel"
+    },
+    "show": {
+      "positionAt": "{{position}} at {{company}}",
+      "edit": "Edit",
+      "delete": "Delete",
+      "emailLabel": "Email",
+      "phoneLabel": "Phone",
+      "companyLabel": "Company",
+      "createdAt": "Created at",
+      "notesTitle": "Notes"
+    },
+    "delete": {
+      "pageTitle": "Delete {{name}}",
+      "title": "Delete Contact",
+      "confirm": "Are you sure?",
+      "warning": "You are about to delete the contact:",
+      "reversible": "This action can be reversed by the system administrator.",
+      "cancel": "Cancel",
+      "submitting": "Deleting...",
+      "submit": "Yes, Delete"
+    }
+  },
+  "billing": {
+    "index": {
+      "pageTitle": "Billing",
+      "title": "Billing",
+      "description": "Manage your subscription and payment history",
+      "subscription": {
+        "title": "Current Subscription",
+        "active": "Active",
+        "planLabel": "Plan",
+        "defaultPlan": "Default Plan",
+        "nextBilling": "Next billing",
+        "manage": "Manage on Stripe"
+      },
+      "noSubscription": "You don't have an active subscription yet",
+      "choosePlan": "Choose a Plan",
+      "invoices": {
+        "title": "Invoice History",
+        "paid": "Paid",
+        "empty": "No invoices found"
+      }
+    },
+    "success": {
+      "pageTitle": "Payment Confirmed",
+      "title": "Payment Confirmed!",
+      "description": "Thank you for your subscription. Your access is now active.",
+      "goToDashboard": "Go to Dashboard"
+    }
+  },
+  "notifications": {
+    "pageTitle": "Notifications",
+    "title": "Notifications",
+    "unreadCount": "{{count}} unread",
+    "unreadCount_plural": "{{count}} unread",
+    "allRead": "All read",
+    "markAllRead": "Mark all as read",
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "markAsRead": "Mark as read",
+    "empty": "No notifications found",
+    "timeAgo": {
+      "minutes": "{{count}}m ago",
+      "hours": "{{count}}h ago",
+      "days": "{{count}}d ago"
+    }
+  },
+  "settings": {
+    "index": {
+      "pageTitle": "Settings",
+      "title": "Settings",
+      "description": "Manage your account and preferences",
+      "nav": {
+        "profile": "Profile",
+        "profileDesc": "Manage your personal information and profile photo",
+        "notifications": "Notifications",
+        "notificationsDesc": "Configure your notification preferences",
+        "billing": "Billing",
+        "billingDesc": "Manage your subscription and payment methods",
+        "security": "Security",
+        "securityDesc": "Change your password and configure authentication"
+      }
+    },
+    "profile": {
+      "pageTitle": "Profile",
+      "title": "My Profile",
+      "description": "Update your personal information",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "(00) 00000-0000",
+      "stateLabel": "State",
+      "cityLabel": "City",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Tell us a bit about yourself...",
+      "submitting": "Saving...",
+      "submit": "Save Changes"
+    },
+    "security": {
+      "pageTitle": "Security Settings",
+      "title": "Security",
+      "description": "Manage your password and account security",
+      "changePassword": {
+        "title": "Change password",
+        "description": "Update your password to keep your account secure",
+        "currentLabel": "Current password",
+        "newLabel": "New password",
+        "confirmLabel": "Confirm new password",
+        "submitting": "Updating...",
+        "submit": "Update password"
+      }
+    }
+  },
+  "delinquent": {
+    "pageTitle": "Payment Issue",
+    "title": "Payment Issue",
+    "defaultMessage": "There is a problem with your payment method. Please update your billing information to continue using the platform.",
+    "goToBilling": "Go to Billing Portal",
+    "logout": "Logout",
+    "needHelp": "Need help?",
+    "contactSupport": "Contact support"
+  }
+}

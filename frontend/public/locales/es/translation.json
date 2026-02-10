@@ -1,0 +1,323 @@
+{
+  "auth": {
+    "login": {
+      "pageTitle": "Iniciar Sesion",
+      "welcomeBack": "Bienvenido de nuevo",
+      "description": "Ingrese sus credenciales para acceder al dashboard",
+      "emailLabel": "Correo electronico",
+      "emailPlaceholder": "tu@email.com",
+      "passwordLabel": "Contrasena",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Olvido su contrasena?",
+      "rememberMe": "Recordarme",
+      "rememberMeHelp": "Su sesion se mantendra por 30 dias",
+      "submitting": "Iniciando sesion...",
+      "submit": "Ingresar al Dashboard",
+      "noAccount": "No tiene una cuenta?",
+      "signUp": "Registrarse",
+      "copyright": "© {{year}} BotREI Systems. Todos los derechos reservados."
+    },
+    "register": {
+      "pageTitle": "Registro",
+      "title": "Cree su cuenta",
+      "subtitle": "Comience a gestionar sus lanzamientos con nuestra plataforma",
+      "firstNameLabel": "Nombre",
+      "firstNamePlaceholder": "Juan",
+      "lastNameLabel": "Apellido",
+      "lastNamePlaceholder": "Garcia",
+      "emailLabel": "Correo electronico",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "passwordLabel": "Contrasena",
+      "confirmPasswordLabel": "Confirmar contrasena",
+      "termsAgree": "Acepto los",
+      "termsOfService": "Terminos de Servicio",
+      "and": "y",
+      "privacyPolicy": "Politica de Privacidad",
+      "submitting": "Creando cuenta...",
+      "submit": "Crear cuenta",
+      "hasAccount": "Ya tiene una cuenta?",
+      "signIn": "Iniciar sesion"
+    },
+    "forgotPassword": {
+      "pageTitle": "Olvido la Contrasena",
+      "title": "Recuperar Contrasena",
+      "description": "Ingrese su correo para recibir instrucciones de recuperacion",
+      "emailLabel": "Correo electronico",
+      "emailPlaceholder": "tu@email.com",
+      "submitting": "Enviando...",
+      "submit": "Enviar Enlace de Recuperacion",
+      "backToLogin": "Volver al inicio de sesion"
+    },
+    "resetPassword": {
+      "pageTitle": "Restablecer Contrasena",
+      "title": "Establecer nueva contrasena",
+      "subtitle": "Ingrese su nueva contrasena a continuacion",
+      "newPasswordLabel": "Nueva contrasena",
+      "confirmPasswordLabel": "Confirmar nueva contrasena",
+      "submitting": "Restableciendo...",
+      "submit": "Restablecer contrasena",
+      "backToLogin": "Volver al inicio de sesion"
+    }
+  },
+  "onboarding": {
+    "steps": {
+      "email": "Correo",
+      "terms": "Terminos",
+      "profile": "Perfil",
+      "plan": "Plan"
+    },
+    "brand": "Launch",
+    "subtitle": "Complete la configuracion de su cuenta",
+    "progress": "Paso {{current}} de {{total}}",
+    "verifyEmail": {
+      "pageTitle": "Verificar Correo",
+      "title": "Verifique su correo",
+      "instruction": "Enviamos un codigo de 6 digitos a",
+      "submitting": "Verificando...",
+      "submit": "Verificar Correo",
+      "resendCountdown": "Reenviar codigo en {{seconds}}s",
+      "resendPrompt": "No recibio un codigo? Reenviar"
+    },
+    "legal": {
+      "pageTitle": "Acuerdos Legales",
+      "title": "Acuerdos Legales",
+      "instruction": "Por favor, revise y acepte los siguientes acuerdos para continuar.",
+      "termsTitle": "Terminos de Uso",
+      "termsDescription": "Al usar nuestro servicio, acepta nuestros terminos de uso que describen sus derechos y responsabilidades.",
+      "readTerms": "Leer Terminos de Uso completos",
+      "agreeTerms": "Acepto los Terminos de Uso",
+      "privacyTitle": "Politica de Privacidad",
+      "privacyDescription": "Nos tomamos su privacidad en serio. Conozca como recopilamos, usamos y protegemos sus datos.",
+      "readPrivacy": "Leer Politica de Privacidad completa",
+      "agreePrivacy": "Acepto la Politica de Privacidad",
+      "marketingLabel": "Me gustaria recibir actualizaciones del producto y correos de marketing",
+      "marketingHelp": "Opcional. Puede cancelar la suscripcion en cualquier momento.",
+      "submitting": "Guardando...",
+      "submit": "Aceptar y Continuar"
+    },
+    "profile": {
+      "pageTitle": "Completar Perfil",
+      "title": "Complete su perfil",
+      "instruction": "Cuentenos un poco sobre usted para personalizar su experiencia.",
+      "firstNameLabel": "Nombre",
+      "firstNamePlaceholder": "Juan",
+      "lastNameLabel": "Apellido",
+      "lastNamePlaceholder": "Garcia",
+      "phoneLabel": "Telefono",
+      "phonePlaceholder": "(00) 00000-0000",
+      "companyLabel": "Empresa",
+      "companyPlaceholder": "Nombre de su empresa",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Cuentenos un poco sobre usted...",
+      "submitting": "Guardando...",
+      "submit": "Guardar y Continuar"
+    },
+    "plan": {
+      "pageTitle": "Elegir Plan",
+      "title": "Elija su plan",
+      "instruction": "Seleccione el plan que mejor se adapte a sus necesidades. Puede cambiar despues.",
+      "popular": "Popular",
+      "free": "Gratis",
+      "pricePerMonth": "/mes",
+      "submitting": "Configurando...",
+      "submitFree": "Comenzar Gratis",
+      "submitPlan": "Continuar con el Plan {{name}}",
+      "selected": "Seleccionado",
+      "footer": "Puede cambiar su plan en cualquier momento desde Configuracion."
+    }
+  },
+  "dashboard": {
+    "pageTitle": "Dashboard",
+    "title": "Dashboard",
+    "welcome": "Bienvenido de nuevo, {{name}}!",
+    "subtitle": "Esto es lo que esta sucediendo con su cuenta hoy.",
+    "stats": {
+      "totalContacts": "Contactos Totales",
+      "activeSubscriptions": "Suscripciones Activas",
+      "unreadNotifications": "Notificaciones No Leidas",
+      "conversionRate": "Tasa de Conversion"
+    },
+    "quickActions": {
+      "title": "Acciones Rapidas",
+      "addContact": "Agregar Contacto",
+      "manageBilling": "Gestionar Facturacion",
+      "viewSettings": "Ver Configuracion"
+    }
+  },
+  "contacts": {
+    "index": {
+      "pageTitle": "Contactos",
+      "title": "Contactos",
+      "totalCount": "{{total}} contactos en total",
+      "addContact": "Agregar Contacto",
+      "searchPlaceholder": "Buscar contactos...",
+      "table": {
+        "name": "Nombre",
+        "contact": "Contacto",
+        "company": "Empresa",
+        "status": "Estado",
+        "tags": "Etiquetas",
+        "actions": "Acciones",
+        "edit": "Editar"
+      },
+      "empty": "No se encontraron contactos.",
+      "addFirst": "Agregue su primer contacto",
+      "pagination": {
+        "showing": "Mostrando {{from}} a {{to}} de {{total}} resultados",
+        "previous": "Anterior",
+        "next": "Siguiente"
+      }
+    },
+    "create": {
+      "pageTitle": "Nuevo Contacto",
+      "title": "Nuevo Contacto",
+      "description": "Agregue un nuevo contacto a su lista",
+      "nameLabel": "Nombre *",
+      "namePlaceholder": "Nombre completo",
+      "emailLabel": "Correo electronico",
+      "emailPlaceholder": "email@ejemplo.com",
+      "phoneLabel": "Telefono",
+      "phonePlaceholder": "(00) 00000-0000",
+      "companyLabel": "Empresa",
+      "companyPlaceholder": "Nombre de la empresa",
+      "positionLabel": "Cargo",
+      "positionPlaceholder": "Cargo o funcion",
+      "notesLabel": "Notas",
+      "notesPlaceholder": "Observaciones sobre el contacto...",
+      "submitting": "Guardando...",
+      "submit": "Crear Contacto",
+      "cancel": "Cancelar"
+    },
+    "edit": {
+      "pageTitle": "Editar {{name}}",
+      "title": "Editar Contacto",
+      "description": "Actualice la informacion de {{name}}",
+      "submitting": "Guardando...",
+      "submit": "Guardar Cambios",
+      "cancel": "Cancelar"
+    },
+    "show": {
+      "positionAt": "{{position}} en {{company}}",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "emailLabel": "Correo electronico",
+      "phoneLabel": "Telefono",
+      "companyLabel": "Empresa",
+      "createdAt": "Creado el",
+      "notesTitle": "Notas"
+    },
+    "delete": {
+      "pageTitle": "Eliminar {{name}}",
+      "title": "Eliminar Contacto",
+      "confirm": "Esta seguro?",
+      "warning": "Esta a punto de eliminar el contacto:",
+      "reversible": "Esta accion puede ser revertida por el administrador del sistema.",
+      "cancel": "Cancelar",
+      "submitting": "Eliminando...",
+      "submit": "Si, Eliminar"
+    }
+  },
+  "billing": {
+    "index": {
+      "pageTitle": "Facturacion",
+      "title": "Facturacion",
+      "description": "Gestione su suscripcion e historial de pagos",
+      "subscription": {
+        "title": "Suscripcion Actual",
+        "active": "Activa",
+        "planLabel": "Plan",
+        "defaultPlan": "Plan Predeterminado",
+        "nextBilling": "Proxima facturacion",
+        "manage": "Gestionar en Stripe"
+      },
+      "noSubscription": "Aun no tiene una suscripcion activa",
+      "choosePlan": "Elegir un Plan",
+      "invoices": {
+        "title": "Historial de Facturas",
+        "paid": "Pagado",
+        "empty": "No se encontraron facturas"
+      }
+    },
+    "success": {
+      "pageTitle": "Pago Confirmado",
+      "title": "Pago Confirmado!",
+      "description": "Gracias por su suscripcion. Su acceso ya esta activo.",
+      "goToDashboard": "Ir al Dashboard"
+    }
+  },
+  "notifications": {
+    "pageTitle": "Notificaciones",
+    "title": "Notificaciones",
+    "unreadCount": "{{count}} no leida",
+    "unreadCount_plural": "{{count}} no leidas",
+    "allRead": "Todas leidas",
+    "markAllRead": "Marcar todas como leidas",
+    "filters": {
+      "all": "Todas",
+      "unread": "No leidas",
+      "read": "Leidas"
+    },
+    "markAsRead": "Marcar como leida",
+    "empty": "No se encontraron notificaciones",
+    "timeAgo": {
+      "minutes": "hace {{count}}m",
+      "hours": "hace {{count}}h",
+      "days": "hace {{count}}d"
+    }
+  },
+  "settings": {
+    "index": {
+      "pageTitle": "Configuracion",
+      "title": "Configuracion",
+      "description": "Gestione su cuenta y preferencias",
+      "nav": {
+        "profile": "Perfil",
+        "profileDesc": "Gestione su informacion personal y foto de perfil",
+        "notifications": "Notificaciones",
+        "notificationsDesc": "Configure sus preferencias de notificacion",
+        "billing": "Facturacion",
+        "billingDesc": "Gestione su suscripcion y metodos de pago",
+        "security": "Seguridad",
+        "securityDesc": "Cambie su contrasena y configure la autenticacion"
+      }
+    },
+    "profile": {
+      "pageTitle": "Perfil",
+      "title": "Mi Perfil",
+      "description": "Actualice su informacion personal",
+      "firstNameLabel": "Nombre",
+      "lastNameLabel": "Apellido",
+      "phoneLabel": "Telefono",
+      "phonePlaceholder": "(00) 00000-0000",
+      "stateLabel": "Estado/Provincia",
+      "cityLabel": "Ciudad",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Cuentenos un poco sobre usted...",
+      "submitting": "Guardando...",
+      "submit": "Guardar Cambios"
+    },
+    "security": {
+      "pageTitle": "Configuracion de Seguridad",
+      "title": "Seguridad",
+      "description": "Gestione su contrasena y seguridad de la cuenta",
+      "changePassword": {
+        "title": "Cambiar contrasena",
+        "description": "Actualice su contrasena para mantener su cuenta segura",
+        "currentLabel": "Contrasena actual",
+        "newLabel": "Nueva contrasena",
+        "confirmLabel": "Confirmar nueva contrasena",
+        "submitting": "Actualizando...",
+        "submit": "Actualizar contrasena"
+      }
+    }
+  },
+  "delinquent": {
+    "pageTitle": "Problema de Pago",
+    "title": "Problema de Pago",
+    "defaultMessage": "Hay un problema con su metodo de pago. Por favor, actualice su informacion de facturacion para continuar usando la plataforma.",
+    "goToBilling": "Ir al Portal de Facturacion",
+    "logout": "Cerrar sesion",
+    "needHelp": "Necesita ayuda?",
+    "contactSupport": "Contactar soporte"
+  }
+}

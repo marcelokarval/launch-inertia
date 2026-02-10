@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ subject }}</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .wrapper { width: 100%; background-color: #f4f4f7; padding: 40px 0; }
+    .container { max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 40px; text-align: center; }
+    .header h1 { color: #ffffff; font-size: 28px; margin: 0 0 8px; font-weight: 700; }
+    .header p { color: rgba(255,255,255,0.85); font-size: 16px; margin: 0; }
+    .body { padding: 40px; }
+    .body p { color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 16px; }
+    .highlight { background: linear-gradient(135deg, #eef2ff, #f5f3ff); border-radius: 8px; padding: 24px; margin: 24px 0; text-align: center; }
+    .highlight p { color: #4338ca; font-size: 18px; font-weight: 600; margin: 0; }
+    .footer { padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb; }
+    .footer p { color: #9ca3af; font-size: 13px; line-height: 1.5; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <h1>Bem-vindo(a) ao Launch!</h1>
+        <p>Sua jornada comeca agora</p>
+      </div>
+      <div class="body">
+        <p>Ola, <strong>{{ user.first_name|default:user.email }}</strong>!</p>
+        <p>Sua conta foi verificada com sucesso e voce ja pode aproveitar todos os recursos da plataforma.</p>
+        <div class="highlight">
+          <p>Comece completando seu perfil para personalizar sua experiencia.</p>
+        </div>
+        <p>Estamos a disposicao para ajudar no que precisar. Bom trabalho!</p>
+      </div>
+      <div class="footer">
+        <p>Equipe Launch &mdash; Este email foi enviado automaticamente.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

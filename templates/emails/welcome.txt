@@ -1,0 +1,14 @@
+{{ subject }}
+
+Ola, {{ user.first_name|default:user.email }}!
+
+Seja bem-vindo(a) ao Launch! Estamos muito felizes em ter voce conosco.
+
+Sua conta foi verificada com sucesso e voce ja pode comecar a usar a plataforma.
+
+Acesse sua conta e complete seu perfil para aproveitar todos os recursos disponiveis.
+
+Qualquer duvida, estamos a disposicao.
+
+--
+Equipe Launch

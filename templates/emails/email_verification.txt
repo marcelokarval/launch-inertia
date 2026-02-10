@@ -1,0 +1,12 @@
+{{ subject }}
+
+Ola, {{ user.first_name|default:user.email }}!
+
+Seu codigo de verificacao e: {{ verification_code }}
+
+Insira esse codigo na pagina de verificacao para confirmar seu email.
+
+Se voce nao criou uma conta no Launch, ignore este email.
+
+--
+Equipe Launch

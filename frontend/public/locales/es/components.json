@@ -1,0 +1,45 @@
+{
+  "authLayout": {
+    "features": {
+      "title": "Funciones Premium",
+      "subtitle": "Plataforma completa para gestion y orquestacion de lanzamientos digitales",
+      "campaignManagement": {
+        "title": "Gestion de Campanas",
+        "description": "Orqueste lanzamientos completos con multiples fases"
+      },
+      "analytics": {
+        "title": "Analiticas Integradas",
+        "description": "Dashboards con metricas de todas las herramientas conectadas"
+      },
+      "leadManagement": {
+        "title": "Gestion de Leads",
+        "description": "Captura, segmentacion y nurturing automatizado"
+      },
+      "automations": {
+        "title": "Automatizaciones Multi-API",
+        "description": "Integracion con Meta, Mautic, Evolution-API y mas"
+      }
+    },
+    "stats": {
+      "avgRoi": "ROI promedio",
+      "launches": "Lanzamientos",
+      "uptime": "Uptime"
+    }
+  },
+  "passwordInput": {
+    "showPassword": "Mostrar contrasena",
+    "hidePassword": "Ocultar contrasena",
+    "strengthLabel": "Fortaleza de la contrasena:",
+    "strength": {
+      "weak": "Debil",
+      "medium": "Media",
+      "strong": "Fuerte",
+      "veryStrong": "Muy Fuerte"
+    }
+  },
+  "themeToggle": {
+    "light": "Modo claro",
+    "dark": "Modo oscuro",
+    "system": "Preferencia del sistema"
+  }
+}

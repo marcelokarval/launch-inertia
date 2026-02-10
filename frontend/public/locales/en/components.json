@@ -1,0 +1,45 @@
+{
+  "authLayout": {
+    "features": {
+      "title": "Premium Features",
+      "subtitle": "Complete platform for digital launch management and orchestration",
+      "campaignManagement": {
+        "title": "Campaign Management",
+        "description": "Orchestrate full launches with multiple phases"
+      },
+      "analytics": {
+        "title": "Integrated Analytics",
+        "description": "Dashboards with metrics from all connected tools"
+      },
+      "leadManagement": {
+        "title": "Lead Management",
+        "description": "Capture, segmentation, and automated nurturing"
+      },
+      "automations": {
+        "title": "Multi-API Automations",
+        "description": "Integration with Meta, Mautic, Evolution-API, and more"
+      }
+    },
+    "stats": {
+      "avgRoi": "Avg ROI",
+      "launches": "Launches",
+      "uptime": "Uptime"
+    }
+  },
+  "passwordInput": {
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "strengthLabel": "Password strength:",
+    "strength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong",
+      "veryStrong": "Very Strong"
+    }
+  },
+  "themeToggle": {
+    "light": "Light mode",
+    "dark": "Dark mode",
+    "system": "System preference"
+  }
+}
