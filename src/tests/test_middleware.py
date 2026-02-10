@@ -3,16 +3,17 @@ Unit tests for middleware: SetupStatusMiddleware, DelinquentMiddleware, InertiaS
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, PropertyMock
 from django.test import RequestFactory
 from django.contrib.auth.models import AnonymousUser
 
+from apps.identity.models import User
 from core.inertia.middleware import (
     SetupStatusMiddleware,
     DelinquentMiddleware,
     InertiaShareMiddleware,
 )
-from tests.factories import UserFactory
+from tests.factories import UserFactory, ProfileFactory
 
 
 class TestSetupStatusMiddleware:
@@ -45,14 +46,20 @@ class TestSetupStatusMiddleware:
             self.middleware(request)
         assert self.get_response.call_count == 4
 
-    def test_complete_user_passes_through(self, db):
+    @patch("apps.identity.services.SetupStatusService")
+    def test_complete_user_passes_through(self, mock_service_cls, db):
         user = UserFactory(email="complete@test.com", setup_status="complete")
+        mock_status = MagicMock()
+        mock_status.is_complete = True
+        mock_status.redirect_url = "/dashboard/"
+        mock_service_cls.get_setup_status.return_value = mock_status
+
         request = self.rf.get("/dashboard/")
         request.user = user
         self.middleware(request)
         self.get_response.assert_called_once_with(request)
 
-    @patch("core.inertia.middleware.SetupStatusService")
+    @patch("apps.identity.services.SetupStatusService")
     def test_incomplete_user_redirected(self, mock_service_cls, db):
         user = UserFactory(email="incomplete@test.com", incomplete_setup=True)
         mock_status = MagicMock()
@@ -92,34 +99,39 @@ class TestDelinquentMiddleware:
 
     def test_delinquent_user_redirected(self, db):
         user = UserFactory(email="deli@test.com")
-        # Mock is_delinquent property
-        user.is_delinquent = True
 
         request = self.rf.get("/dashboard/")
         request.user = user
 
-        response = self.middleware(request)
+        with patch.object(
+            type(user), "is_delinquent", new_callable=PropertyMock, return_value=True
+        ):
+            response = self.middleware(request)
         assert response.status_code == 302
         assert response.url == "/delinquent/"
 
     def test_delinquent_user_can_access_billing(self, db):
         user = UserFactory(email="deli2@test.com")
-        user.is_delinquent = True
 
         request = self.rf.get("/billing/")
         request.user = user
 
-        self.middleware(request)
+        with patch.object(
+            type(user), "is_delinquent", new_callable=PropertyMock, return_value=True
+        ):
+            self.middleware(request)
         self.get_response.assert_called_once_with(request)
 
     def test_delinquent_user_can_access_logout(self, db):
         user = UserFactory(email="deli3@test.com")
-        user.is_delinquent = True
 
         request = self.rf.get("/auth/logout/")
         request.user = user
 
-        self.middleware(request)
+        with patch.object(
+            type(user), "is_delinquent", new_callable=PropertyMock, return_value=True
+        ):
+            self.middleware(request)
         self.get_response.assert_called_once_with(request)
 
 

@@ -51,6 +51,12 @@ export default defineConfig({
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-inertia': ['@inertiajs/react', '@inertiajs/core'],
+          'vendor-heroui': ['@heroui/react'],
+          'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector', 'i18next-http-backend'],
+        },
       },
     },
   },

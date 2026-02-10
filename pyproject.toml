@@ -171,7 +171,7 @@ django_settings_module = "config.settings.development"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test_memory"
 python_files = ["test_*.py", "*_test.py"]
-python_paths = ["src"]
+pythonpath = ["src"]
 addopts = "-v --tb=short --reuse-db"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

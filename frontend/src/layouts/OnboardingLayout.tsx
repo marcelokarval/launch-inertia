@@ -79,12 +79,12 @@ export default function OnboardingLayout({ children, currentStep, title }: Props
         {(flash.success || flash.error) && (
           <div>
             {flash.success && (
-              <div className="p-3 bg-success/10 text-success-700 dark:text-success-400 rounded-xl border border-success/20 text-sm">
+              <div className="p-3 bg-success/10 text-success rounded-xl border border-success/20 text-sm">
                 {flash.success}
               </div>
             )}
             {flash.error && (
-              <div className="p-3 bg-danger/10 text-danger-700 dark:text-danger-400 rounded-xl border border-danger/20 text-sm">
+              <div className="p-3 bg-danger/10 text-danger rounded-xl border border-danger/20 text-sm">
                 {flash.error}
               </div>
             )}

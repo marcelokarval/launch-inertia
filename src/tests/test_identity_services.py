@@ -135,7 +135,7 @@ class TestAuthServicePasswordReset:
     def setup(self, db):
         self.user = UserFactory(email="reset@test.com")
 
-    @patch("apps.identity.services.auth_service.send_password_reset_email_task")
+    @patch("apps.identity.tasks.send_password_reset_email_task")
     def test_reset_request_existing_email(self, mock_task):
         result = AuthService.reset_password_request("reset@test.com")
         assert result["success"] is True
@@ -146,7 +146,7 @@ class TestAuthServicePasswordReset:
         result = AuthService.reset_password_request("nobody@test.com")
         assert result["success"] is True
 
-    @patch("apps.identity.services.auth_service.send_password_reset_email_task")
+    @patch("apps.identity.tasks.send_password_reset_email_task")
     def test_reset_confirm_success(self, mock_task):
         token = TokenService.create_password_reset_token(self.user)
         result = AuthService.reset_password_confirm(token, "newpass12345")
@@ -165,7 +165,7 @@ class TestAuthServicePasswordReset:
 class TestRegistrationService:
     """Tests for RegistrationService.register() and verify_email()."""
 
-    @patch("apps.identity.services.registration_service.send_verification_email_task")
+    @patch("apps.identity.tasks.send_verification_email_task")
     def test_register_success(self, mock_task, db):
         result = RegistrationService.register(
             email="new@test.com",
@@ -187,7 +187,7 @@ class TestRegistrationService:
         assert result.success is False
         assert "email" in result.errors
 
-    @patch("apps.identity.services.registration_service.send_verification_email_task")
+    @patch("apps.identity.tasks.send_verification_email_task")
     def test_register_duplicate_email_anti_enumeration(self, mock_task, db):
         """Duplicate email returns success (anti-enumeration)."""
         UserFactory(email="existing@test.com")
@@ -200,7 +200,7 @@ class TestRegistrationService:
         # Anti-enumeration: same response as success
         assert result.success is True
 
-    @patch("apps.identity.services.registration_service.send_verification_email_task")
+    @patch("apps.identity.tasks.send_verification_email_task")
     def test_register_creates_profile(self, mock_task, db):
         RegistrationService.register(
             email="withprofile@test.com",
@@ -213,7 +213,7 @@ class TestRegistrationService:
         user = User.objects.get(email="withprofile@test.com")
         assert Profile.objects.filter(user=user).exists()
 
-    @patch("apps.identity.services.registration_service.send_verification_email_task")
+    @patch("apps.identity.tasks.send_verification_email_task")
     def test_verify_email_success(self, mock_task, db):
         user = UserFactory(email="verify@test.com", unverified=True)
         token = TokenService.create_email_verification_token(user, user.email)

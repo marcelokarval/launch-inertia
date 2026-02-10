@@ -24,7 +24,7 @@ export function FormErrorBanner({
 
   return (
     <div
-      className={`animate-in fade-in slide-in-from-top-2 duration-300 p-3 rounded-lg bg-danger-50 border border-danger-200 text-danger-700 text-sm ${className}`}
+      className={`animate-in fade-in slide-in-from-top-2 duration-300 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm ${className}`}
       role="alert"
     >
       <div className="flex items-center gap-2">

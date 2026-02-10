@@ -291,11 +291,11 @@ export default function Login({ errors = {}, needs_verification = false, verific
                   </div>
 
                   {/* Error Message */}
-                  {errors.__all__ && (
+                    {errors.__all__ && (
                     <div className={`p-3 rounded-lg text-sm border ${
                       needs_verification
-                        ? 'bg-warning-50 border-warning-200 text-warning-700'
-                        : 'bg-danger-50 border-danger-200 text-danger-700'
+                        ? 'bg-warning/10 border-warning/20 text-warning'
+                        : 'bg-danger/10 border-danger/20 text-danger'
                     }`}>
                       <div className="flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 flex-shrink-0" />

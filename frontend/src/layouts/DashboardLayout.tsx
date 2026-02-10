@@ -414,22 +414,22 @@ function FlashMessages({ flash }: { flash: PageProps['flash'] }) {
   return (
     <div className="px-6 pt-4 space-y-2">
       {flash.success && (
-        <div className="p-3 bg-success/10 text-success-700 dark:text-success-400 rounded-xl text-sm border border-success/20 animate-slide-up">
+        <div className="p-3 bg-success/10 text-success rounded-xl text-sm border border-success/20 animate-slide-up">
           {flash.success}
         </div>
       )}
       {flash.error && (
-        <div className="p-3 bg-danger/10 text-danger-700 dark:text-danger-400 rounded-xl text-sm border border-danger/20 animate-slide-up">
+        <div className="p-3 bg-danger/10 text-danger rounded-xl text-sm border border-danger/20 animate-slide-up">
           {flash.error}
         </div>
       )}
       {flash.warning && (
-        <div className="p-3 bg-warning/10 text-warning-700 dark:text-warning-400 rounded-xl text-sm border border-warning/20 animate-slide-up">
+        <div className="p-3 bg-warning/10 text-warning rounded-xl text-sm border border-warning/20 animate-slide-up">
           {flash.warning}
         </div>
       )}
       {flash.info && (
-        <div className="p-3 bg-primary/10 text-primary-700 dark:text-primary-400 rounded-xl text-sm border border-primary/20 animate-slide-up">
+        <div className="p-3 bg-primary/10 text-primary rounded-xl text-sm border border-primary/20 animate-slide-up">
           {flash.info}
         </div>
       )}

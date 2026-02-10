@@ -1,6 +1,7 @@
 """
 Contact forms.
 """
+
 from django import forms
 
 from ..models import Contact, Tag
@@ -29,6 +30,20 @@ class ContactForm(forms.ModelForm):
             "tags",
             "custom_fields",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # status and source have model defaults; don't require them in the form
+        self.fields["status"].required = False
+        self.fields["source"].required = False
+
+    def clean_status(self):
+        """Use model default if not provided."""
+        return self.cleaned_data.get("status") or Contact.Status.LEAD
+
+    def clean_source(self):
+        """Use model default if not provided."""
+        return self.cleaned_data.get("source") or Contact.Source.MANUAL
 
     def clean_email(self):
         email = self.cleaned_data.get("email", "")
