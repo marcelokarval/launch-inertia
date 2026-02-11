@@ -78,6 +78,11 @@ THIRD_PARTY_APPS = [
 PROJECT_APPS = [
     "apps.identity",
     "apps.contacts",
+    # Contact sub-apps (identity resolution system)
+    "apps.contacts.identity",
+    "apps.contacts.email",
+    "apps.contacts.phone",
+    "apps.contacts.fingerprint",
     "apps.billing",
     "apps.notifications",
 ]

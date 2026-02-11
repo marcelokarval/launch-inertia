@@ -3,6 +3,7 @@ Contacts domain models.
 
 CRM models for managing contacts, companies, tags, and custom fields.
 """
+
 from django.db import models
 from django.conf import settings
 
@@ -86,6 +87,17 @@ class Contact(BaseModel):
     # Notes
     notes = models.TextField(blank=True)
 
+    # Identity resolution link
+    identity = models.OneToOneField(
+        "contact_identity.Identity",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="crm_contact",
+        verbose_name="Resolved Identity",
+        help_text="The unified identity this CRM contact resolves to",
+    )
+
     # Ownership
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -142,31 +154,45 @@ class Contact(BaseModel):
             "source": self.source,
             "email_verified": self.email_verified,
             "phone_verified": self.phone_verified,
+            "identity_id": self.identity.public_id if self.identity else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "tags": [{"id": t.public_id, "name": t.name, "color": t.color} for t in self.tags.all()],
+            "tags": [
+                {"id": t.public_id, "name": t.name, "color": t.color}
+                for t in self.tags.all()
+            ],
         }
 
         if include_details:
-            data.update({
-                "notes": self.notes,
-                "custom_fields": self.custom_fields,
-                "owner": self.owner.to_dict() if self.owner else None,
-                "created_by": self.created_by.to_dict() if self.created_by else None,
-                "metadata": self.metadata,
-            })
+            data.update(
+                {
+                    "notes": self.notes,
+                    "custom_fields": self.custom_fields,
+                    "owner": self.owner.to_dict() if self.owner else None,
+                    "created_by": self.created_by.to_dict()
+                    if self.created_by
+                    else None,
+                    "metadata": self.metadata,
+                }
+            )
 
         return data
 
 
-class ContactEmail(BaseModel):
-    """Additional email addresses for a contact."""
+class AdditionalEmail(BaseModel):
+    """
+    Additional email addresses for a CRM contact.
 
-    PUBLIC_ID_PREFIX = "cem"
+    This is a simple CRM record (label + email). For identity-resolution
+    email channels with normalization, verification lifecycle, and domain
+    analysis, use contacts.email.models.ContactEmail instead.
+    """
+
+    PUBLIC_ID_PREFIX = "aem"
 
     contact = models.ForeignKey(
         Contact,
         on_delete=models.CASCADE,
-        related_name="emails",
+        related_name="additional_emails",
     )
     email = models.EmailField()
     label = models.CharField(max_length=50, default="work")  # work, personal, other
@@ -175,34 +201,44 @@ class ContactEmail(BaseModel):
     verified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Contact Email"
-        verbose_name_plural = "Contact Emails"
+        verbose_name = "Additional Email"
+        verbose_name_plural = "Additional Emails"
         unique_together = [("contact", "email")]
+        db_table = "contacts_contactemail"  # preserve existing DB table name
 
     def __str__(self):
         return self.email
 
 
-class ContactPhone(BaseModel):
-    """Additional phone numbers for a contact."""
+class AdditionalPhone(BaseModel):
+    """
+    Additional phone numbers for a CRM contact.
 
-    PUBLIC_ID_PREFIX = "cph"
+    This is a simple CRM record (label + phone). For identity-resolution
+    phone channels with E.164 normalization, WhatsApp detection, and DNC
+    tracking, use contacts.phone.models.ContactPhone instead.
+    """
+
+    PUBLIC_ID_PREFIX = "aph"
 
     contact = models.ForeignKey(
         Contact,
         on_delete=models.CASCADE,
-        related_name="phones",
+        related_name="additional_phones",
     )
     phone = models.CharField(max_length=50)
-    label = models.CharField(max_length=50, default="mobile")  # mobile, work, home, other
+    label = models.CharField(
+        max_length=50, default="mobile"
+    )  # mobile, work, home, other
     is_primary = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Contact Phone"
-        verbose_name_plural = "Contact Phones"
+        verbose_name = "Additional Phone"
+        verbose_name_plural = "Additional Phones"
         unique_together = [("contact", "phone")]
+        db_table = "contacts_contactphone"  # preserve existing DB table name
 
     def __str__(self):
         return self.phone
