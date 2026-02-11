@@ -141,7 +141,22 @@ class Contact(BaseModel):
         return self.name or self.email or self.phone or f"Contact {self.public_id}"
 
     def to_dict(self, include_details: bool = False) -> dict:
-        """Serialize contact for Inertia props."""
+        """Serialize contact for Inertia props.
+
+        Always includes identity summary (confidence, channel counts) for list views.
+        include_details=True adds notes, custom_fields, owner, etc. for detail views.
+        """
+        identity = self.identity
+        identity_summary = None
+        if identity:
+            identity_summary = {
+                "confidence_score": identity.confidence_score,
+                "status": identity.status,
+                "email_count": identity.email_contacts.count(),
+                "phone_count": identity.phone_contacts.count(),
+                "fingerprint_count": identity.fingerprints.count(),
+            }
+
         data = {
             "id": self.public_id,
             "name": self.name,
@@ -154,7 +169,8 @@ class Contact(BaseModel):
             "source": self.source,
             "email_verified": self.email_verified,
             "phone_verified": self.phone_verified,
-            "identity_id": self.identity.public_id if self.identity else None,
+            "identity_id": identity.public_id if identity else None,
+            "identity_summary": identity_summary,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "tags": [
                 {"id": t.public_id, "name": t.name, "color": t.color}

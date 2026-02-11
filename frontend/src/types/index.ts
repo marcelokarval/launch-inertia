@@ -86,6 +86,15 @@ export interface Tag {
   color: string
 }
 
+/** Identity summary included in list-view Contact.to_dict(). */
+export interface IdentitySummary {
+  confidence_score: number
+  status: IdentityStatus
+  email_count: number
+  phone_count: number
+  fingerprint_count: number
+}
+
 /**
  * Contact as returned by Contact.to_dict() (list view).
  */
@@ -101,6 +110,8 @@ export interface Contact {
   source: ContactSource
   email_verified: boolean
   phone_verified: boolean
+  identity_id: string | null
+  identity_summary: IdentitySummary | null
   created_at: string
   tags: Tag[]
 }
@@ -114,6 +125,167 @@ export interface ContactDetail extends Contact {
   owner: SharedUser | null
   created_by: SharedUser | null
   metadata: Record<string, unknown>
+  identity_id: string | null
+}
+
+// ============================================================================
+// Identity Resolution Types (matching contact_identity.models)
+// ============================================================================
+
+export type IdentityStatus = 'active' | 'merged' | 'inactive'
+
+/** Identity as returned by Identity.to_dict(include_contacts=True). */
+export interface IdentityDetail {
+  id: string
+  status: IdentityStatus
+  merged_into_id: string | null
+  last_seen: string | null
+  first_seen_source: string | null
+  confidence_score: number
+  email_count: number
+  phone_count: number
+  fingerprint_count: number
+  emails: ChannelEmail[]
+  phones: ChannelPhone[]
+  fingerprints: DeviceFingerprint[]
+  created_at: string
+}
+
+/** Attribution as returned by Attribution.to_dict(). */
+export interface Attribution {
+  id: string
+  identity_id: string
+  utm_source: string
+  utm_medium: string
+  utm_campaign: string
+  utm_content: string
+  utm_term: string
+  referrer: string
+  landing_page: string
+  touchpoint_type: string
+  created_at: string
+}
+
+// ============================================================================
+// Contact Channel Types (matching contact_email/contact_phone models)
+// ============================================================================
+
+export type EmailLifecycleStatus =
+  | 'pending'
+  | 'active'
+  | 'invalid'
+  | 'bounced_soft'
+  | 'bounced_hard'
+  | 'complained'
+  | 'unsubscribed'
+
+/** ContactEmail as returned by ContactEmail.to_dict(). */
+export interface ChannelEmail {
+  id: string
+  value: string
+  original_value: string
+  domain: string
+  lifecycle_status: EmailLifecycleStatus
+  is_verified: boolean
+  verified_at: string | null
+  is_dnc: boolean
+  is_deliverable: boolean
+  quality_score: number
+  first_seen: string | null
+  last_seen: string | null
+  identity_id: string | null
+}
+
+export type PhoneType = 'mobile' | 'landline' | 'voip' | 'unknown'
+
+/** ContactPhone as returned by ContactPhone.to_dict(). */
+export interface ChannelPhone {
+  id: string
+  value: string
+  original_value: string
+  country_code: string
+  phone_type: PhoneType
+  display_value: string
+  is_verified: boolean
+  verified_at: string | null
+  is_whatsapp: boolean
+  is_sms_capable: boolean
+  is_dnc: boolean
+  first_seen: string | null
+  last_seen: string | null
+  identity_id: string | null
+}
+
+// ============================================================================
+// Fingerprint / Device Types (matching contact_fingerprint models)
+// ============================================================================
+
+export interface FraudSignal {
+  type: string
+  severity: 'low' | 'medium' | 'high'
+  description: string
+}
+
+/** FingerprintIdentity as returned by FingerprintIdentity.to_dict(). */
+export interface DeviceFingerprint {
+  id: string
+  hash: string
+  confidence_score: number
+  device_type: string
+  visitor_found: boolean
+  device_info: Record<string, unknown>
+  browser_info: Record<string, unknown>
+  geo_info: Record<string, unknown>
+  browser: string
+  browser_family: string
+  os: string
+  ip_address: string | null
+  first_seen: string | null
+  last_seen: string | null
+  is_master: boolean
+  is_mobile: boolean
+  identity_id: string | null
+  fraud_signals: FraudSignal[]
+}
+
+/** FingerprintEvent as returned by FingerprintEvent.to_dict(). */
+export interface TimelineEvent {
+  id: string
+  event_type: string
+  page_url: string | null
+  timestamp: string
+  user_data: Record<string, unknown>
+  event_data: Record<string, unknown>
+  session_id: string | null
+  fingerprint_id: string
+}
+
+// ============================================================================
+// Contact Detail Extended (for Show page with full identity data)
+// ============================================================================
+
+/** Full contact detail with resolved identity data for the Show page. */
+export interface ContactShowData extends ContactDetail {
+  identity: IdentityDetail | null
+  attributions: Attribution[]
+  timeline: TimelineEvent[]
+}
+
+/** Chip color helpers for identity/channel status. */
+export const EMAIL_LIFECYCLE_CHIP_COLOR: Record<EmailLifecycleStatus, 'accent' | 'success' | 'warning' | 'danger' | 'default'> = {
+  pending: 'accent',
+  active: 'success',
+  invalid: 'danger',
+  bounced_soft: 'warning',
+  bounced_hard: 'danger',
+  complained: 'danger',
+  unsubscribed: 'default',
+}
+
+export const IDENTITY_STATUS_CHIP_COLOR: Record<IdentityStatus, 'success' | 'warning' | 'default'> = {
+  active: 'success',
+  merged: 'warning',
+  inactive: 'default',
 }
 
 // ============================================================================

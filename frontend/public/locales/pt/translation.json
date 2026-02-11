@@ -158,8 +158,12 @@
         "status": "Status",
         "tags": "Tags",
         "actions": "Acoes",
-        "edit": "Editar"
+        "edit": "Editar",
+        "identity": "Identidade"
       },
+      "noIdentity": "Sem identidade",
+      "emptyTitle": "Nenhum contato ainda",
+      "emptyDesc": "Comece a construir sua audiencia adicionando seu primeiro contato.",
       "empty": "Nenhum contato encontrado.",
       "addFirst": "Adicione seu primeiro contato",
       "pagination": {
@@ -204,7 +208,38 @@
       "phoneLabel": "Telefone",
       "companyLabel": "Empresa",
       "createdAt": "Criado em",
-      "notesTitle": "Notas"
+      "notesTitle": "Notas",
+      "identity": {
+        "noIdentity": "Sem identidade resolvida",
+        "noIdentityDesc": "Este contato ainda nao foi vinculado a uma identidade resolvida.",
+        "title": "Resolucao de Identidade",
+        "emails": "Emails",
+        "phones": "Telefones",
+        "devices": "Dispositivos",
+        "firstSource": "Primeira origem"
+      },
+      "channels": {
+        "noEmails": "Sem canais de email",
+        "noPhones": "Sem canais de telefone"
+      },
+      "devices": {
+        "noDevices": "Nenhum dispositivo rastreado",
+        "primary": "Principal",
+        "fpConfidence": "Confianca FP"
+      },
+      "attributions": {
+        "noData": "Sem dados de atribuicao"
+      },
+      "timeline": {
+        "noEvents": "Nenhum evento registrado"
+      },
+      "tabs": {
+        "emails": "Emails",
+        "phones": "Telefones",
+        "devices": "Dispositivos",
+        "attributions": "Atribuicao",
+        "timeline": "Timeline"
+      }
     },
     "delete": {
       "pageTitle": "Excluir {{name}}",

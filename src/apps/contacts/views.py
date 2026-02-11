@@ -49,14 +49,36 @@ def index(request):
 @login_required
 @require_ownership(Contact, owner_field="owner")
 def show(request, public_id):
-    """Show contact details. Ownership verified by @require_ownership."""
+    """Show contact details with full identity resolution data.
+
+    Passes:
+    - contact: CRM contact with details
+    - identity: resolved identity with emails, phones, fingerprints (if linked)
+    - attributions: marketing attribution records
+    - timeline: fingerprint events ordered by timestamp
+    """
     contact = request.verified_object
+    contact_data = contact.to_dict(include_details=True)
+
+    identity_data = None
+    attributions_data = []
+    timeline_data = []
+
+    if contact.identity:
+        identity = contact.identity
+        identity_data = identity.to_dict(include_contacts=True)
+        attributions_data = [a.to_dict() for a in identity.attributions.all()[:50]]
+        timeline_data = [e.to_dict() for e in identity.get_timeline()[:100]]
+
+    contact_data["identity"] = identity_data
+    contact_data["attributions"] = attributions_data
+    contact_data["timeline"] = timeline_data
 
     return inertia_render(
         request,
         "Contacts/Show",
         {
-            "contact": contact.to_dict(include_details=True),
+            "contact": contact_data,
         },
     )
 
