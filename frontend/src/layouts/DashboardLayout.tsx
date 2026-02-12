@@ -14,7 +14,7 @@
 import { useState } from 'react'
 import { Link, usePage, router } from '@inertiajs/react'
 import type { ReactNode } from 'react'
-import { Avatar, Badge, Chip, Dropdown, Tooltip, Button as HeroButton } from '@heroui/react'
+import { Avatar, Chip, Dropdown, Tooltip, Button as HeroButton } from '@heroui/react'
 import {
   Home,
   Users,
@@ -301,7 +301,12 @@ function NavLink({
   )
 
   if (collapsed) {
-    return <div title={label}>{content}</div>
+    return (
+      <Tooltip>
+        <Tooltip.Trigger>{content}</Tooltip.Trigger>
+        <Tooltip.Content placement="right">{label}</Tooltip.Content>
+      </Tooltip>
+    )
   }
   return content
 }

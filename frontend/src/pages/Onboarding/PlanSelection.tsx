@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { Head } from '@inertiajs/react'
-import { Card, Form } from '@heroui/react'
+import { Card, Chip, Form, RadioGroup, Radio } from '@heroui/react'
 import { Button, FormErrorBanner } from '@/components/ui'
 import { Check, Zap, Star, Crown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -74,94 +74,77 @@ export default function PlanSelection({ plans = [], errors = {} }: Props) {
 
         <Form onSubmit={submit} className="space-y-4">
           {/* Plan Cards */}
-          <div className="space-y-3">
+          <RadioGroup
+            value={selectedPlan}
+            onChange={(value) => handleSelectPlan(value)}
+            className="space-y-3"
+          >
             {plans.map((plan) => {
               const isSelected = selectedPlan === plan.id
               const Icon = PLAN_ICONS[plan.id] || Zap
               const colors = PLAN_COLORS[plan.id] || PLAN_COLORS.free
 
               return (
-                <div
-                  key={plan.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleSelectPlan(plan.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectPlan(plan.id) } }}
-                >
-                <Card
-                  className={`cursor-pointer transition-all duration-200 ${
-                    isSelected
-                      ? `ring-2 ring-primary ${colors.bg} ${colors.border}`
-                      : `hover:shadow-md border ${colors.border} ${colors.bg}`
-                  }`}
-                >
-                  <Card.Content className="p-4">
-                    <div className="flex items-start gap-4">
-                      {/* Radio indicator */}
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? 'border-primary bg-primary'
-                              : 'border-default-300'
-                          }`}
-                        >
-                          {isSelected && (
-                            <div className="w-2 h-2 rounded-full bg-background" />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Plan info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4 text-primary" />
-                            <h3 className="font-semibold text-foreground">
-                              {plan.name}
-                            </h3>
-                            {plan.id === 'basic' && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>
-                                {t('onboarding.plan.popular')}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            {(plan.price ?? plan.amount) === 0 ? (
-                              <span className="text-lg font-bold text-foreground">
-                                {t('onboarding.plan.free')}
-                              </span>
-                            ) : (
-                              <div>
+                <Radio key={plan.id} value={plan.id} className="w-full">
+                  <Radio.Control />
+                  <Radio.Content>
+                    <Card
+                      className={`cursor-pointer transition-all duration-200 w-full ${
+                        isSelected
+                          ? `ring-2 ring-primary ${colors.bg} ${colors.border}`
+                          : `hover:shadow-md border ${colors.border} ${colors.bg}`
+                      }`}
+                    >
+                      <Card.Content className="p-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4 text-primary" />
+                              <h3 className="font-semibold text-foreground">
+                                {plan.name}
+                              </h3>
+                              {plan.id === 'basic' && (
+                                <Chip size="sm" variant="soft" color="accent">
+                                  {t('onboarding.plan.popular')}
+                                </Chip>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              {(plan.price ?? plan.amount) === 0 ? (
                                 <span className="text-lg font-bold text-foreground">
-                                  ${plan.price ?? plan.amount}
+                                  {t('onboarding.plan.free')}
                                 </span>
-                                <span className="text-xs text-default-500">{t('onboarding.plan.pricePerMonth')}</span>
-                              </div>
-                            )}
+                              ) : (
+                                <div>
+                                  <span className="text-lg font-bold text-foreground">
+                                    ${plan.price ?? plan.amount}
+                                  </span>
+                                  <span className="text-xs text-default-500">{t('onboarding.plan.pricePerMonth')}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Features */}
-                        <ul className="mt-2 space-y-1">
-                          {(plan.features ?? []).map((feature, idx) => (
-                            <li
-                              key={idx}
-                              className="flex items-center gap-2 text-xs text-default-600"
-                            >
-                               <Check className="w-3.5 h-3.5 text-success flex-shrink-0" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </Card.Content>
-                </Card>
-                </div>
+                          {/* Features */}
+                          <ul className="mt-2 space-y-1">
+                            {(plan.features ?? []).map((feature, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-center gap-2 text-xs text-default-600"
+                              >
+                                <Check className="w-3.5 h-3.5 text-success flex-shrink-0" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </Card.Content>
+                    </Card>
+                  </Radio.Content>
+                </Radio>
               )
             })}
-          </div>
+          </RadioGroup>
 
           {/* Submit */}
           <Button

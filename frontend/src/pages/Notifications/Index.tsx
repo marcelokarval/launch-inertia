@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react'
 import DashboardLayout from '@/layouts/DashboardLayout'
-import { Card, Chip } from '@heroui/react'
+import { Card, Chip, Button as HeroButton } from '@heroui/react'
 import { Button } from '@/components/ui'
-import { Bell, Check, CheckCheck, User, Clock } from 'lucide-react'
+import { Bell, Check, CheckCheck, User, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Notification, Pagination } from '@/types'
 import { NOTIFICATION_TYPE_COLORS } from '@/types'
@@ -190,20 +190,47 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="flex justify-center gap-2 mt-6">
+          <div className="flex justify-center items-center gap-1 mt-6">
+            <HeroButton
+              variant="ghost"
+              size="sm"
+              isIconOnly
+              isDisabled={pagination.page <= 1}
+              onPress={() => router.get('/notifications/', {
+                page: pagination.page - 1,
+                ...(filter !== 'all' ? { status: filter } : {}),
+              }, { preserveState: true })}
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </HeroButton>
             {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
-              <Link
+              <HeroButton
                 key={page}
-                href={`/notifications/?page=${page}${filter !== 'all' ? `&status=${filter}` : ''}`}
+                variant={page === pagination.page ? 'primary' : 'ghost'}
+                size="sm"
+                className="min-w-8"
+                onPress={() => router.get('/notifications/', {
+                  page,
+                  ...(filter !== 'all' ? { status: filter } : {}),
+                }, { preserveState: true })}
               >
-                <Button
-                  variant={page === pagination.page ? 'primary' : 'secondary'}
-                  size="sm"
-                >
-                  {page}
-                </Button>
-              </Link>
+                {page}
+              </HeroButton>
             ))}
+            <HeroButton
+              variant="ghost"
+              size="sm"
+              isIconOnly
+              isDisabled={pagination.page >= pagination.pages}
+              onPress={() => router.get('/notifications/', {
+                page: pagination.page + 1,
+                ...(filter !== 'all' ? { status: filter } : {}),
+              }, { preserveState: true })}
+              aria-label="Next page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </HeroButton>
           </div>
         )}
       </div>

@@ -7,6 +7,7 @@
 
 import { Head, router } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
+import { Link as HeroLink } from '@heroui/react'
 import { AlertTriangle, CreditCard, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui'
 
@@ -66,12 +67,12 @@ export default function Delinquent({ message }: Props) {
           {/* Footer */}
           <p className="text-sm text-default-400">
             {t('delinquent.needHelp')}{' '}
-            <a
+            <HeroLink
               href="mailto:support@botrei.com"
               className="text-primary hover:opacity-80 font-medium"
             >
               {t('delinquent.contactSupport')}
-            </a>
+            </HeroLink>
           </p>
         </div>
       </div>

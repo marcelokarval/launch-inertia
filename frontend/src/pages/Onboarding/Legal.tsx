@@ -3,7 +3,7 @@
  */
 
 import { Head } from '@inertiajs/react'
-import { Checkbox, Form } from '@heroui/react'
+import { Checkbox, Form, Link as HeroLink } from '@heroui/react'
 import { Button, FormErrorBanner } from '@/components/ui'
 import { FileText, Shield, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -53,12 +53,12 @@ export default function Legal({ errors = {} }: Props) {
                 <p className="text-xs text-default-500">
                   {t('onboarding.legal.termsDescription')}
                 </p>
-                <a
+                <HeroLink
                   href="#"
-                   className="text-xs text-primary hover:opacity-80"
+                  className="text-xs text-primary hover:opacity-80"
                 >
                   {t('onboarding.legal.readTerms')}
-                </a>
+                </HeroLink>
               </div>
             </div>
             <Checkbox
@@ -84,12 +84,12 @@ export default function Legal({ errors = {} }: Props) {
                 <p className="text-xs text-default-500">
                   {t('onboarding.legal.privacyDescription')}
                 </p>
-                <a
+                <HeroLink
                   href="#"
-                   className="text-xs text-primary hover:opacity-80"
+                  className="text-xs text-primary hover:opacity-80"
                 >
                   {t('onboarding.legal.readPrivacy')}
-                </a>
+                </HeroLink>
               </div>
             </div>
             <Checkbox

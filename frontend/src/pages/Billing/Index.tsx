@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react'
 import DashboardLayout from '@/layouts/DashboardLayout'
-import { Card, Chip } from '@heroui/react'
+import { Card, Chip, Link as HeroLink } from '@heroui/react'
 import { Button } from '@/components/ui'
 import { CreditCard, Receipt, ExternalLink, AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -134,14 +134,14 @@ export default function BillingIndex({ subscription, invoices }: Props) {
                         {invoice.status === 'paid' ? t('billing.index.invoices.paid') : invoice.status}
                       </Chip>
                       {invoice.invoice_pdf && (
-                        <a
+                        <HeroLink
                           href={invoice.invoice_pdf}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:opacity-80"
                         >
                           <ExternalLink className="w-5 h-5" />
-                        </a>
+                        </HeroLink>
                       )}
                     </div>
                   </div>

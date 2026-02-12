@@ -38,14 +38,15 @@ interface Props {
 
 function ConfidenceBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100)
-  const color = pct >= 70 ? 'text-success' : pct >= 40 ? 'text-warning' : 'text-danger'
-  const bg = pct >= 70 ? 'bg-success/10' : pct >= 40 ? 'bg-warning/10' : 'bg-danger/10'
+  const chipColor: 'success' | 'warning' | 'danger' = pct >= 70 ? 'success' : pct >= 40 ? 'warning' : 'danger'
 
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${bg}`}>
-      <Shield className={`w-3.5 h-3.5 ${color}`} />
-      <span className={`text-sm font-semibold ${color}`}>{pct}%</span>
-    </div>
+    <Chip color={chipColor} variant="soft" size="sm">
+      <span className="inline-flex items-center gap-1">
+        <Shield className="w-3.5 h-3.5" />
+        {pct}%
+      </span>
+    </Chip>
   )
 }
 
@@ -87,13 +88,14 @@ function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
             <div className="flex items-center gap-2 flex-wrap">
               <Tag className="w-4 h-4 text-default-400 flex-shrink-0" />
               {identity.tags.map((tag) => (
-                <span
+                <Chip
                   key={tag.id}
-                  className="px-2 py-0.5 text-xs rounded-full"
+                  size="sm"
+                  variant="soft"
                   style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
                 >
                   {tag.name}
-                </span>
+                </Chip>
               ))}
             </div>
           )}
@@ -596,27 +598,21 @@ export default function IdentityShow({ identity }: Props) {
                     <div className="flex items-center gap-1.5">
                       <Mail className="w-4 h-4" />
                       <span>{t('identities.show.tabs.emails', 'Emails')}</span>
-                      <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                        {identity.email_count}
-                      </span>
+                      <Chip size="sm" variant="soft" color="default">{identity.email_count}</Chip>
                     </div>
                   </Tabs.Tab>
                   <Tabs.Tab id="phones">
                     <div className="flex items-center gap-1.5">
                       <Phone className="w-4 h-4" />
                       <span>{t('identities.show.tabs.phones', 'Phones')}</span>
-                      <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                        {identity.phone_count}
-                      </span>
+                      <Chip size="sm" variant="soft" color="default">{identity.phone_count}</Chip>
                     </div>
                   </Tabs.Tab>
                   <Tabs.Tab id="devices">
                     <div className="flex items-center gap-1.5">
                       <Fingerprint className="w-4 h-4" />
                       <span>{t('identities.show.tabs.devices', 'Devices')}</span>
-                      <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                        {identity.fingerprint_count}
-                      </span>
+                      <Chip size="sm" variant="soft" color="default">{identity.fingerprint_count}</Chip>
                     </div>
                   </Tabs.Tab>
                   <Tabs.Tab id="attributions">
@@ -624,9 +620,7 @@ export default function IdentityShow({ identity }: Props) {
                       <TrendingUp className="w-4 h-4" />
                       <span>{t('identities.show.tabs.attributions', 'Attribution')}</span>
                       {identity.attributions.length > 0 && (
-                        <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                          {identity.attributions.length}
-                        </span>
+                        <Chip size="sm" variant="soft" color="default">{identity.attributions.length}</Chip>
                       )}
                     </div>
                   </Tabs.Tab>
@@ -635,9 +629,7 @@ export default function IdentityShow({ identity }: Props) {
                       <Activity className="w-4 h-4" />
                       <span>{t('identities.show.tabs.timeline', 'Timeline')}</span>
                       {identity.timeline.length > 0 && (
-                        <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                          {identity.timeline.length}
-                        </span>
+                        <Chip size="sm" variant="soft" color="default">{identity.timeline.length}</Chip>
                       )}
                     </div>
                   </Tabs.Tab>

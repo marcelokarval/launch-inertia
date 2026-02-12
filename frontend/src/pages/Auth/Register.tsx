@@ -7,7 +7,7 @@
 
 import { Head, Link } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
-import { Form, Checkbox } from '@heroui/react'
+import { Form, Checkbox, Link as HeroLink } from '@heroui/react'
 import { User, Mail, ArrowRight } from 'lucide-react'
 import AuthLayout from '@/layouts/AuthLayout'
 import { InputField, PasswordInput, FormErrorBanner, Button } from '@/components/ui'
@@ -133,23 +133,23 @@ export default function Register({ errors = {} }: Props) {
           >
             <span className="text-sm text-default-600">
               {t('auth.register.termsAgree')}{' '}
-              <a
+              <HeroLink
                 href="#"
-                className="text-primary hover:opacity-80 font-medium"
+                className="text-primary hover:opacity-80 font-medium text-sm"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 {t('auth.register.termsOfService')}
-              </a>{' '}
+              </HeroLink>{' '}
               {t('auth.register.and')}{' '}
-              <a
+              <HeroLink
                 href="#"
-                className="text-primary hover:opacity-80 font-medium"
+                className="text-primary hover:opacity-80 font-medium text-sm"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 {t('auth.register.privacyPolicy')}
-              </a>
+              </HeroLink>
             </span>
           </Checkbox>
           {errors.terms_accepted && (
