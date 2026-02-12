@@ -10,7 +10,7 @@ from django.test import RequestFactory
 from tests.factories import (
     UserFactory,
     ProfileFactory,
-    ContactFactory,
+    IdentityFactory,
     NotificationFactory,
 )
 
@@ -81,25 +81,23 @@ def authenticated_request(rf, user):
     return request
 
 
-# ── Contact Fixtures ─────────────────────────────────────────────────
+# ── Identity Fixtures ────────────────────────────────────────────────
 
 
 @pytest.fixture
-def contact(db, user):
-    """A contact owned by the default user."""
-    return ContactFactory(owner=user, created_by=user)
+def identity(db):
+    """A single active Identity."""
+    from tests.factories import IdentityFactory
+
+    return IdentityFactory()
 
 
 @pytest.fixture
-def contacts(db, user):
-    """Multiple contacts owned by the default user."""
-    return ContactFactory.create_batch(5, owner=user, created_by=user)
+def identities(db):
+    """A list of 3 active Identities."""
+    from tests.factories import IdentityFactory
 
-
-@pytest.fixture
-def other_user_contact(db, other_user):
-    """A contact owned by the other user (for IDOR tests)."""
-    return ContactFactory(owner=other_user, created_by=other_user)
+    return [IdentityFactory() for _ in range(3)]
 
 
 # ── Notification Fixtures ────────────────────────────────────────────

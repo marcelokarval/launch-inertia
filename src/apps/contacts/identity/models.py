@@ -72,6 +72,34 @@ class Identity(BaseModel):
         help_text="Overall confidence score (0.0 - 1.0)",
     )
 
+    # ── New fields (Phase 0: Identity becomes primary entity) ────────
+    display_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Display name",
+        help_text="Name for display (from capture form or inferred from email)",
+    )
+    operator_notes = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Operator notes",
+        help_text="Free-form notes by the operator about this identity",
+    )
+    tags = models.ManyToManyField(
+        "contacts.Tag",
+        blank=True,
+        related_name="identities",
+        verbose_name="Tags",
+        help_text="Manual operator tags + automatic launch tags",
+    )
+    lifecycle_global = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Global lifecycle",
+        help_text="JSONB cache of cross-launch lifecycle data (updated by signals/tasks)",
+    )
+
     class Meta(BaseModel.Meta):
         verbose_name = "Identity"
         verbose_name_plural = "Identities"
@@ -143,6 +171,29 @@ class Identity(BaseModel):
         self.save(update_fields=["last_seen", "updated_at"])
 
     # ── Serialization ────────────────────────────────────────────────
+
+    def to_list_dict(self) -> dict:
+        """Lightweight serialization for list views (Index page)."""
+        primary_email = self.email_contacts.first()
+        primary_phone = self.phone_contacts.first()
+        return {
+            "id": self.public_id,
+            "display_name": self.display_name,
+            "status": self.status,
+            "confidence_score": self.confidence_score,
+            "primary_email": primary_email.value if primary_email else None,
+            "primary_phone": primary_phone.value if primary_phone else None,
+            "email_count": self.email_contacts.count(),
+            "phone_count": self.phone_contacts.count(),
+            "fingerprint_count": self.fingerprints.count(),
+            "tags": [
+                {"id": t.public_id, "name": t.name, "color": t.color}
+                for t in self.tags.all()
+            ],
+            "lifecycle_global": self.lifecycle_global,
+            "last_seen": self.last_seen.isoformat() if self.last_seen else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
     def to_dict(self, include_contacts: bool = False, **kwargs) -> dict:
         """Serialize identity for Inertia props."""

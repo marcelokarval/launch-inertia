@@ -100,7 +100,7 @@ function QuickActionsCard() {
   const { t } = useTranslation()
 
   const actions = [
-    { href: '/contacts/create/', icon: Plus, label: t('dashboard.quickActions.addContact', 'New Contact'), color: 'text-primary' },
+    { href: '/identities/create/', icon: Plus, label: t('dashboard.quickActions.importIdentity', 'Import Identity'), color: 'text-primary' },
     { href: '#', icon: Target, label: t('dashboard.quickActions.newCampaign', 'New Campaign'), color: 'text-warning' },
     { href: '/billing/', icon: CreditCard, label: t('dashboard.quickActions.manageBilling', 'Billing'), color: 'text-success' },
     { href: '/settings/', icon: Settings, label: t('dashboard.quickActions.viewSettings', 'Settings'), color: 'text-default-500' },
@@ -249,13 +249,13 @@ function GettingStartedCard() {
               {t('dashboard.gettingStarted.title', 'Get Started with Launch')}
             </h3>
             <p className="text-default-500 text-sm">
-              {t('dashboard.gettingStarted.description', 'Add your first contact to start managing your launch campaigns.')}
+              {t('dashboard.gettingStarted.description', 'Import your first identity to start managing your launch campaigns.')}
             </p>
           </div>
-          <Link href="/contacts/create/" className="flex-shrink-0">
+          <Link href="/identities/create/" className="flex-shrink-0">
             <Button variant="primary" size="lg">
               <Plus className="h-4 w-4" />
-              {t('dashboard.gettingStarted.cta', 'Add First Contact')}
+              {t('dashboard.gettingStarted.cta', 'Import First Identity')}
             </Button>
           </Link>
         </div>
@@ -271,15 +271,15 @@ function GettingStartedCard() {
 export default function DashboardIndex({ user, stats }: Props) {
   const { t } = useTranslation()
 
-  const totalContacts = stats?.total_contacts ?? 0
+  const totalIdentities = stats?.total_identities ?? 0
   const activeSubscriptions = stats?.active_subscriptions ?? 0
   const unreadNotifications = stats?.unread_notifications ?? 0
   const conversionRate = stats?.conversion_rate ?? 0
 
   const statCards: StatCardProps[] = [
     {
-      title: t('dashboard.stats.totalContacts', 'Active Campaigns'),
-      value: totalContacts.toLocaleString(),
+      title: t('dashboard.stats.totalIdentities', 'Active Campaigns'),
+      value: totalIdentities.toLocaleString(),
       icon: Target,
       variant: 'gradient',
     },
@@ -339,7 +339,7 @@ export default function DashboardIndex({ user, stats }: Props) {
       </div>
 
       {/* Getting Started (new users) */}
-      {totalContacts === 0 && <GettingStartedCard />}
+      {totalIdentities === 0 && <GettingStartedCard />}
     </DashboardLayout>
   )
 }

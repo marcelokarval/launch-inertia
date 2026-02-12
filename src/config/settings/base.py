@@ -499,14 +499,14 @@ UNFOLD = {
                 ],
             },
             {
-                "title": "CRM",
+                "title": "Identity",
                 "separator": True,
                 "collapsible": True,
                 "items": [
                     {
-                        "title": "Contacts",
-                        "icon": "contacts",
-                        "link": "/admin/contacts/contact/",
+                        "title": "Identities",
+                        "icon": "fingerprint",
+                        "link": "/admin/contact_identity/identity/",
                     },
                 ],
             },

@@ -73,12 +73,8 @@ export interface UserProfile {
 }
 
 // ============================================================================
-// Contact & CRM Types (matching contacts.models.Contact.to_dict())
+// Identity Types (matching contact_identity.models.Identity)
 // ============================================================================
-
-export type ContactStatus = 'lead' | 'prospect' | 'customer' | 'churned' | 'inactive'
-
-export type ContactSource = 'manual' | 'import' | 'form' | 'api' | 'integration'
 
 export interface Tag {
   id: string
@@ -86,46 +82,21 @@ export interface Tag {
   color: string
 }
 
-/** Identity summary included in list-view Contact.to_dict(). */
-export interface IdentitySummary {
-  confidence_score: number
+/** Identity as shown in list views (Index page). */
+export interface IdentityListItem {
+  id: string
+  display_name: string
   status: IdentityStatus
+  confidence_score: number
+  primary_email: string | null
+  primary_phone: string | null
   email_count: number
   phone_count: number
   fingerprint_count: number
-}
-
-/**
- * Contact as returned by Contact.to_dict() (list view).
- */
-export interface Contact {
-  id: string
-  name: string
-  email: string
-  phone: string
-  company: string
-  job_title: string
-  status: ContactStatus
-  lead_score: number
-  source: ContactSource
-  email_verified: boolean
-  phone_verified: boolean
-  identity_id: string | null
-  identity_summary: IdentitySummary | null
-  created_at: string
   tags: Tag[]
-}
-
-/**
- * Contact with details as returned by Contact.to_dict(include_details=True).
- */
-export interface ContactDetail extends Contact {
-  notes: string
-  custom_fields: Record<string, unknown>
-  owner: SharedUser | null
-  created_by: SharedUser | null
-  metadata: Record<string, unknown>
-  identity_id: string | null
+  lifecycle_global: Record<string, unknown>
+  last_seen: string | null
+  created_at: string | null
 }
 
 // ============================================================================
@@ -261,12 +232,15 @@ export interface TimelineEvent {
 }
 
 // ============================================================================
-// Contact Detail Extended (for Show page with full identity data)
+// Identity Detail Extended (for Show page with full identity data)
 // ============================================================================
 
-/** Full contact detail with resolved identity data for the Show page. */
-export interface ContactShowData extends ContactDetail {
-  identity: IdentityDetail | null
+/** Full identity detail with channels, attributions, timeline for Show page. */
+export interface IdentityShowData extends IdentityDetail {
+  display_name: string
+  operator_notes: string
+  tags: Tag[]
+  lifecycle_global: Record<string, unknown>
   attributions: Attribution[]
   timeline: TimelineEvent[]
 }
@@ -404,13 +378,18 @@ export interface ProfileCompletionFormData {
   hear_about_us?: string
 }
 
-export interface ContactFormData {
-  name: string
+/** Form data for creating/importing an identity. */
+export interface IdentityFormData {
   email?: string
   phone?: string
-  company?: string
-  job_title?: string
-  notes?: string
+  display_name?: string
+}
+
+/** Form data for editing identity operator fields. */
+export interface IdentityEditFormData {
+  display_name: string
+  operator_notes: string
+  tag_ids: string[]
 }
 
 export interface PasswordChangeFormData {
@@ -472,7 +451,7 @@ export interface Pagination {
 // ============================================================================
 
 export interface DashboardStats {
-  total_contacts: number
+  total_identities: number
   active_subscriptions: number
   unread_notifications: number
   conversion_rate: number
@@ -481,24 +460,6 @@ export interface DashboardStats {
 // ============================================================================
 // Status Color Helpers
 // ============================================================================
-
-/** HeroUI Chip color mapping for contact statuses */
-export const CONTACT_STATUS_CHIP_COLOR: Record<ContactStatus, 'accent' | 'warning' | 'success' | 'danger' | 'default'> = {
-  lead: 'accent',
-  prospect: 'warning',
-  customer: 'success',
-  churned: 'danger',
-  inactive: 'default',
-}
-
-/** @deprecated Use CONTACT_STATUS_CHIP_COLOR with HeroUI Chip color prop instead */
-export const CONTACT_STATUS_COLORS: Record<ContactStatus, { bg: string; text: string }> = {
-  lead: { bg: 'bg-primary-100', text: 'text-primary-800' },
-  prospect: { bg: 'bg-warning-100', text: 'text-warning-800' },
-  customer: { bg: 'bg-success-100', text: 'text-success-800' },
-  churned: { bg: 'bg-danger-100', text: 'text-danger-800' },
-  inactive: { bg: 'bg-default-100', text: 'text-default-800' },
-}
 
 export const NOTIFICATION_TYPE_COLORS: Record<NotificationType, { bg: string; text: string }> = {
   info: { bg: 'bg-primary-100', text: 'text-primary-600' },

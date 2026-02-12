@@ -55,7 +55,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { key: 'dashboard', href: '/dashboard/', icon: Home },
-  { key: 'contacts', href: '/contacts/', icon: Users },
+  { key: 'identities', href: '/identities/', icon: Users },
   { key: 'campaigns', href: '#', icon: Target, badge: { label: 'Soon', color: 'warning' } },
   { key: 'automations', href: '#', icon: Zap, badge: { label: 'Pro', color: 'accent' } },
   { key: 'schedule', href: '#', icon: Calendar },

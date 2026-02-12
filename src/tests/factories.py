@@ -59,21 +59,16 @@ class ProfileFactory(DjangoModelFactory):
     agreed_to_terms = True
 
 
-class ContactFactory(DjangoModelFactory):
-    """Factory for creating Contact instances."""
+class IdentityFactory(DjangoModelFactory):
+    """Factory for creating Identity instances."""
 
     class Meta:
-        model = "contacts.Contact"
+        model = "contact_identity.Identity"
 
-    name = factory.Faker("name")
-    email = factory.Faker("email")
-    phone = factory.Faker("phone_number")
-    company = factory.Faker("company")
-    job_title = factory.Faker("job")
-    status = "lead"
-    source = "manual"
-    owner = factory.SubFactory(UserFactory)
-    created_by = factory.LazyAttribute(lambda o: o.owner)
+    status = "active"
+    confidence_score = factory.Faker("pyfloat", min_value=0.0, max_value=1.0)
+    display_name = factory.Faker("name")
+    first_seen_source = "manual"
 
 
 class TagFactory(DjangoModelFactory):

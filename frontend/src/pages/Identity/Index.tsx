@@ -4,15 +4,35 @@ import { Card, Chip, Form, SearchField, Input, Label } from '@heroui/react'
 import { Button } from '@/components/ui'
 import {
   Plus, Search, Mail, Phone, Shield, Fingerprint, User,
-  ChevronLeft, ChevronRight, Users,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Contact, Pagination } from '@/types'
-import { CONTACT_STATUS_CHIP_COLOR, IDENTITY_STATUS_CHIP_COLOR } from '@/types'
+import type { Pagination, Tag } from '@/types'
+import { IDENTITY_STATUS_CHIP_COLOR } from '@/types'
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface IdentityListItem {
+  id: string
+  display_name: string
+  status: 'active' | 'merged' | 'inactive'
+  confidence_score: number
+  primary_email: string | null
+  primary_phone: string | null
+  email_count: number
+  phone_count: number
+  fingerprint_count: number
+  tags: Tag[]
+  lifecycle_global: Record<string, unknown>
+  last_seen: string | null
+  created_at: string | null
+}
 
 interface Props {
-  contacts: Contact[]
+  identities: IdentityListItem[]
   filters: {
     q: string
     tag: string | null
@@ -21,7 +41,7 @@ interface Props {
 }
 
 // ============================================================================
-// Confidence Badge (reused from Show page, inline here for independence)
+// Confidence Badge
 // ============================================================================
 
 function ConfidenceBadge({ score }: { score: number }) {
@@ -65,16 +85,15 @@ function ChannelCounts({ emailCount, phoneCount, fpCount }: {
 }
 
 // ============================================================================
-// Contact Row Card
+// Identity Row Card
 // ============================================================================
 
-function ContactRow({ contact }: { contact: Contact }) {
-  const { t } = useTranslation()
-  const summary = contact.identity_summary
+function IdentityRow({ identity }: { identity: IdentityListItem }) {
+  const { t } = useTranslation('identities')
 
   return (
     <Link
-      href={`/contacts/${contact.id}/`}
+      href={`/identities/${identity.id}/`}
       className="block"
     >
       <div className="flex items-center gap-4 px-5 py-4 hover:bg-default-50 transition-colors border-b border-divider last:border-b-0">
@@ -83,79 +102,42 @@ function ContactRow({ contact }: { contact: Contact }) {
           <User className="w-5 h-5 text-primary" />
         </div>
 
-        {/* Name + contact info */}
+        {/* Name + primary contact */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-foreground truncate">
-              {contact.name}
+              {identity.display_name || t('index.anonymous', 'Anonymous')}
             </p>
-            {summary && (
-              <ConfidenceBadge score={summary.confidence_score} />
-            )}
+            <ConfidenceBadge score={identity.confidence_score} />
           </div>
           <div className="flex items-center gap-4 mt-0.5">
-            {contact.email && (
+            {identity.primary_email && (
               <span className="flex items-center gap-1 text-xs text-default-500 truncate">
                 <Mail className="w-3 h-3 flex-shrink-0" />
-                {contact.email}
+                {identity.primary_email}
               </span>
             )}
-            {contact.phone && (
+            {identity.primary_phone && (
               <span className="flex items-center gap-1 text-xs text-default-500">
                 <Phone className="w-3 h-3 flex-shrink-0" />
-                {contact.phone}
+                {identity.primary_phone}
               </span>
             )}
           </div>
         </div>
 
-        {/* Identity channels */}
-        <div className="hidden md:block flex-shrink-0">
-          {summary ? (
-            <div className="flex items-center gap-3">
-              <Chip
-                color={IDENTITY_STATUS_CHIP_COLOR[summary.status]}
-                variant="soft"
-                size="sm"
-              >
-                {summary.status}
-              </Chip>
-              <ChannelCounts
-                emailCount={summary.email_count}
-                phoneCount={summary.phone_count}
-                fpCount={summary.fingerprint_count}
-              />
-            </div>
-          ) : (
-            <span className="text-xs text-default-300 italic">
-              {t('contacts.index.noIdentity', 'No identity')}
-            </span>
-          )}
-        </div>
-
-        {/* Company */}
-        <div className="hidden lg:block w-32 flex-shrink-0">
-          {contact.company ? (
-            <p className="text-xs text-default-500 truncate">{contact.company}</p>
-          ) : (
-            <span className="text-xs text-default-300">-</span>
-          )}
-        </div>
-
-        {/* Status */}
-        <div className="flex-shrink-0">
-          <Chip
-            color={CONTACT_STATUS_CHIP_COLOR[contact.status] ?? 'default'}
-            variant="soft"
-            size="sm"
-          >
-            {contact.status}
-          </Chip>
+        {/* Channels */}
+        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+          <ChannelCounts
+            emailCount={identity.email_count}
+            phoneCount={identity.phone_count}
+            fpCount={identity.fingerprint_count}
+          />
         </div>
 
         {/* Tags */}
         <div className="hidden xl:flex gap-1 flex-shrink-0 max-w-[160px]">
-          {contact.tags.slice(0, 2).map((tag) => (
+          {identity.tags.slice(0, 2).map((tag) => (
             <span
               key={tag.id}
               className="px-2 py-0.5 text-[10px] rounded-full truncate"
@@ -164,22 +146,33 @@ function ContactRow({ contact }: { contact: Contact }) {
               {tag.name}
             </span>
           ))}
-          {contact.tags.length > 2 && (
+          {identity.tags.length > 2 && (
             <span className="text-[10px] text-default-400">
-              +{contact.tags.length - 2}
+              +{identity.tags.length - 2}
             </span>
           )}
         </div>
 
-        {/* Edit link */}
+        {/* Status */}
         <div className="flex-shrink-0">
-          <Link
-            href={`/contacts/${contact.id}/edit/`}
-            className="text-xs text-primary hover:text-primary/80 font-medium"
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          <Chip
+            color={IDENTITY_STATUS_CHIP_COLOR[identity.status] ?? 'default'}
+            variant="soft"
+            size="sm"
           >
-            {t('contacts.index.table.edit', 'Edit')}
-          </Link>
+            {identity.status}
+          </Chip>
+        </div>
+
+        {/* Last seen */}
+        <div className="hidden lg:block w-24 flex-shrink-0 text-right">
+          {identity.last_seen ? (
+            <span className="text-xs text-default-400">
+              {new Date(identity.last_seen).toLocaleDateString('pt-BR')}
+            </span>
+          ) : (
+            <span className="text-xs text-default-300">-</span>
+          )}
         </div>
       </div>
     </Link>
@@ -191,23 +184,23 @@ function ContactRow({ contact }: { contact: Contact }) {
 // ============================================================================
 
 function EmptyState() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('identities')
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <div className="w-16 h-16 rounded-full bg-default-100 flex items-center justify-center mb-4">
-        <Users className="w-8 h-8 text-default-300" />
+        <Shield className="w-8 h-8 text-default-300" />
       </div>
       <h3 className="text-lg font-semibold text-foreground mb-1">
-        {t('contacts.index.emptyTitle', 'No contacts yet')}
+        {t('index.emptyTitle', 'No identities yet')}
       </h3>
       <p className="text-sm text-default-500 mb-4 text-center max-w-sm">
-        {t('contacts.index.emptyDesc', 'Start building your audience by adding your first contact.')}
+        {t('index.emptyDesc', 'Start by importing your first identity to begin resolution.')}
       </p>
-      <Link href="/contacts/create/">
+      <Link href="/identities/create/">
         <Button variant="primary">
           <Plus className="w-4 h-4" />
-          {t('contacts.index.addFirst', 'Add your first contact')}
+          {t('index.addFirst', 'Import your first identity')}
         </Button>
       </Link>
     </div>
@@ -218,33 +211,33 @@ function EmptyState() {
 // Main Page
 // ============================================================================
 
-export default function ContactsIndex({ contacts, filters, pagination }: Props) {
-  const { t } = useTranslation()
+export default function IdentitiesIndex({ identities, filters, pagination }: Props) {
+  const { t } = useTranslation('identities')
   const [search, setSearch] = useState(filters.q || '')
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    router.get('/contacts/', { q: search }, { preserveState: true })
+    router.get('/identities/', { q: search }, { preserveState: true })
   }
 
   return (
-    <DashboardLayout title={t('contacts.index.title', 'Contacts')}>
-      <Head title={t('contacts.index.pageTitle', 'Contacts')} />
+    <DashboardLayout title={t('index.title', 'Identities')}>
+      <Head title={t('index.pageTitle', 'Identities')} />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-foreground">
-            {t('contacts.index.title', 'Contacts')}
+            {t('index.title', 'Identities')}
           </h2>
           <p className="text-sm text-default-500">
-            {t('contacts.index.totalCount', { total: pagination.total })}
+            {t('index.totalCount', { count: pagination.total, defaultValue: '{{count}} identities' })}
           </p>
         </div>
-        <Link href="/contacts/create/">
+        <Link href="/identities/create/">
           <Button variant="primary">
             <Plus className="w-4 h-4" />
-            {t('contacts.index.addContact', 'Add Contact')}
+            {t('index.importIdentity', 'Import Identity')}
           </Button>
         </Link>
       </div>
@@ -256,16 +249,16 @@ export default function ContactsIndex({ contacts, filters, pagination }: Props) 
             <SearchField
               value={search}
               onChange={setSearch}
-              aria-label={t('contacts.index.searchPlaceholder', 'Search contacts...')}
+              aria-label={t('index.searchPlaceholder', 'Search identities...')}
               className="w-full"
             >
               <Label className="sr-only">
-                {t('contacts.index.searchPlaceholder', 'Search contacts...')}
+                {t('index.searchPlaceholder', 'Search identities...')}
               </Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-default-400 z-10" />
                 <Input
-                  placeholder={t('contacts.index.searchPlaceholder', 'Search contacts...')}
+                  placeholder={t('index.searchPlaceholder', 'Search identities...')}
                   className="pl-10"
                 />
               </div>
@@ -274,35 +267,34 @@ export default function ContactsIndex({ contacts, filters, pagination }: Props) 
         </Card.Content>
       </Card>
 
-      {/* Contact List */}
+      {/* Identity List */}
       <Card className="border border-default-200 overflow-hidden">
-        {/* Column headers (visible on md+) */}
+        {/* Column headers */}
         <div className="hidden md:flex items-center gap-4 px-5 py-3 bg-content2 border-b border-divider text-xs font-medium text-default-500 uppercase tracking-wider">
           <div className="w-10 flex-shrink-0" /> {/* Avatar spacer */}
           <div className="flex-1">
-            {t('contacts.index.table.name', 'Name')}
+            {t('index.table.displayName', 'Display Name')}
           </div>
-          <div className="hidden md:block flex-shrink-0 w-[220px]">
-            {t('contacts.index.table.identity', 'Identity')}
-          </div>
-          <div className="hidden lg:block w-32 flex-shrink-0">
-            {t('contacts.index.table.company', 'Company')}
-          </div>
-          <div className="flex-shrink-0 w-[80px]">
-            {t('contacts.index.table.status', 'Status')}
+          <div className="hidden md:block flex-shrink-0 w-[180px]">
+            {t('index.table.channels', 'Channels')}
           </div>
           <div className="hidden xl:block flex-shrink-0 w-[160px]">
-            {t('contacts.index.table.tags', 'Tags')}
+            {t('index.table.tags', 'Tags')}
           </div>
-          <div className="flex-shrink-0 w-[40px]" /> {/* Edit spacer */}
+          <div className="flex-shrink-0 w-[80px]">
+            {t('index.table.status', 'Status')}
+          </div>
+          <div className="hidden lg:block w-24 flex-shrink-0 text-right">
+            {t('index.table.lastSeen', 'Last Seen')}
+          </div>
         </div>
 
         {/* Rows */}
-        {contacts.length === 0 ? (
+        {identities.length === 0 ? (
           <EmptyState />
         ) : (
-          contacts.map((contact) => (
-            <ContactRow key={contact.id} contact={contact} />
+          identities.map((identity) => (
+            <IdentityRow key={identity.id} identity={identity} />
           ))
         )}
       </Card>
@@ -311,28 +303,29 @@ export default function ContactsIndex({ contacts, filters, pagination }: Props) 
       {pagination.pages > 1 && (
         <div className="mt-6 flex items-center justify-between">
           <p className="text-sm text-default-500">
-            {t('contacts.index.pagination.showing', {
+            {t('index.pagination.showing', {
               from: (pagination.page - 1) * pagination.per_page + 1,
               to: Math.min(pagination.page * pagination.per_page, pagination.total),
               total: pagination.total,
+              defaultValue: 'Showing {{from}}-{{to}} of {{total}}',
             })}
           </p>
           <div className="flex gap-2">
             {pagination.page > 1 && (
               <Link
-                href={`/contacts/?page=${pagination.page - 1}${search ? `&q=${search}` : ''}`}
+                href={`/identities/?page=${pagination.page - 1}${search ? `&q=${search}` : ''}`}
                 className="flex items-center gap-1 px-3 py-2 border border-default-300 rounded-lg text-sm hover:bg-default-100 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
-                {t('contacts.index.pagination.previous', 'Previous')}
+                {t('index.pagination.previous', 'Previous')}
               </Link>
             )}
             {pagination.page < pagination.pages && (
               <Link
-                href={`/contacts/?page=${pagination.page + 1}${search ? `&q=${search}` : ''}`}
+                href={`/identities/?page=${pagination.page + 1}${search ? `&q=${search}` : ''}`}
                 className="flex items-center gap-1 px-3 py-2 border border-default-300 rounded-lg text-sm hover:bg-default-100 transition-colors"
               >
-                {t('contacts.index.pagination.next', 'Next')}
+                {t('index.pagination.next', 'Next')}
                 <ChevronRight className="w-4 h-4" />
               </Link>
             )}

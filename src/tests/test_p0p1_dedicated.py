@@ -8,9 +8,9 @@ Tests all new code added in the P0/P1 gap fix session:
 - ContactEmail lifecycle methods (mark_bounced, mark_complained, mark_unsubscribed, mark_invalid, is_deliverable)
 - Signal receivers (identity, email, phone, fingerprint post_save)
 - Celery tasks (all 19 tasks across 4 sub-apps)
-- Contact.identity FK and AdditionalEmail/AdditionalPhone renames
 
-136 existing tests remain untouched; these are additive tests for new code.
+Note: Contact.identity FK and AdditionalEmail/AdditionalPhone tests were
+removed in Phase 0 cleanup (Contact model eliminated).
 """
 
 import pytest
@@ -27,7 +27,7 @@ from apps.contacts.fingerprint.models import (
     FingerprintContact,
 )
 from apps.contacts.fingerprint.services.correlation_service import CorrelationService
-from apps.contacts.models import Contact, AdditionalEmail, AdditionalPhone
+# ELIMINATED: Contact, AdditionalEmail, AdditionalPhone imports removed in Phase 0 cleanup.
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1285,165 +1285,6 @@ class TestFingerprintTasks:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# CONTACT.IDENTITY FK AND ADDITIONAL EMAIL/PHONE RENAME TESTS
+# ELIMINATED: Contact.identity FK and AdditionalEmail/AdditionalPhone tests
+# removed in Phase 0 cleanup. Contact model has been removed.
 # ═══════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.django_db
-class TestContactIdentityFK:
-    """Tests for Contact.identity FK (P0.1)."""
-
-    def test_contact_without_identity(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(
-            name="John Doe",
-            email="john@example.com",
-            owner=user,
-            created_by=user,
-        )
-        assert contact.identity is None
-
-    def test_contact_with_identity(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        identity = Identity.objects.create(status=Identity.ACTIVE)
-        contact = Contact.objects.create(
-            name="Jane Doe",
-            email="jane@example.com",
-            owner=user,
-            created_by=user,
-            identity=identity,
-        )
-        assert contact.identity == identity
-        assert identity.crm_contact == contact
-
-    def test_contact_identity_set_null_on_hard_delete(self):
-        """Hard delete triggers SQL CASCADE/SET_NULL behavior.
-        Soft delete (default) does NOT trigger SET_NULL since the
-        record still exists in DB."""
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        identity = Identity.objects.create(status=Identity.ACTIVE)
-        contact = Contact.objects.create(
-            name="Delete Test",
-            email="delete@example.com",
-            owner=user,
-            created_by=user,
-            identity=identity,
-        )
-        identity.hard_delete()
-        contact.refresh_from_db()
-        assert contact.identity is None
-
-    def test_to_dict_includes_identity_id(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        identity = Identity.objects.create(status=Identity.ACTIVE)
-        contact = Contact.objects.create(
-            name="Dict Test",
-            email="dict_test@example.com",
-            owner=user,
-            created_by=user,
-            identity=identity,
-        )
-        data = contact.to_dict()
-        assert data["identity_id"] == identity.public_id
-
-    def test_to_dict_identity_id_none(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(
-            name="No Identity",
-            email="no_id@example.com",
-            owner=user,
-            created_by=user,
-        )
-        data = contact.to_dict()
-        assert data["identity_id"] is None
-
-
-@pytest.mark.django_db
-class TestAdditionalEmailPhone:
-    """Tests for renamed AdditionalEmail/AdditionalPhone models (P0.2)."""
-
-    def test_additional_email_creation(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(name="AE Test", owner=user, created_by=user)
-        ae = AdditionalEmail.objects.create(
-            contact=contact,
-            email="additional@example.com",
-            label="work",
-            is_primary=True,
-        )
-        assert ae.public_id.startswith("aem_")
-        assert ae.label == "work"
-        assert ae.is_primary is True
-
-    def test_additional_email_related_name(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(name="Rel Test", owner=user, created_by=user)
-        AdditionalEmail.objects.create(contact=contact, email="rel1@example.com")
-        AdditionalEmail.objects.create(contact=contact, email="rel2@example.com")
-        assert contact.additional_emails.count() == 2
-
-    def test_additional_email_unique_per_contact(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(
-            name="Unique Test", owner=user, created_by=user
-        )
-        AdditionalEmail.objects.create(contact=contact, email="dup@example.com")
-        with pytest.raises(Exception):
-            AdditionalEmail.objects.create(contact=contact, email="dup@example.com")
-
-    def test_additional_phone_creation(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(name="AP Test", owner=user, created_by=user)
-        ap = AdditionalPhone.objects.create(
-            contact=contact,
-            phone="+5511999000077",
-            label="mobile",
-            is_primary=True,
-        )
-        assert ap.public_id.startswith("aph_")
-        assert ap.label == "mobile"
-
-    def test_additional_phone_related_name(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(
-            name="Rel Phone Test", owner=user, created_by=user
-        )
-        AdditionalPhone.objects.create(contact=contact, phone="+5511999000088")
-        AdditionalPhone.objects.create(contact=contact, phone="+5511999000099")
-        assert contact.additional_phones.count() == 2
-
-    def test_additional_phone_unique_per_contact(self):
-        from tests.factories import UserFactory
-
-        user = UserFactory()
-        contact = Contact.objects.create(
-            name="Unique Phone", owner=user, created_by=user
-        )
-        AdditionalPhone.objects.create(contact=contact, phone="+5511999000011")
-        with pytest.raises(Exception):
-            AdditionalPhone.objects.create(contact=contact, phone="+5511999000011")
-
-    def test_db_table_names_preserved(self):
-        """Verify that the DB table names are preserved after rename."""
-        assert AdditionalEmail._meta.db_table == "contacts_contactemail"
-        assert AdditionalPhone._meta.db_table == "contacts_contactphone"

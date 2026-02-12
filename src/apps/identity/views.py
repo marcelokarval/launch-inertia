@@ -283,12 +283,12 @@ def settings_security_view(request):
 @login_required
 def dashboard_view(request):
     """Main dashboard with dynamic stats."""
-    from apps.contacts.models import Contact
+    from apps.contacts.identity.models import Identity
     from apps.notifications.models import Notification
 
     stats = {
-        "total_contacts": Contact.objects.filter(
-            created_by=request.user, is_deleted=False
+        "total_identities": Identity.objects.filter(
+            is_deleted=False, status="active"
         ).count(),
         "active_subscriptions": 0,  # TODO: from djstripe
         "unread_notifications": Notification.objects.filter(

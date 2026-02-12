@@ -1,11 +1,14 @@
 """
-Contacts URL configuration.
+Identity URL configuration.
+
+All routes serve Identity pages (CRM Contact has been eliminated).
 """
+
 from django.urls import path
 
 from . import views
 
-app_name = "contacts"
+app_name = "identities"
 
 urlpatterns = [
     path("", views.index, name="index"),

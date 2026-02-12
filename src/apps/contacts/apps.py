@@ -5,7 +5,7 @@ class ContactsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.contacts"
     label = "contacts"
-    verbose_name = "CRM & Contacts"
+    verbose_name = "Identity & Contacts"
 
     def ready(self):
-        pass  # from . import signals
+        pass

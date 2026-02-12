@@ -3,20 +3,33 @@ import DashboardLayout from '@/layouts/DashboardLayout'
 import { Card, Chip, Tabs } from '@heroui/react'
 import { Button } from '@/components/ui'
 import {
-  User, Mail, Phone, Building, Calendar, Edit, Trash2, ArrowLeft,
-  Shield, Fingerprint, Globe, Monitor, Smartphone, Tablet,
+  User, Mail, Phone, Shield, Fingerprint, Globe, Monitor, Smartphone, Tablet,
   CheckCircle, AlertTriangle, Clock, Tag, ExternalLink,
   Activity, TrendingUp, Eye, MapPin, Wifi,
+  Edit, Trash2, ArrowLeft, Calendar, FileText,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type {
-  ContactShowData, ChannelEmail, ChannelPhone, DeviceFingerprint,
-  Attribution, TimelineEvent,
+  IdentityDetail, ChannelEmail, ChannelPhone, DeviceFingerprint,
+  Attribution, TimelineEvent, Tag as TagType,
 } from '@/types'
-import { EMAIL_LIFECYCLE_CHIP_COLOR, IDENTITY_STATUS_CHIP_COLOR, CONTACT_STATUS_CHIP_COLOR } from '@/types'
+import { EMAIL_LIFECYCLE_CHIP_COLOR, IDENTITY_STATUS_CHIP_COLOR } from '@/types'
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface IdentityShowData extends IdentityDetail {
+  display_name: string
+  operator_notes: string
+  tags: TagType[]
+  lifecycle_global: Record<string, unknown>
+  attributions: Attribution[]
+  timeline: TimelineEvent[]
+}
 
 interface Props {
-  contact: ContactShowData
+  identity: IdentityShowData
 }
 
 // ============================================================================
@@ -37,85 +50,138 @@ function ConfidenceBadge({ score }: { score: number }) {
 }
 
 // ============================================================================
-// Identity Overview Card
+// Identity Info Sidebar Card
 // ============================================================================
 
-function IdentityOverviewCard({ contact }: { contact: ContactShowData }) {
-  const { t } = useTranslation()
-  const identity = contact.identity
-
-  if (!identity) {
-    return (
-      <Card className="border border-default-200">
-        <Card.Content className="p-6 text-center">
-          <div className="w-12 h-12 rounded-full bg-default-100 flex items-center justify-center mx-auto mb-3">
-            <Shield className="w-6 h-6 text-default-300" />
-          </div>
-          <p className="text-default-500 font-medium">
-            {t('contacts.show.identity.noIdentity', 'No resolved identity')}
-          </p>
-          <p className="text-sm text-default-400 mt-1">
-            {t('contacts.show.identity.noIdentityDesc', 'This contact has not been linked to a resolved identity yet.')}
-          </p>
-        </Card.Content>
-      </Card>
-    )
-  }
+function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
+  const { t } = useTranslation('identities')
 
   return (
     <Card className="border border-default-200">
       <Card.Content className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">
-              {t('contacts.show.identity.title', 'Identity Resolution')}
-            </h3>
-            <p className="text-sm text-default-400 mt-0.5">
-              {identity.id}
-            </p>
+        <div className="space-y-4">
+          {/* Avatar & Name */}
+          <div className="flex items-center gap-4 pb-4 border-b border-divider">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <User className="w-8 h-8 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-semibold text-foreground truncate">
+                {identity.display_name || identity.id}
+              </h3>
+              <div className="flex items-center gap-2 mt-1.5">
+                <Chip
+                  color={IDENTITY_STATUS_CHIP_COLOR[identity.status]}
+                  variant="soft"
+                  size="sm"
+                >
+                  {identity.status}
+                </Chip>
+                <ConfidenceBadge score={identity.confidence_score} />
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Chip
-              color={IDENTITY_STATUS_CHIP_COLOR[identity.status]}
-              variant="soft"
-              size="sm"
-            >
-              {identity.status}
-            </Chip>
-            <ConfidenceBadge score={identity.confidence_score} />
+
+          {/* Tags */}
+          {identity.tags && identity.tags.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Tag className="w-4 h-4 text-default-400 flex-shrink-0" />
+              {identity.tags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="px-2 py-0.5 text-xs rounded-full"
+                  style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Operator Notes */}
+          {identity.operator_notes && (
+            <div className="pt-3 border-t border-divider">
+              <h4 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-default-400" />
+                {t('show.operatorNotes', 'Operator Notes')}
+              </h4>
+              <p className="text-sm text-default-600 whitespace-pre-wrap">{identity.operator_notes}</p>
+            </div>
+          )}
+
+          {/* Dates */}
+          <div className="pt-3 border-t border-divider space-y-2">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-4 h-4 text-default-400 flex-shrink-0" />
+              <div>
+                <p className="text-xs text-default-400">{t('show.createdAt', 'Created')}</p>
+                <p className="text-sm text-foreground">
+                  {identity.created_at
+                    ? new Date(identity.created_at).toLocaleDateString('pt-BR', {
+                        day: '2-digit', month: 'long', year: 'numeric',
+                      })
+                    : '-'}
+                </p>
+              </div>
+            </div>
+            {identity.last_seen && (
+              <div className="flex items-center gap-3">
+                <Eye className="w-4 h-4 text-default-400 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-default-400">{t('show.lastSeen', 'Last Seen')}</p>
+                  <p className="text-sm text-foreground">
+                    {new Date(identity.last_seen).toLocaleDateString('pt-BR', {
+                      day: '2-digit', month: 'long', year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
+            {identity.first_seen_source && (
+              <p className="text-xs text-default-400">
+                {t('show.firstSource', 'First seen via')}: {identity.first_seen_source}
+              </p>
+            )}
           </div>
         </div>
+      </Card.Content>
+    </Card>
+  )
+}
 
-        {/* Stats grid */}
+// ============================================================================
+// Stats Card
+// ============================================================================
+
+function StatsCard({ identity }: { identity: IdentityShowData }) {
+  const { t } = useTranslation('identities')
+
+  return (
+    <Card className="border border-default-200">
+      <Card.Content className="p-6">
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 rounded-lg bg-content2">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Mail className="w-4 h-4 text-primary" />
               <span className="text-2xl font-bold text-foreground">{identity.email_count}</span>
             </div>
-            <p className="text-xs text-default-500">{t('contacts.show.identity.emails', 'Emails')}</p>
+            <p className="text-xs text-default-500">{t('show.stats.emails', 'Emails')}</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-content2">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Phone className="w-4 h-4 text-success" />
               <span className="text-2xl font-bold text-foreground">{identity.phone_count}</span>
             </div>
-            <p className="text-xs text-default-500">{t('contacts.show.identity.phones', 'Phones')}</p>
+            <p className="text-xs text-default-500">{t('show.stats.phones', 'Phones')}</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-content2">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Fingerprint className="w-4 h-4 text-warning" />
               <span className="text-2xl font-bold text-foreground">{identity.fingerprint_count}</span>
             </div>
-            <p className="text-xs text-default-500">{t('contacts.show.identity.devices', 'Devices')}</p>
+            <p className="text-xs text-default-500">{t('show.stats.devices', 'Devices')}</p>
           </div>
         </div>
-
-        {identity.first_seen_source && (
-          <p className="text-xs text-default-400 mt-3">
-            {t('contacts.show.identity.firstSource', 'First seen via')}: {identity.first_seen_source}
-          </p>
-        )}
       </Card.Content>
     </Card>
   )
@@ -126,13 +192,13 @@ function IdentityOverviewCard({ contact }: { contact: ContactShowData }) {
 // ============================================================================
 
 function EmailChannelsSection({ emails }: { emails: ChannelEmail[] }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('identities')
 
   if (emails.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('contacts.show.channels.noEmails', 'No email channels')}</p>
+        <p>{t('show.channels.noEmails', 'No email channels')}</p>
       </div>
     )
   }
@@ -185,13 +251,13 @@ function EmailChannelsSection({ emails }: { emails: ChannelEmail[] }) {
 // ============================================================================
 
 function PhoneChannelsSection({ phones }: { phones: ChannelPhone[] }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('identities')
 
   if (phones.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Phone className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('contacts.show.channels.noPhones', 'No phone channels')}</p>
+        <p>{t('show.channels.noPhones', 'No phone channels')}</p>
       </div>
     )
   }
@@ -248,13 +314,13 @@ function DeviceIcon({ type }: { type: string }) {
 }
 
 function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('identities')
 
   if (fingerprints.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Fingerprint className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('contacts.show.devices.noDevices', 'No devices tracked')}</p>
+        <p>{t('show.devices.noDevices', 'No devices tracked')}</p>
       </div>
     )
   }
@@ -284,7 +350,7 @@ function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] })
                     </p>
                     {fp.is_master && (
                       <Chip color="accent" variant="soft" size="sm" className="text-[10px] h-4">
-                        {t('contacts.show.devices.primary', 'Primary')}
+                        {t('show.devices.primary', 'Primary')}
                       </Chip>
                     )}
                   </div>
@@ -310,7 +376,7 @@ function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] })
                   {Math.round(fp.confidence_score * 100)}%
                 </div>
                 <p className="text-xs text-default-400">
-                  {t('contacts.show.devices.fpConfidence', 'FP confidence')}
+                  {t('show.devices.fpConfidence', 'FP confidence')}
                 </p>
               </div>
             </div>
@@ -343,13 +409,13 @@ function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] })
 // ============================================================================
 
 function AttributionsSection({ attributions }: { attributions: Attribution[] }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('identities')
 
   if (attributions.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('contacts.show.attributions.noData', 'No attribution data')}</p>
+        <p>{t('show.attributions.noData', 'No attribution data')}</p>
       </div>
     )
   }
@@ -409,13 +475,13 @@ function AttributionsSection({ attributions }: { attributions: Attribution[] }) 
 // ============================================================================
 
 function TimelineSection({ events }: { events: TimelineEvent[] }) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('identities')
 
   if (events.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('contacts.show.timeline.noEvents', 'No events recorded')}</p>
+        <p>{t('show.timeline.noEvents', 'No events recorded')}</p>
       </div>
     )
   }
@@ -466,161 +532,47 @@ function TimelineSection({ events }: { events: TimelineEvent[] }) {
 }
 
 // ============================================================================
-// Contact Info Card (basic CRM data)
-// ============================================================================
-
-function ContactInfoCard({ contact }: { contact: ContactShowData }) {
-  const { t } = useTranslation()
-
-  return (
-    <Card className="border border-default-200">
-      <Card.Content className="p-6">
-        <div className="space-y-4">
-          {/* Avatar & Name */}
-          <div className="flex items-center gap-4 pb-4 border-b border-divider">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <User className="w-8 h-8 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-semibold text-foreground truncate">{contact.name}</h3>
-              {contact.job_title && contact.company && (
-                <p className="text-sm text-default-500">
-                  {contact.job_title} @ {contact.company}
-                </p>
-              )}
-              <div className="flex items-center gap-2 mt-1.5">
-                <Chip
-                  color={CONTACT_STATUS_CHIP_COLOR[contact.status]}
-                  variant="soft"
-                  size="sm"
-                >
-                  {contact.status}
-                </Chip>
-                {contact.identity_summary && (
-                  <ConfidenceBadge score={contact.identity_summary.confidence_score} />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Contact details grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {contact.email && (
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-default-400 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs text-default-400">{t('contacts.show.emailLabel')}</p>
-                  <a href={`mailto:${contact.email}`} className="text-sm text-primary hover:underline truncate block">
-                    {contact.email}
-                  </a>
-                </div>
-              </div>
-            )}
-            {contact.phone && (
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-default-400 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs text-default-400">{t('contacts.show.phoneLabel')}</p>
-                  <a href={`tel:${contact.phone}`} className="text-sm text-primary hover:underline">
-                    {contact.phone}
-                  </a>
-                </div>
-              </div>
-            )}
-            {contact.company && (
-              <div className="flex items-center gap-3">
-                <Building className="w-4 h-4 text-default-400 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs text-default-400">{t('contacts.show.companyLabel')}</p>
-                  <p className="text-sm text-foreground">{contact.company}</p>
-                </div>
-              </div>
-            )}
-            <div className="flex items-center gap-3">
-              <Calendar className="w-4 h-4 text-default-400 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-default-400">{t('contacts.show.createdAt')}</p>
-                <p className="text-sm text-foreground">
-                  {new Date(contact.created_at).toLocaleDateString('pt-BR', {
-                    day: '2-digit', month: 'long', year: 'numeric',
-                  })}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tags */}
-          {contact.tags && contact.tags.length > 0 && (
-            <div className="flex items-center gap-2 pt-2 border-t border-divider flex-wrap">
-              <Tag className="w-4 h-4 text-default-400" />
-              {contact.tags.map((tag) => (
-                <span
-                  key={tag.id}
-                  className="px-2 py-0.5 text-xs rounded-full"
-                  style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Notes */}
-          {contact.notes && (
-            <div className="pt-3 border-t border-divider">
-              <h4 className="text-sm font-semibold text-foreground mb-1">
-                {t('contacts.show.notesTitle')}
-              </h4>
-              <p className="text-sm text-default-600 whitespace-pre-wrap">{contact.notes}</p>
-            </div>
-          )}
-        </div>
-      </Card.Content>
-    </Card>
-  )
-}
-
-// ============================================================================
 // Main Page Component
 // ============================================================================
 
-export default function ContactShow({ contact }: Props) {
-  const { t } = useTranslation()
-  const identity = contact.identity
+export default function IdentityShow({ identity }: Props) {
+  const { t } = useTranslation('identities')
 
   return (
-    <DashboardLayout title={contact.name}>
-      <Head title={contact.name} />
+    <DashboardLayout title={identity.display_name || identity.id}>
+      <Head title={identity.display_name || identity.id} />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link
-            href="/contacts/"
+            href="/identities/"
             className="p-2 rounded-lg hover:bg-default-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-default-500" />
           </Link>
           <div>
-            <h2 className="text-2xl font-bold text-foreground">{contact.name}</h2>
-            {contact.job_title && contact.company && (
+            <h2 className="text-2xl font-bold text-foreground">
+              {identity.display_name || identity.id}
+            </h2>
+            {identity.first_seen_source && (
               <p className="text-default-500 text-sm">
-                {t('contacts.show.positionAt', { position: contact.job_title, company: contact.company })}
+                {t('show.firstSource', 'First seen via')}: {identity.first_seen_source}
               </p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/contacts/${contact.id}/edit/`}>
+          <Link href={`/identities/${identity.id}/edit/`}>
             <Button variant="primary">
               <Edit className="w-4 h-4" />
-              {t('contacts.show.edit')}
+              {t('show.edit', 'Edit')}
             </Button>
           </Link>
-          <Link href={`/contacts/${contact.id}/delete/`}>
+          <Link href={`/identities/${identity.id}/delete/`}>
             <Button variant="danger">
               <Trash2 className="w-4 h-4" />
-              {t('contacts.show.delete')}
+              {t('show.delete', 'Delete')}
             </Button>
           </Link>
         </div>
@@ -628,10 +580,10 @@ export default function ContactShow({ contact }: Props) {
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: Contact info + Identity overview */}
+        {/* Left column: Identity info + Stats */}
         <div className="lg:col-span-1 space-y-6">
-          <ContactInfoCard contact={contact} />
-          <IdentityOverviewCard contact={contact} />
+          <IdentityInfoCard identity={identity} />
+          <StatsCard identity={identity} />
         </div>
 
         {/* Right column: Tabbed detail sections */}
@@ -643,43 +595,37 @@ export default function ContactShow({ contact }: Props) {
                   <Tabs.Tab id="emails">
                     <div className="flex items-center gap-1.5">
                       <Mail className="w-4 h-4" />
-                      <span>{t('contacts.show.tabs.emails', 'Emails')}</span>
-                      {identity && (
-                        <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                          {identity.email_count}
-                        </span>
-                      )}
+                      <span>{t('show.tabs.emails', 'Emails')}</span>
+                      <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
+                        {identity.email_count}
+                      </span>
                     </div>
                   </Tabs.Tab>
                   <Tabs.Tab id="phones">
                     <div className="flex items-center gap-1.5">
                       <Phone className="w-4 h-4" />
-                      <span>{t('contacts.show.tabs.phones', 'Phones')}</span>
-                      {identity && (
-                        <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                          {identity.phone_count}
-                        </span>
-                      )}
+                      <span>{t('show.tabs.phones', 'Phones')}</span>
+                      <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
+                        {identity.phone_count}
+                      </span>
                     </div>
                   </Tabs.Tab>
                   <Tabs.Tab id="devices">
                     <div className="flex items-center gap-1.5">
                       <Fingerprint className="w-4 h-4" />
-                      <span>{t('contacts.show.tabs.devices', 'Devices')}</span>
-                      {identity && (
-                        <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                          {identity.fingerprint_count}
-                        </span>
-                      )}
+                      <span>{t('show.tabs.devices', 'Devices')}</span>
+                      <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
+                        {identity.fingerprint_count}
+                      </span>
                     </div>
                   </Tabs.Tab>
                   <Tabs.Tab id="attributions">
                     <div className="flex items-center gap-1.5">
                       <TrendingUp className="w-4 h-4" />
-                      <span>{t('contacts.show.tabs.attributions', 'Attribution')}</span>
-                      {contact.attributions.length > 0 && (
+                      <span>{t('show.tabs.attributions', 'Attribution')}</span>
+                      {identity.attributions.length > 0 && (
                         <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                          {contact.attributions.length}
+                          {identity.attributions.length}
                         </span>
                       )}
                     </div>
@@ -687,10 +633,10 @@ export default function ContactShow({ contact }: Props) {
                   <Tabs.Tab id="timeline">
                     <div className="flex items-center gap-1.5">
                       <Activity className="w-4 h-4" />
-                      <span>{t('contacts.show.tabs.timeline', 'Timeline')}</span>
-                      {contact.timeline.length > 0 && (
+                      <span>{t('show.tabs.timeline', 'Timeline')}</span>
+                      {identity.timeline.length > 0 && (
                         <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
-                          {contact.timeline.length}
+                          {identity.timeline.length}
                         </span>
                       )}
                     </div>
@@ -699,19 +645,19 @@ export default function ContactShow({ contact }: Props) {
 
                 <div className="p-4">
                   <Tabs.Panel id="emails">
-                    <EmailChannelsSection emails={identity?.emails ?? []} />
+                    <EmailChannelsSection emails={identity.emails ?? []} />
                   </Tabs.Panel>
                   <Tabs.Panel id="phones">
-                    <PhoneChannelsSection phones={identity?.phones ?? []} />
+                    <PhoneChannelsSection phones={identity.phones ?? []} />
                   </Tabs.Panel>
                   <Tabs.Panel id="devices">
-                    <DevicesSection fingerprints={identity?.fingerprints ?? []} />
+                    <DevicesSection fingerprints={identity.fingerprints ?? []} />
                   </Tabs.Panel>
                   <Tabs.Panel id="attributions">
-                    <AttributionsSection attributions={contact.attributions} />
+                    <AttributionsSection attributions={identity.attributions} />
                   </Tabs.Panel>
                   <Tabs.Panel id="timeline">
-                    <TimelineSection events={contact.timeline} />
+                    <TimelineSection events={identity.timeline} />
                   </Tabs.Panel>
                 </div>
               </Tabs>

@@ -1,3 +1,1 @@
-from .contact import ContactForm
-
-__all__ = ["ContactForm"]
+# Contact forms — ContactForm eliminated (Phase 0 cleanup).

@@ -5,35 +5,38 @@ import { Button } from '@/components/ui'
 import { AlertTriangle, ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAppForm } from '@/hooks/useAppForm'
-import type { Contact } from '@/types'
 
 interface Props {
-  contact: Pick<Contact, 'id' | 'name' | 'email'>
+  identity: {
+    id: string
+    display_name: string
+    primary_email?: string
+  }
 }
 
-export default function ContactDelete({ contact }: Props) {
-  const { t } = useTranslation()
+export default function IdentityDelete({ identity }: Props) {
+  const { t } = useTranslation('identities')
   const { submit, isSubmitting } = useAppForm({
     initialData: {},
-    url: `/contacts/${contact.id}/delete/`,
+    url: `/identities/${identity.id}/delete/`,
     method: 'post',
   })
 
   return (
-    <DashboardLayout title={t('contacts.delete.pageTitle', { name: contact.name })}>
-      <Head title={t('contacts.delete.pageTitle', { name: contact.name })} />
+    <DashboardLayout title={t('delete.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Delete {{name}}' })}>
+      <Head title={t('delete.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Delete {{name}}' })} />
 
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link
-            href={`/contacts/${contact.id}/`}
+            href={`/identities/${identity.id}/`}
             className="p-2 rounded-lg hover:bg-default-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-default-500" />
           </Link>
           <h2 className="text-2xl font-bold text-foreground">
-            {t('contacts.delete.title')}
+            {t('delete.title', 'Delete Identity')}
           </h2>
         </div>
 
@@ -44,37 +47,37 @@ export default function ContactDelete({ contact }: Props) {
             </div>
 
             <h3 className="text-xl font-semibold text-foreground mb-2">
-              {t('contacts.delete.confirm')}
+              {t('delete.confirm', 'Are you sure you want to delete this identity?')}
             </h3>
 
             <p className="text-default-500 mb-2">
-              {t('contacts.delete.warning')}
+              {t('delete.warning', 'This action will remove the identity and all associated channel data.')}
             </p>
 
             <p className="font-semibold text-foreground text-lg mb-1">
-              {contact.name}
+              {identity.display_name || identity.id}
             </p>
-            {contact.email && (
-              <p className="text-default-500 text-sm mb-6">{contact.email}</p>
+            {identity.primary_email && (
+              <p className="text-default-500 text-sm mb-6">{identity.primary_email}</p>
             )}
 
             <p className="text-sm text-default-500 mb-8">
-              {t('contacts.delete.reversible')}
+              {t('delete.reversible', 'This identity uses soft-delete and can be restored by an administrator if needed.')}
             </p>
 
             <Form onSubmit={submit} className="flex items-center justify-center gap-4">
-              <Link href={`/contacts/${contact.id}/`}>
+              <Link href={`/identities/${identity.id}/`}>
                 <Button type="button" variant="secondary">
-                  {t('contacts.delete.cancel')}
+                  {t('delete.cancel', 'Cancel')}
                 </Button>
               </Link>
               <Button
                 type="submit"
                 variant="danger"
                 isLoading={isSubmitting}
-                loadingText={t('contacts.delete.submitting')}
+                loadingText={t('delete.submitting', 'Deleting...')}
               >
-                {t('contacts.delete.submit')}
+                {t('delete.submit', 'Delete Identity')}
               </Button>
             </Form>
           </Card.Content>

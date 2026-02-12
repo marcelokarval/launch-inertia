@@ -1,159 +1,252 @@
 """
-Contacts views using Inertia.js.
+Identity views using Inertia.js.
 
-Thin views that delegate business logic to ContactService.
+Thin views that delegate business logic to IdentityService.
+Identity is the primary entity — the CRM Contact has been eliminated.
 
 Security:
 - All views require authentication (@login_required)
-- show/edit/delete use @require_ownership for IDOR protection
-- list_contacts is scoped by user inside ContactService
-- create sets owner=request.user inside ContactService
+- Identity doesn't have per-user ownership (it's the person's record, not the operator's)
+- Soft-delete is available for cleanup
 """
 
+import logging
+from typing import Any
+
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import redirect
 
 from core.inertia import inertia_render, flash_success
-from core.security.decorators import require_ownership
-from .models import Contact
-from .services import ContactService
+
+from apps.contacts.identity.models import Identity
+from apps.contacts.identity.services import IdentityService
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
 def index(request):
-    """List all contacts for the current user with filtering and pagination."""
-    service = ContactService(user=request.user)
-
+    """List all active identities with filtering and pagination."""
     try:
         page = int(request.GET.get("page", 1))
     except (ValueError, TypeError):
         page = 1
 
-    result = service.list_contacts(
-        search_query=request.GET.get("q", "") or None,
-        tag_slug=request.GET.get("tag") or None,
-        page=page,
-    )
+    per_page = 25
+    search_query = request.GET.get("q", "") or None
+    tag_slug = request.GET.get("tag") or None
+
+    qs = Identity.objects.filter(is_deleted=False, status=Identity.ACTIVE)
+
+    if search_query:
+        q = Q()
+        q |= Q(display_name__icontains=search_query)
+        q |= Q(email_contacts__value__icontains=search_query)
+        q |= Q(phone_contacts__value__icontains=search_query)
+        qs = qs.filter(q).distinct()
+
+    if tag_slug:
+        qs = qs.filter(tags__slug=tag_slug)
+
+    qs = qs.order_by("-created_at")
+    total = qs.count()
+    total_pages = (total + per_page - 1) // per_page if total else 1
+    offset = (page - 1) * per_page
+    identities = qs[offset : offset + per_page]
 
     return inertia_render(
         request,
-        "Contacts/Index",
+        "Identity/Index",
         {
-            "contacts": result["items"],
-            "filters": result["filters"],
-            "pagination": result["pagination"],
+            "identities": [i.to_list_dict() for i in identities],
+            "filters": {
+                "q": search_query or "",
+                "tag": tag_slug,
+            },
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": total_pages,
+            },
         },
     )
 
 
 @login_required
-@require_ownership(Contact, owner_field="owner")
 def show(request, public_id):
-    """Show contact details with full identity resolution data.
+    """Show identity details with full channels, attributions, and timeline.
 
     Passes:
-    - contact: CRM contact with details
-    - identity: resolved identity with emails, phones, fingerprints (if linked)
+    - identity: full identity with emails, phones, fingerprints
     - attributions: marketing attribution records
     - timeline: fingerprint events ordered by timestamp
     """
-    contact = request.verified_object
-    contact_data = contact.to_dict(include_details=True)
+    try:
+        identity = Identity.objects.get(public_id=public_id, is_deleted=False)
+    except Identity.DoesNotExist:
+        raise Http404("Identity not found")
 
-    identity_data = None
-    attributions_data = []
-    timeline_data = []
+    identity_data = identity.to_dict(include_contacts=True)
+    identity_data["display_name"] = identity.display_name
+    identity_data["operator_notes"] = identity.operator_notes
+    identity_data["tags"] = [
+        {"id": t.public_id, "name": t.name, "color": t.color}
+        for t in identity.tags.all()
+    ]
+    identity_data["lifecycle_global"] = identity.lifecycle_global
 
-    if contact.identity:
-        identity = contact.identity
-        identity_data = identity.to_dict(include_contacts=True)
-        attributions_data = [a.to_dict() for a in identity.attributions.all()[:50]]
-        timeline_data = [e.to_dict() for e in identity.get_timeline()[:100]]
+    attributions_data = [a.to_dict() for a in identity.attributions.all()[:50]]
+    timeline_data = [e.to_dict() for e in identity.get_timeline()[:100]]
 
-    contact_data["identity"] = identity_data
-    contact_data["attributions"] = attributions_data
-    contact_data["timeline"] = timeline_data
+    identity_data["attributions"] = attributions_data
+    identity_data["timeline"] = timeline_data
 
     return inertia_render(
         request,
-        "Contacts/Show",
+        "Identity/Show",
         {
-            "contact": contact_data,
+            "identity": identity_data,
         },
     )
 
 
 @login_required
 def create(request):
-    """Create new contact. Owner is set to the current user by ContactService."""
-    service = ContactService(user=request.user)
+    """Import a new identity by providing email and/or phone.
 
+    Uses ResolutionService to find or create the identity, avoiding duplicates.
+    """
     if request.method == "POST":
-        contact, errors = service.create_contact(request.data)
+        from apps.contacts.identity.services import ResolutionService
+
+        email = (request.data.get("email") or "").strip().lower()
+        phone = (request.data.get("phone") or "").strip()
+        display_name = (request.data.get("display_name") or "").strip()
+
+        errors: dict[str, Any] = {}
+        if not email and not phone:
+            errors["email"] = "At least email or phone is required."
+            errors["phone"] = "At least email or phone is required."
 
         if errors:
             return inertia_render(
                 request,
-                "Contacts/Create",
-                {
-                    "errors": errors,
-                },
+                "Identity/Create",
+                {"errors": errors},
             )
 
-        flash_success(request, f"Contact {contact.name} created successfully!")
-        return redirect("contacts:show", public_id=contact.public_id)
+        # Build contact_data for resolution
+        contact_data = {}
+        if email:
+            contact_data["email"] = email
+        if phone:
+            contact_data["phone"] = phone
 
-    return inertia_render(request, "Contacts/Create")
+        try:
+            result = ResolutionService.resolve_identity_from_real_data(
+                fingerprint_data={},
+                contact_data=contact_data if contact_data else None,
+            )
+            identity = Identity.objects.get(pk=result["identity_id"])
+
+            # Update display_name if provided and not already set
+            if display_name and not identity.display_name:
+                identity.display_name = display_name
+                identity.save(update_fields=["display_name", "updated_at"])
+
+            action = "imported" if not result.get("is_new") else "created"
+            flash_success(
+                request,
+                f"Identity {identity.display_name or identity.public_id} {action} successfully!",
+            )
+            return redirect("identities:show", public_id=identity.public_id)
+
+        except Exception as e:
+            logger.exception("Failed to create/resolve identity: %s", e)
+            return inertia_render(
+                request,
+                "Identity/Create",
+                {"errors": {"__all__": str(e)}},
+            )
+
+    return inertia_render(request, "Identity/Create")
 
 
 @login_required
-@require_ownership(Contact, owner_field="owner")
 def edit(request, public_id):
-    """Edit contact. Ownership verified by @require_ownership."""
-    service = ContactService(user=request.user)
+    """Edit identity operator fields: display_name, notes, tags."""
+    try:
+        identity = Identity.objects.get(public_id=public_id, is_deleted=False)
+    except Identity.DoesNotExist:
+        raise Http404("Identity not found")
 
     if request.method == "POST":
-        contact, errors = service.update_contact(public_id, request.data)
+        display_name = (request.data.get("display_name") or "").strip()
+        operator_notes = (request.data.get("operator_notes") or "").strip()
 
-        if errors:
-            return inertia_render(
-                request,
-                "Contacts/Edit",
-                {
-                    "contact": contact.to_dict(),
-                    "errors": errors,
-                },
-            )
+        identity.display_name = display_name
+        identity.operator_notes = operator_notes
+        identity.save(update_fields=["display_name", "operator_notes", "updated_at"])
 
-        flash_success(request, f"Contact {contact.name} updated successfully!")
-        return redirect("contacts:show", public_id=contact.public_id)
+        # Handle tags (tag IDs sent from frontend)
+        tag_ids = request.data.get("tag_ids")
+        if tag_ids is not None:
+            from apps.contacts.models import Tag
 
-    contact = request.verified_object
+            if isinstance(tag_ids, list):
+                tags = Tag.objects.filter(public_id__in=tag_ids, is_deleted=False)
+                identity.tags.set(tags)
+            elif tag_ids == "" or tag_ids == []:
+                identity.tags.clear()
+
+        flash_success(
+            request,
+            f"Identity {identity.display_name or identity.public_id} updated!",
+        )
+        return redirect("identities:show", public_id=identity.public_id)
+
+    identity_data = identity.to_dict()
+    identity_data["display_name"] = identity.display_name
+    identity_data["operator_notes"] = identity.operator_notes
+    identity_data["tags"] = [
+        {"id": t.public_id, "name": t.name, "color": t.color}
+        for t in identity.tags.all()
+    ]
+
     return inertia_render(
         request,
-        "Contacts/Edit",
+        "Identity/Edit",
         {
-            "contact": contact.to_dict(),
+            "identity": identity_data,
         },
     )
 
 
 @login_required
-@require_ownership(Contact, owner_field="owner")
 def delete(request, public_id):
-    """Delete contact (soft delete). Ownership verified by @require_ownership."""
-    service = ContactService(user=request.user)
+    """Soft-delete an identity."""
+    try:
+        identity = Identity.objects.get(public_id=public_id, is_deleted=False)
+    except Identity.DoesNotExist:
+        raise Http404("Identity not found")
 
     if request.method == "POST":
-        name = service.delete_contact(public_id)
-        flash_success(request, f"Contact {name} deleted.")
-        return redirect("contacts:index")
+        display = identity.display_name or identity.public_id
+        identity.soft_delete()
+        flash_success(request, f"Identity {display} deleted.")
+        return redirect("identities:index")
 
-    contact = request.verified_object
+    identity_data = identity.to_dict()
+    identity_data["display_name"] = identity.display_name
+
     return inertia_render(
         request,
-        "Contacts/Delete",
+        "Identity/Delete",
         {
-            "contact": contact.to_dict(),
+            "identity": identity_data,
         },
     )
