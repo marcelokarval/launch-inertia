@@ -29,6 +29,13 @@ def _get_identity_tasks():
     return calculate_confidence_score, update_identity_history, analyze_identity_graph
 
 
+def _get_lifecycle_task():
+    """Lazy import for lifecycle recalculation task."""
+    from apps.contacts.identity.tasks import recalculate_lifecycle
+
+    return recalculate_lifecycle
+
+
 @receiver(post_save, sender=Identity)
 def identity_post_save(sender, instance, created, **kwargs):
     """
@@ -43,6 +50,7 @@ def identity_post_save(sender, instance, created, **kwargs):
         logger.info("New identity created: %s", instance.public_id)
 
         calc_confidence, update_history, analyze_graph = _get_identity_tasks()
+        recalc_lifecycle = _get_lifecycle_task()
 
         calc_confidence.delay(instance.id)
         update_history.delay(
@@ -51,6 +59,7 @@ def identity_post_save(sender, instance, created, **kwargs):
             {"action": "created", "created_at": instance.created_at.isoformat()},
         )
         analyze_graph.delay(instance.id)
+        recalc_lifecycle.delay(instance.id)
 
 
 @receiver(identity_post_merge)
@@ -66,6 +75,8 @@ def identity_post_merge_handler(sender, source, target, stats, **kwargs):
     )
 
     calc_confidence, _, analyze_graph = _get_identity_tasks()
+    recalc_lifecycle = _get_lifecycle_task()
 
     calc_confidence.delay(target.id)
     analyze_graph.delay(target.id)
+    recalc_lifecycle.delay(target.id)

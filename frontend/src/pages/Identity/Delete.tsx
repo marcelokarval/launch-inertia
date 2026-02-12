@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function IdentityDelete({ identity }: Props) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
   const { submit, isSubmitting } = useAppForm({
     initialData: {},
     url: `/identities/${identity.id}/delete/`,
@@ -23,8 +23,8 @@ export default function IdentityDelete({ identity }: Props) {
   })
 
   return (
-    <DashboardLayout title={t('delete.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Delete {{name}}' })}>
-      <Head title={t('delete.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Delete {{name}}' })} />
+    <DashboardLayout title={t('identities.delete.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Delete {{name}}' })}>
+      <Head title={t('identities.delete.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Delete {{name}}' })} />
 
       <div className="max-w-lg mx-auto">
         {/* Header */}
@@ -36,7 +36,7 @@ export default function IdentityDelete({ identity }: Props) {
             <ArrowLeft className="w-5 h-5 text-default-500" />
           </Link>
           <h2 className="text-2xl font-bold text-foreground">
-            {t('delete.title', 'Delete Identity')}
+            {t('identities.delete.title', 'Delete Identity')}
           </h2>
         </div>
 
@@ -47,11 +47,11 @@ export default function IdentityDelete({ identity }: Props) {
             </div>
 
             <h3 className="text-xl font-semibold text-foreground mb-2">
-              {t('delete.confirm', 'Are you sure you want to delete this identity?')}
+              {t('identities.delete.confirm', 'Are you sure you want to delete this identity?')}
             </h3>
 
             <p className="text-default-500 mb-2">
-              {t('delete.warning', 'This action will remove the identity and all associated channel data.')}
+              {t('identities.delete.warning', 'This action will remove the identity and all associated channel data.')}
             </p>
 
             <p className="font-semibold text-foreground text-lg mb-1">
@@ -62,22 +62,22 @@ export default function IdentityDelete({ identity }: Props) {
             )}
 
             <p className="text-sm text-default-500 mb-8">
-              {t('delete.reversible', 'This identity uses soft-delete and can be restored by an administrator if needed.')}
+              {t('identities.delete.reversible', 'This identity uses soft-delete and can be restored by an administrator if needed.')}
             </p>
 
             <Form onSubmit={submit} className="flex items-center justify-center gap-4">
               <Link href={`/identities/${identity.id}/`}>
                 <Button type="button" variant="secondary">
-                  {t('delete.cancel', 'Cancel')}
+                  {t('identities.delete.cancel', 'Cancel')}
                 </Button>
               </Link>
               <Button
                 type="submit"
                 variant="danger"
                 isLoading={isSubmitting}
-                loadingText={t('delete.submitting', 'Deleting...')}
+                loadingText={t('identities.delete.submitting', 'Deleting...')}
               >
-                {t('delete.submit', 'Delete Identity')}
+                {t('identities.delete.submit', 'Delete Identity')}
               </Button>
             </Form>
           </Card.Content>

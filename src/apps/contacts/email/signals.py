@@ -30,3 +30,9 @@ def email_post_save(sender, instance, created, **kwargs):
 
         process_new_email.delay(instance.value)
         verify_email.delay(instance.id)
+
+        # Trigger lifecycle recalculation for the linked identity
+        if instance.identity_id:
+            from apps.contacts.identity.tasks import recalculate_lifecycle
+
+            recalculate_lifecycle.delay(instance.identity_id)

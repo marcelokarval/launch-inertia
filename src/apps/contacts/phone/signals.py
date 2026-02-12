@@ -28,3 +28,9 @@ def phone_post_save(sender, instance, created, **kwargs):
 
         process_new_phone.delay(instance.value)
         verify_phone.delay(instance.id)
+
+        # Trigger lifecycle recalculation for the linked identity
+        if instance.identity_id:
+            from apps.contacts.identity.tasks import recalculate_lifecycle
+
+            recalculate_lifecycle.delay(instance.identity_id)

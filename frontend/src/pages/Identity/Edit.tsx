@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function IdentityEdit({ identity, errors = {} }: Props) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
   const { data, setData, submit, isSubmitting } = useAppForm({
     initialData: {
       display_name: identity.display_name || '',
@@ -28,8 +28,8 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
   })
 
   return (
-    <DashboardLayout title={t('edit.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Edit {{name}}' })}>
-      <Head title={t('edit.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Edit {{name}}' })} />
+    <DashboardLayout title={t('identities.edit.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Edit {{name}}' })}>
+      <Head title={t('identities.edit.pageTitle', { name: identity.display_name || identity.id, defaultValue: 'Edit {{name}}' })} />
 
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -42,10 +42,10 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
           </Link>
           <div>
             <h2 className="text-2xl font-bold text-foreground">
-              {t('edit.title', 'Edit Identity')}
+              {t('identities.edit.title', 'Edit Identity')}
             </h2>
             <p className="text-default-500">
-              {t('edit.description', {
+              {t('identities.edit.description', {
                 name: identity.display_name || identity.id,
                 defaultValue: 'Update operator fields for {{name}}',
               })}
@@ -61,7 +61,7 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
               className="space-y-6"
             >
               <TextField name="display_name" className="space-y-2">
-                <Label>{t('edit.displayNameLabel', 'Display Name')}</Label>
+                <Label>{t('identities.edit.displayNameLabel', 'Display Name')}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-default-400 z-10" />
                   <Input
@@ -69,7 +69,7 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
                     value={data.display_name}
                     onChange={(e) => setData('display_name', e.target.value)}
                     className="pl-10"
-                    placeholder={t('edit.displayNamePlaceholder', 'e.g. John Doe')}
+                    placeholder={t('identities.edit.displayNamePlaceholder', 'e.g. John Doe')}
                   />
                 </div>
                 <FieldError />
@@ -79,19 +79,19 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
                 <Label>
                   <span className="flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-default-400" />
-                    {t('edit.operatorNotesLabel', 'Operator Notes')}
+                    {t('identities.edit.operatorNotesLabel', 'Operator Notes')}
                   </span>
                 </Label>
                 <TextArea
                   value={data.operator_notes}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData('operator_notes', e.target.value)}
-                  placeholder={t('edit.operatorNotesPlaceholder', 'Internal notes about this identity...')}
+                  placeholder={t('identities.edit.operatorNotesPlaceholder', 'Internal notes about this identity...')}
                 />
                 <FieldError />
               </TextField>
 
               <p className="text-xs text-default-400">
-                {t('edit.tagNote', 'Tag editing will be available in a future update.')}
+                {t('identities.edit.tagNote', 'Tag editing will be available in a future update.')}
               </p>
 
               <div className="flex items-center gap-4 pt-4">
@@ -99,13 +99,13 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
                   type="submit"
                   variant="primary"
                   isLoading={isSubmitting}
-                  loadingText={t('edit.submitting', 'Saving...')}
+                  loadingText={t('identities.edit.submitting', 'Saving...')}
                 >
-                  {t('edit.submit', 'Save Changes')}
+                  {t('identities.edit.submit', 'Save Changes')}
                 </Button>
                 <Link href={`/identities/${identity.id}/`}>
                   <Button type="button" variant="secondary">
-                    {t('edit.cancel', 'Cancel')}
+                    {t('identities.edit.cancel', 'Cancel')}
                   </Button>
                 </Link>
               </div>

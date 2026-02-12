@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function IdentityCreate({ errors = {} }: Props) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
   const { data, setData, submit, isSubmitting } = useAppForm({
     initialData: {
       email: '',
@@ -25,8 +25,8 @@ export default function IdentityCreate({ errors = {} }: Props) {
   const hasContactInfo = data.email.trim() !== '' || data.phone.trim() !== ''
 
   return (
-    <DashboardLayout title={t('create.title', 'Import Identity')}>
-      <Head title={t('create.pageTitle', 'Import Identity')} />
+    <DashboardLayout title={t('identities.create.title', 'Import Identity')}>
+      <Head title={t('identities.create.pageTitle', 'Import Identity')} />
 
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -39,10 +39,10 @@ export default function IdentityCreate({ errors = {} }: Props) {
           </Link>
           <div>
             <h2 className="text-2xl font-bold text-foreground">
-              {t('create.title', 'Import Identity')}
+              {t('identities.create.title', 'Import Identity')}
             </h2>
             <p className="text-default-500">
-              {t('create.description', 'Import a new identity by providing at least an email or phone.')}
+              {t('identities.create.description', 'Import a new identity by providing at least an email or phone.')}
             </p>
           </div>
         </div>
@@ -58,12 +58,12 @@ export default function IdentityCreate({ errors = {} }: Props) {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
                 <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-default-600">
-                  {t('create.requirementNote', 'At least an email or phone number is required to create an identity.')}
+                  {t('identities.create.requirementNote', 'At least an email or phone number is required to create an identity.')}
                 </p>
               </div>
 
               <TextField name="email" className="space-y-2">
-                <Label>{t('create.emailLabel', 'Email')}</Label>
+                <Label>{t('identities.create.emailLabel', 'Email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-default-400 z-10" />
                   <Input
@@ -71,14 +71,14 @@ export default function IdentityCreate({ errors = {} }: Props) {
                     value={data.email}
                     onChange={(e) => setData('email', e.target.value)}
                     className="pl-10"
-                    placeholder={t('create.emailPlaceholder', 'contact@example.com')}
+                    placeholder={t('identities.create.emailPlaceholder', 'contact@example.com')}
                   />
                 </div>
                 <FieldError />
               </TextField>
 
               <TextField name="phone" className="space-y-2">
-                <Label>{t('create.phoneLabel', 'Phone')}</Label>
+                <Label>{t('identities.create.phoneLabel', 'Phone')}</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-default-400 z-10" />
                   <Input
@@ -86,14 +86,14 @@ export default function IdentityCreate({ errors = {} }: Props) {
                     value={data.phone}
                     onChange={(e) => setData('phone', e.target.value)}
                     className="pl-10"
-                    placeholder={t('create.phonePlaceholder', '+55 11 99999-0000')}
+                    placeholder={t('identities.create.phonePlaceholder', '+55 11 99999-0000')}
                   />
                 </div>
                 <FieldError />
               </TextField>
 
               <TextField name="display_name" className="space-y-2">
-                <Label>{t('create.displayNameLabel', 'Display Name')}</Label>
+                <Label>{t('identities.create.displayNameLabel', 'Display Name')}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-default-400 z-10" />
                   <Input
@@ -101,7 +101,7 @@ export default function IdentityCreate({ errors = {} }: Props) {
                     value={data.display_name}
                     onChange={(e) => setData('display_name', e.target.value)}
                     className="pl-10"
-                    placeholder={t('create.displayNamePlaceholder', 'John Doe (optional)')}
+                    placeholder={t('identities.create.displayNamePlaceholder', 'John Doe (optional)')}
                   />
                 </div>
                 <FieldError />
@@ -112,14 +112,14 @@ export default function IdentityCreate({ errors = {} }: Props) {
                   type="submit"
                   variant="primary"
                   isLoading={isSubmitting}
-                  loadingText={t('create.submitting', 'Importing...')}
+                  loadingText={t('identities.create.submitting', 'Importing...')}
                   isDisabled={!hasContactInfo}
                 >
-                  {t('create.submit', 'Import')}
+                  {t('identities.create.submit', 'Import')}
                 </Button>
                 <Link href="/identities/">
                   <Button type="button" variant="secondary">
-                    {t('create.cancel', 'Cancel')}
+                    {t('identities.create.cancel', 'Cancel')}
                   </Button>
                 </Link>
               </div>

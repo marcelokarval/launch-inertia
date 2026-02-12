@@ -16,4 +16,9 @@ urlpatterns = [
     path("<str:public_id>/", views.show, name="show"),
     path("<str:public_id>/edit/", views.edit, name="edit"),
     path("<str:public_id>/delete/", views.delete, name="delete"),
+    # JSON API endpoints (expand-on-demand + manual recalculation)
+    path("<str:public_id>/expand/", views.expand, name="expand"),
+    path(
+        "<str:public_id>/recalculate/", views.recalculate_lifecycle, name="recalculate"
+    ),
 ]

@@ -71,6 +71,30 @@ class IdentityFactory(DjangoModelFactory):
     first_seen_source = "manual"
 
 
+class ContactEmailFactory(DjangoModelFactory):
+    """Factory for creating ContactEmail instances."""
+
+    class Meta:
+        model = "contact_email.ContactEmail"
+
+    value = factory.Sequence(lambda n: f"contact{n}@example.com")
+    identity = factory.SubFactory(IdentityFactory)
+    is_verified = False
+    lifecycle_status = "pending"
+
+
+class ContactPhoneFactory(DjangoModelFactory):
+    """Factory for creating ContactPhone instances."""
+
+    class Meta:
+        model = "contact_phone.ContactPhone"
+
+    value = factory.Sequence(lambda n: f"+5511999{n:06d}")
+    identity = factory.SubFactory(IdentityFactory)
+    is_verified = False
+    is_whatsapp = False
+
+
 class TagFactory(DjangoModelFactory):
     """Factory for creating Tag instances."""
 

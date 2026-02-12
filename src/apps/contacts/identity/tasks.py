@@ -333,3 +333,106 @@ def cleanup_merged_identities(days: int = 30) -> dict:
     except Exception as e:
         logger.exception("Error cleaning up merged identities: %s", str(e))
         raise
+
+
+@shared_task(
+    name="identity.recalculate_lifecycle",
+    queue="identity_processing",
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 3, "countdown": 60},
+    acks_late=True,
+)
+def recalculate_lifecycle(identity_id: int) -> dict:
+    """
+    Recalculate the lifecycle_global JSONB cache for an identity.
+
+    Triggered by signals when channels/tags/fingerprints change,
+    or after merge operations.
+
+    Args:
+        identity_id: Primary key of the Identity object.
+    """
+    try:
+        from apps.contacts.identity.models import Identity
+        from apps.contacts.identity.services.lifecycle_service import LifecycleService
+
+        identity = Identity.objects.filter(id=identity_id).first()
+        if not identity:
+            logger.error(
+                "Identity %d not found for lifecycle recalculation", identity_id
+            )
+            return {"status": "error", "message": f"Identity {identity_id} not found"}
+
+        lifecycle = LifecycleService.recalculate(identity)
+
+        logger.info(
+            "Recalculated lifecycle for identity %s (version=%s)",
+            identity.public_id,
+            lifecycle.get("_version"),
+        )
+        return {
+            "status": "success",
+            "identity_id": identity.public_id,
+            "version": lifecycle.get("_version"),
+        }
+
+    except Exception as e:
+        logger.exception(
+            "Error recalculating lifecycle for identity %d: %s", identity_id, str(e)
+        )
+        raise
+
+
+@shared_task(
+    name="identity.bulk_recalculate_lifecycle",
+    queue="identity_maintenance",
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 3, "countdown": 300},
+    acks_late=True,
+)
+def bulk_recalculate_lifecycle(batch_size: int = 100) -> dict:
+    """
+    Recalculate lifecycle_global for all active identities.
+
+    Useful for schema migrations or after bulk data imports.
+    Processes in batches to avoid memory issues.
+    """
+    try:
+        from apps.contacts.identity.models import Identity
+
+        active_identities = Identity.objects.filter(
+            status=Identity.ACTIVE,
+            is_deleted=False,
+        )
+        total = active_identities.count()
+        processed = 0
+        errors = 0
+
+        for identity in active_identities.iterator(chunk_size=batch_size):
+            try:
+                recalculate_lifecycle.delay(identity.id)
+                processed += 1
+            except Exception as e:
+                logger.warning(
+                    "Failed to queue lifecycle recalculation for %s: %s",
+                    identity.public_id,
+                    str(e),
+                )
+                errors += 1
+
+        logger.info(
+            "Queued lifecycle recalculation for %d/%d identities (%d errors)",
+            processed,
+            total,
+            errors,
+        )
+        return {
+            "status": "success",
+            "total": total,
+            "queued": processed,
+            "errors": errors,
+        }
+
+    except Exception as e:
+        logger.exception("Error in bulk lifecycle recalculation: %s", str(e))
+        raise

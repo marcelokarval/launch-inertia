@@ -54,7 +54,7 @@ function ConfidenceBadge({ score }: { score: number }) {
 // ============================================================================
 
 function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   return (
     <Card className="border border-default-200">
@@ -103,7 +103,7 @@ function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
             <div className="pt-3 border-t border-divider">
               <h4 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-default-400" />
-                {t('show.operatorNotes', 'Operator Notes')}
+                {t('identities.show.operatorNotes', 'Operator Notes')}
               </h4>
               <p className="text-sm text-default-600 whitespace-pre-wrap">{identity.operator_notes}</p>
             </div>
@@ -114,7 +114,7 @@ function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
             <div className="flex items-center gap-3">
               <Calendar className="w-4 h-4 text-default-400 flex-shrink-0" />
               <div>
-                <p className="text-xs text-default-400">{t('show.createdAt', 'Created')}</p>
+                <p className="text-xs text-default-400">{t('identities.show.createdAt', 'Created')}</p>
                 <p className="text-sm text-foreground">
                   {identity.created_at
                     ? new Date(identity.created_at).toLocaleDateString('pt-BR', {
@@ -128,7 +128,7 @@ function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
               <div className="flex items-center gap-3">
                 <Eye className="w-4 h-4 text-default-400 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-default-400">{t('show.lastSeen', 'Last Seen')}</p>
+                  <p className="text-xs text-default-400">{t('identities.show.lastSeen', 'Last Seen')}</p>
                   <p className="text-sm text-foreground">
                     {new Date(identity.last_seen).toLocaleDateString('pt-BR', {
                       day: '2-digit', month: 'long', year: 'numeric',
@@ -139,7 +139,7 @@ function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
             )}
             {identity.first_seen_source && (
               <p className="text-xs text-default-400">
-                {t('show.firstSource', 'First seen via')}: {identity.first_seen_source}
+                {t('identities.show.firstSource', 'First seen via')}: {identity.first_seen_source}
               </p>
             )}
           </div>
@@ -154,7 +154,7 @@ function IdentityInfoCard({ identity }: { identity: IdentityShowData }) {
 // ============================================================================
 
 function StatsCard({ identity }: { identity: IdentityShowData }) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   return (
     <Card className="border border-default-200">
@@ -165,21 +165,21 @@ function StatsCard({ identity }: { identity: IdentityShowData }) {
               <Mail className="w-4 h-4 text-primary" />
               <span className="text-2xl font-bold text-foreground">{identity.email_count}</span>
             </div>
-            <p className="text-xs text-default-500">{t('show.stats.emails', 'Emails')}</p>
+            <p className="text-xs text-default-500">{t('identities.show.stats.emails', 'Emails')}</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-content2">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Phone className="w-4 h-4 text-success" />
               <span className="text-2xl font-bold text-foreground">{identity.phone_count}</span>
             </div>
-            <p className="text-xs text-default-500">{t('show.stats.phones', 'Phones')}</p>
+            <p className="text-xs text-default-500">{t('identities.show.stats.phones', 'Phones')}</p>
           </div>
           <div className="text-center p-3 rounded-lg bg-content2">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Fingerprint className="w-4 h-4 text-warning" />
               <span className="text-2xl font-bold text-foreground">{identity.fingerprint_count}</span>
             </div>
-            <p className="text-xs text-default-500">{t('show.stats.devices', 'Devices')}</p>
+            <p className="text-xs text-default-500">{t('identities.show.stats.devices', 'Devices')}</p>
           </div>
         </div>
       </Card.Content>
@@ -192,13 +192,13 @@ function StatsCard({ identity }: { identity: IdentityShowData }) {
 // ============================================================================
 
 function EmailChannelsSection({ emails }: { emails: ChannelEmail[] }) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   if (emails.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('show.channels.noEmails', 'No email channels')}</p>
+        <p>{t('identities.show.channels.noEmails', 'No email channels')}</p>
       </div>
     )
   }
@@ -251,13 +251,13 @@ function EmailChannelsSection({ emails }: { emails: ChannelEmail[] }) {
 // ============================================================================
 
 function PhoneChannelsSection({ phones }: { phones: ChannelPhone[] }) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   if (phones.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Phone className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('show.channels.noPhones', 'No phone channels')}</p>
+        <p>{t('identities.show.channels.noPhones', 'No phone channels')}</p>
       </div>
     )
   }
@@ -314,13 +314,13 @@ function DeviceIcon({ type }: { type: string }) {
 }
 
 function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] }) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   if (fingerprints.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Fingerprint className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('show.devices.noDevices', 'No devices tracked')}</p>
+        <p>{t('identities.show.devices.noDevices', 'No devices tracked')}</p>
       </div>
     )
   }
@@ -350,7 +350,7 @@ function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] })
                     </p>
                     {fp.is_master && (
                       <Chip color="accent" variant="soft" size="sm" className="text-[10px] h-4">
-                        {t('show.devices.primary', 'Primary')}
+                        {t('identities.show.devices.primary', 'Primary')}
                       </Chip>
                     )}
                   </div>
@@ -376,7 +376,7 @@ function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] })
                   {Math.round(fp.confidence_score * 100)}%
                 </div>
                 <p className="text-xs text-default-400">
-                  {t('show.devices.fpConfidence', 'FP confidence')}
+                  {t('identities.show.devices.fpConfidence', 'FP confidence')}
                 </p>
               </div>
             </div>
@@ -409,13 +409,13 @@ function DevicesSection({ fingerprints }: { fingerprints: DeviceFingerprint[] })
 // ============================================================================
 
 function AttributionsSection({ attributions }: { attributions: Attribution[] }) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   if (attributions.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('show.attributions.noData', 'No attribution data')}</p>
+        <p>{t('identities.show.attributions.noData', 'No attribution data')}</p>
       </div>
     )
   }
@@ -475,13 +475,13 @@ function AttributionsSection({ attributions }: { attributions: Attribution[] }) 
 // ============================================================================
 
 function TimelineSection({ events }: { events: TimelineEvent[] }) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   if (events.length === 0) {
     return (
       <div className="text-center py-8 text-default-400">
         <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t('show.timeline.noEvents', 'No events recorded')}</p>
+        <p>{t('identities.show.timeline.noEvents', 'No events recorded')}</p>
       </div>
     )
   }
@@ -536,7 +536,7 @@ function TimelineSection({ events }: { events: TimelineEvent[] }) {
 // ============================================================================
 
 export default function IdentityShow({ identity }: Props) {
-  const { t } = useTranslation('identities')
+  const { t } = useTranslation()
 
   return (
     <DashboardLayout title={identity.display_name || identity.id}>
@@ -557,7 +557,7 @@ export default function IdentityShow({ identity }: Props) {
             </h2>
             {identity.first_seen_source && (
               <p className="text-default-500 text-sm">
-                {t('show.firstSource', 'First seen via')}: {identity.first_seen_source}
+                {t('identities.show.firstSource', 'First seen via')}: {identity.first_seen_source}
               </p>
             )}
           </div>
@@ -566,13 +566,13 @@ export default function IdentityShow({ identity }: Props) {
           <Link href={`/identities/${identity.id}/edit/`}>
             <Button variant="primary">
               <Edit className="w-4 h-4" />
-              {t('show.edit', 'Edit')}
+              {t('identities.show.edit', 'Edit')}
             </Button>
           </Link>
           <Link href={`/identities/${identity.id}/delete/`}>
             <Button variant="danger">
               <Trash2 className="w-4 h-4" />
-              {t('show.delete', 'Delete')}
+              {t('identities.show.delete', 'Delete')}
             </Button>
           </Link>
         </div>
@@ -595,7 +595,7 @@ export default function IdentityShow({ identity }: Props) {
                   <Tabs.Tab id="emails">
                     <div className="flex items-center gap-1.5">
                       <Mail className="w-4 h-4" />
-                      <span>{t('show.tabs.emails', 'Emails')}</span>
+                      <span>{t('identities.show.tabs.emails', 'Emails')}</span>
                       <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
                         {identity.email_count}
                       </span>
@@ -604,7 +604,7 @@ export default function IdentityShow({ identity }: Props) {
                   <Tabs.Tab id="phones">
                     <div className="flex items-center gap-1.5">
                       <Phone className="w-4 h-4" />
-                      <span>{t('show.tabs.phones', 'Phones')}</span>
+                      <span>{t('identities.show.tabs.phones', 'Phones')}</span>
                       <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
                         {identity.phone_count}
                       </span>
@@ -613,7 +613,7 @@ export default function IdentityShow({ identity }: Props) {
                   <Tabs.Tab id="devices">
                     <div className="flex items-center gap-1.5">
                       <Fingerprint className="w-4 h-4" />
-                      <span>{t('show.tabs.devices', 'Devices')}</span>
+                      <span>{t('identities.show.tabs.devices', 'Devices')}</span>
                       <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
                         {identity.fingerprint_count}
                       </span>
@@ -622,7 +622,7 @@ export default function IdentityShow({ identity }: Props) {
                   <Tabs.Tab id="attributions">
                     <div className="flex items-center gap-1.5">
                       <TrendingUp className="w-4 h-4" />
-                      <span>{t('show.tabs.attributions', 'Attribution')}</span>
+                      <span>{t('identities.show.tabs.attributions', 'Attribution')}</span>
                       {identity.attributions.length > 0 && (
                         <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
                           {identity.attributions.length}
@@ -633,7 +633,7 @@ export default function IdentityShow({ identity }: Props) {
                   <Tabs.Tab id="timeline">
                     <div className="flex items-center gap-1.5">
                       <Activity className="w-4 h-4" />
-                      <span>{t('show.tabs.timeline', 'Timeline')}</span>
+                      <span>{t('identities.show.tabs.timeline', 'Timeline')}</span>
                       {identity.timeline.length > 0 && (
                         <span className="text-xs bg-default-100 text-default-500 rounded-full px-1.5">
                           {identity.timeline.length}

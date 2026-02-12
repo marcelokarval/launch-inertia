@@ -16,7 +16,7 @@ from typing import Any
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
 
 from core.inertia import inertia_render, flash_success
@@ -249,4 +249,71 @@ def delete(request, public_id):
         {
             "identity": identity_data,
         },
+    )
+
+
+# ── API Endpoints (JSON, not Inertia) ────────────────────────────────
+
+
+@login_required
+def expand(request, public_id):
+    """
+    Expand-on-demand endpoint for Identity detail view.
+
+    Returns full channel details, attributions, lifecycle cache, and
+    launch participation data (placeholder until Phase 4).
+
+    This is a JSON endpoint — used by the frontend for lazy loading
+    when the operator clicks "Ver detalhes" on an Identity card.
+
+    URL: GET /identities/<public_id>/expand/
+    """
+    try:
+        identity = Identity.objects.get(public_id=public_id, is_deleted=False)
+    except Identity.DoesNotExist:
+        return JsonResponse(
+            {"error": "Identity not found"},
+            status=404,
+        )
+
+    from apps.contacts.identity.services.lifecycle_service import LifecycleService
+
+    data = LifecycleService.get_expanded_data(identity)
+
+    return JsonResponse(data, status=200)
+
+
+@login_required
+def recalculate_lifecycle(request, public_id):
+    """
+    Trigger lifecycle_global recalculation for a specific Identity.
+
+    POST-only endpoint for manual cache refresh from the frontend.
+
+    URL: POST /identities/<public_id>/recalculate/
+    """
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "Method not allowed"},
+            status=405,
+        )
+
+    try:
+        identity = Identity.objects.get(public_id=public_id, is_deleted=False)
+    except Identity.DoesNotExist:
+        return JsonResponse(
+            {"error": "Identity not found"},
+            status=404,
+        )
+
+    from apps.contacts.identity.services.lifecycle_service import LifecycleService
+
+    lifecycle = LifecycleService.recalculate(identity)
+
+    return JsonResponse(
+        {
+            "status": "success",
+            "lifecycle": lifecycle,
+        },
+        status=200,
     )
