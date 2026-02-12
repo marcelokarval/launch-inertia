@@ -384,7 +384,7 @@ function UserDropdown({ user }: { user: PageProps['auth']['user'] }) {
               <span>Help & Support</span>
             </div>
           </Dropdown.Item>
-          <Dropdown.Item id="logout" onAction={() => router.post('/auth/logout/')}>
+          <Dropdown.Item id="logout" onAction={() => router.post('/auth/logout/', {}, { forceFormData: true })}>
             <div className="flex items-center gap-2 text-danger">
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>

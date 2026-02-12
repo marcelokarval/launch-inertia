@@ -3,6 +3,12 @@
  *
  * 6-digit code input with auto-focus, paste support, and backspace navigation.
  * Used by Auth/VerifyEmail and Onboarding/VerifyEmail.
+ *
+ * ACCEPTED EXCEPTION: Uses native `<input>` instead of HeroUI Input.
+ * Reason: HeroUI has no single-digit OTP input component. This component
+ * requires per-digit ref management, focus chaining, paste interception, and
+ * `inputMode="numeric"` — wrapping each digit in a full HeroUI Input/TextField
+ * would add unnecessary DOM overhead and break the focus-chain UX.
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'

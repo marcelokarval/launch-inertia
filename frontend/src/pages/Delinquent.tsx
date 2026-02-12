@@ -56,7 +56,7 @@ export default function Delinquent({ message }: Props) {
               variant="outline"
               size="md"
               fullWidth
-              onPress={() => router.post('/auth/logout/')}
+              onPress={() => router.post('/auth/logout/', {}, { forceFormData: true })}
             >
               <LogOut className="h-4 w-4" />
               {t('delinquent.logout')}
