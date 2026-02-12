@@ -1,5 +1,5 @@
 /**
- * LanguageSelector - Dropdown to switch between supported languages.
+ * LanguageSelector - HeroUI Dropdown to switch between supported languages.
  *
  * Props:
  * - visualOnly: if true, changes language without persisting to localStorage
@@ -8,6 +8,7 @@
  */
 
 import { Globe } from 'lucide-react'
+import { Dropdown, Button as HeroButton } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import {
   LANGUAGE_OPTIONS,
@@ -37,34 +38,37 @@ export function LanguageSelector({ visualOnly = false, className = '' }: Languag
   }
 
   return (
-    <div className={`relative group ${className}`}>
-      <button
-        type="button"
-        className="flex items-center gap-1.5 p-2 rounded-lg text-default-500 hover:bg-default-100 hover:text-default-700 transition-colors"
-        aria-label="Select language"
-      >
-        <Globe className="h-5 w-5" />
-        <span className="text-xs font-medium uppercase">{currentLang}</span>
-      </button>
-
-      {/* Dropdown */}
-      <div className="absolute right-0 top-full mt-1 w-40 py-1 bg-content1 rounded-lg shadow-lg border border-default-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-        {LANGUAGE_OPTIONS.map((option) => (
-          <button
-            key={option.code}
-            type="button"
-            onClick={() => handleChange(option.code)}
-            className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
-              currentLang === option.code
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'text-default-700 hover:bg-default-100'
-            }`}
+    <div className={className}>
+      <Dropdown>
+        <Dropdown.Trigger>
+          <HeroButton
+            variant="ghost"
+            size="sm"
+            isIconOnly={false}
+            aria-label="Select language"
+            className="flex items-center gap-1.5 text-default-500 hover:text-default-700"
           >
-            <span>{option.flag}</span>
-            <span>{option.name}</span>
-          </button>
-        ))}
-      </div>
+            <Globe className="h-5 w-5" />
+            <span className="text-xs font-medium uppercase">{currentLang}</span>
+          </HeroButton>
+        </Dropdown.Trigger>
+        <Dropdown.Popover placement="bottom end">
+          <Dropdown.Menu
+            selectionMode="single"
+            selectedKeys={new Set([currentLang])}
+            onAction={(key) => handleChange(key as SupportedLanguage)}
+          >
+            {LANGUAGE_OPTIONS.map((option) => (
+              <Dropdown.Item key={option.code} id={option.code}>
+                <div className="flex items-center gap-2">
+                  <span>{option.flag}</span>
+                  <span>{option.name}</span>
+                </div>
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
     </div>
   )
 }

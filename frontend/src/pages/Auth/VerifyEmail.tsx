@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react'
 import { Head, Link } from '@inertiajs/react'
-import { Form, TextField, Input, Label, FieldError } from '@heroui/react'
+import { Form, TextField, Input, Label, FieldError, Button as HeroButton } from '@heroui/react'
 import { Button } from '@/components/ui'
 import { OtpInput } from '@/components/shared/OtpInput'
 import { Mail, RefreshCw, ArrowLeft, ShieldCheck } from 'lucide-react'
@@ -203,21 +203,18 @@ function CodeStep({ email, errors }: { email: string; errors: Record<string, str
 
             {/* Resend */}
             <div className="text-center mt-6">
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={resendCountdown > 0 || isResending}
-                className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
-                  resendCountdown > 0
-                    ? 'text-default-400 cursor-not-allowed'
-                    : 'text-primary hover:text-primary-600'
-                }`}
+              <HeroButton
+                variant="ghost"
+                size="sm"
+                onPress={handleResend}
+                isDisabled={resendCountdown > 0 || isResending}
+                className={resendCountdown > 0 ? 'text-default-400' : 'text-primary'}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 {resendCountdown > 0
                   ? t('auth.verifyEmail.resendCountdown', 'Resend in {{seconds}}s', { seconds: resendCountdown })
                   : t('auth.verifyEmail.resend', 'Resend code')}
-              </button>
+              </HeroButton>
             </div>
           </div>
         </div>

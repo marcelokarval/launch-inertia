@@ -65,7 +65,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
 
           {unread_count > 0 && (
             <Button
-              onClick={markAllRead}
+              onPress={markAllRead}
               variant="primary"
             >
               <CheckCheck className="w-4 h-4 mr-2" />
@@ -164,7 +164,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
 
                             {!notification.is_read && (
                               <Button
-                                onClick={() => markAsRead(notification.id)}
+                                onPress={() => markAsRead(notification.id)}
                                 variant="ghost"
                                 size="sm"
                                 aria-label={t('notifications.markAsRead')}

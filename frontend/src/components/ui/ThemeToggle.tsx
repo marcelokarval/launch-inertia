@@ -5,6 +5,7 @@
  */
 
 import { Sun, Moon, Monitor } from 'lucide-react'
+import { Button as HeroButton } from '@heroui/react'
 import { useTheme, type Theme } from '@/hooks/useTheme'
 import { useTranslation } from 'react-i18next'
 
@@ -40,14 +41,15 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
   const label = t(labelKeys[theme])
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className={`p-2 rounded-lg text-default-500 hover:bg-default-100 hover:text-default-700 transition-colors ${className}`}
+    <HeroButton
+      variant="ghost"
+      size="sm"
+      isIconOnly
+      onPress={handleClick}
+      className={`text-default-500 hover:text-default-700 ${className}`}
       aria-label={label}
-      title={label}
     >
       <Icon className="h-5 w-5" />
-    </button>
+    </HeroButton>
   )
 }

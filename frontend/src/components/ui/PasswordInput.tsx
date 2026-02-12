@@ -3,7 +3,7 @@
  */
 
 import { useState, useMemo } from 'react'
-import { TextField, Input, Label, FieldError } from '@heroui/react'
+import { TextField, Input, Label, FieldError, Button as HeroButton } from '@heroui/react'
 import { Eye, EyeOff, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -91,11 +91,12 @@ export function PasswordInput({
             onChange={onChange}
             className="w-full pl-10 pr-10 font-mono tracking-wider bg-default-100 border-default-200"
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-default-400 hover:text-default-600 transition-colors"
-            tabIndex={-1}
+          <HeroButton
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            onPress={() => setShowPassword((v) => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-default-400 hover:text-default-600 min-w-0 h-auto p-0"
             aria-label={showPassword ? t('passwordInput.hidePassword') : t('passwordInput.showPassword')}
           >
             {showPassword ? (
@@ -103,7 +104,7 @@ export function PasswordInput({
             ) : (
               <Eye className="h-4 w-4" />
             )}
-          </button>
+          </HeroButton>
         </div>
         {error ? (
           <p className="text-sm text-danger">{error}</p>

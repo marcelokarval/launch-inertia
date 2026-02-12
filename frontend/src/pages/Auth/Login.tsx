@@ -18,6 +18,7 @@ import {
   Checkbox,
   Card,
   Chip,
+  Button as HeroButton,
 } from '@heroui/react'
 import { Button } from '@/components/ui'
 import {
@@ -89,7 +90,7 @@ export default function Login({ errors = {}, needs_verification = false, verific
 
       <div className="min-h-screen flex flex-col lg:flex-row">
         {/* Left Panel - Features (Desktop) / Bottom (Mobile) */}
-        <div className="order-2 lg:order-1 lg:flex-1 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 relative overflow-hidden flex">
+        <div className="order-2 lg:order-1 lg:flex-1 bg-gradient-brand relative overflow-hidden flex">
           {/* Grid Pattern Overlay */}
           <div
             className="absolute inset-0 opacity-10"
@@ -103,8 +104,8 @@ export default function Login({ errors = {}, needs_verification = false, verific
               {/* Logo and Title */}
               <div className="space-y-4 text-center lg:text-left">
                 {/* Desktop Logo */}
-                <div className="hidden lg:flex items-center space-x-3">
-                  <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
+                  <div className="hidden lg:flex items-center space-x-3">
+                  <div className="p-3 rounded-xl bg-background/10 backdrop-blur-sm">
                     <Rocket className="h-8 w-8" />
                   </div>
                   <div>
@@ -115,7 +116,7 @@ export default function Login({ errors = {}, needs_verification = false, verific
 
                 {/* Mobile Logo */}
                 <div className="lg:hidden flex flex-col items-center space-y-2">
-                  <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
+                  <div className="p-3 rounded-xl bg-background/10 backdrop-blur-sm">
                     <Zap className="h-8 w-8" />
                   </div>
                   <div className="text-center">
@@ -137,7 +138,7 @@ export default function Login({ errors = {}, needs_verification = false, verific
                     className="flex items-start space-x-4 animate-fade-in"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                    <div className="p-2 rounded-lg bg-background/10 backdrop-blur-sm">
                       <feature.icon className="h-5 w-5" />
                     </div>
                     <div>
@@ -149,7 +150,7 @@ export default function Login({ errors = {}, needs_verification = false, verific
               </div>
 
               {/* Stats */}
-              <div className="pt-8 border-t border-white/20">
+              <div className="pt-8 border-t border-background/20">
                 <div className="flex items-center justify-center lg:justify-start space-x-8">
                   <div className="text-center lg:text-left">
                     <p className="text-3xl font-bold">+127%</p>
@@ -169,8 +170,8 @@ export default function Login({ errors = {}, needs_verification = false, verific
           </div>
 
           {/* Decorative Blurred Circles */}
-          <div className="absolute top-20 right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute top-20 right-20 w-64 h-64 bg-background/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-background/5 rounded-full blur-3xl" />
         </div>
 
         {/* Right Panel - Login Form */}
@@ -185,7 +186,7 @@ export default function Login({ errors = {}, needs_verification = false, verific
             {/* Mobile Logo */}
             <div className="lg:hidden text-center space-y-4">
               <div className="flex justify-center">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600">
+                <div className="p-3 rounded-xl bg-gradient-brand">
                   <Rocket className="h-8 w-8 text-white" />
                 </div>
               </div>
@@ -262,14 +263,16 @@ export default function Login({ errors = {}, needs_verification = false, verific
                           onChange={(e) => setData('password', e.target.value)}
                           className="w-full pl-10 pr-10 h-11 font-mono tracking-wider bg-default-100 border-default-200"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-default-400 hover:text-default-600 transition-colors"
-                          tabIndex={-1}
+                        <HeroButton
+                          variant="ghost"
+                          size="sm"
+                          isIconOnly
+                          onPress={() => setShowPassword(!showPassword)}
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 min-w-0 h-auto p-1 text-default-400 hover:text-default-600"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                        </HeroButton>
                       </div>
                       <FieldError />
                     </TextField>

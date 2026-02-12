@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { Head, router } from '@inertiajs/react'
-import { Form } from '@heroui/react'
+import { Form, Button as HeroButton } from '@heroui/react'
 import { Button } from '@/components/ui'
 import { OtpInput } from '@/components/shared/OtpInput'
 import { Mail, RefreshCw } from 'lucide-react'
@@ -88,21 +88,18 @@ export default function VerifyEmail({ email, errors = {} }: Props) {
 
         {/* Resend */}
         <div className="text-center">
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={resendCountdown > 0}
-            className={`inline-flex items-center gap-1.5 text-sm transition-colors ${
-              resendCountdown > 0
-                ? 'text-default-400 cursor-not-allowed'
-                : 'text-primary hover:text-primary-600'
-            }`}
+          <HeroButton
+            variant="ghost"
+            size="sm"
+            onPress={handleResend}
+            isDisabled={resendCountdown > 0}
+            className={resendCountdown > 0 ? 'text-default-400' : 'text-primary'}
           >
             <RefreshCw className="w-3.5 h-3.5" />
             {resendCountdown > 0
               ? t('onboarding.verifyEmail.resendCountdown', { seconds: resendCountdown })
               : t('onboarding.verifyEmail.resendPrompt')}
-          </button>
+          </HeroButton>
         </div>
       </div>
     </OnboardingLayout>

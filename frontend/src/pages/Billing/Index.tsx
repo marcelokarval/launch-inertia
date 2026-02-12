@@ -80,7 +80,7 @@ export default function BillingIndex({ subscription, invoices }: Props) {
                 )}
                 <div className="pt-4">
                   <Button
-                    onClick={openPortal}
+                    onPress={openPortal}
                     variant="primary"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />

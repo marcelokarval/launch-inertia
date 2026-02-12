@@ -5,7 +5,7 @@
  * Links to billing portal and provides a logout option.
  */
 
-import { Head, Link } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, CreditCard, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui'
@@ -42,22 +42,25 @@ export default function Delinquent({ message }: Props) {
 
           {/* Actions */}
           <div className="space-y-3">
-            <a href="/billing/portal/" className="block">
-              <Button variant="primary" size="lg" fullWidth>
-                <CreditCard className="h-5 w-5" />
-                {t('delinquent.goToBilling')}
-              </Button>
-            </a>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onPress={() => { window.location.href = '/billing/portal/' }}
+            >
+              <CreditCard className="h-5 w-5" />
+              {t('delinquent.goToBilling')}
+            </Button>
 
-            <Link
-              href="/auth/logout/"
-              method="post"
-              as="button"
-              className="w-full inline-flex items-center justify-center gap-2 h-11 px-5 text-sm font-medium rounded-lg border border-default-300 bg-transparent text-default-700 hover:bg-default-100 transition-colors"
+            <Button
+              variant="outline"
+              size="md"
+              fullWidth
+              onPress={() => router.post('/auth/logout/')}
             >
               <LogOut className="h-4 w-4" />
               {t('delinquent.logout')}
-            </Link>
+            </Button>
           </div>
 
           {/* Footer */}

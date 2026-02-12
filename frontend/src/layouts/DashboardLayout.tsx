@@ -14,7 +14,7 @@
 import { useState } from 'react'
 import { Link, usePage, router } from '@inertiajs/react'
 import type { ReactNode } from 'react'
-import { Avatar, Chip, Dropdown } from '@heroui/react'
+import { Avatar, Chip, Dropdown, Button as HeroButton } from '@heroui/react'
 import {
   Home,
   Users,
@@ -31,12 +31,10 @@ import {
   ChevronLeft,
   Rocket,
   ChevronDown,
-  Sun,
-  Moon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
-import { useTheme } from '@/hooks/useTheme'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import type { PageProps } from '@/types/inertia'
 
 // ============================================================================
@@ -121,13 +119,16 @@ export default function DashboardLayout({ children, title }: Props) {
         {/* Header */}
         <header className="flex-shrink-0 h-16 z-30 border-b border-divider bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-6 gap-4">
           {/* Mobile hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 -ml-2 rounded-lg text-default-500 hover:text-foreground hover:bg-default-100 transition-colors"
+          <HeroButton
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            onPress={() => setMobileOpen(true)}
+            className="lg:hidden -ml-2 text-default-500 hover:text-foreground"
+            aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
-          </button>
+          </HeroButton>
 
           {/* Page title */}
           <div className="flex-1">
@@ -137,7 +138,7 @@ export default function DashboardLayout({ children, title }: Props) {
           {/* Right side controls */}
           <div className="flex items-center gap-1">
             <LanguageSelector />
-            <ThemeToggleButton />
+            <ThemeToggle />
 
             {/* Notifications */}
             <Link
@@ -181,13 +182,16 @@ function SidebarHeader({ collapsed, onToggle }: { collapsed: boolean; onToggle: 
           </div>
         )}
       </Link>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="hidden lg:flex p-1.5 rounded-lg text-default-400 hover:text-foreground hover:bg-default-100 transition-colors"
+      <HeroButton
+        variant="ghost"
+        size="sm"
+        isIconOnly
+        onPress={onToggle}
+        className="hidden lg:flex text-default-400 hover:text-foreground"
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <ChevronLeft className={`h-4 w-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
-      </button>
+      </HeroButton>
     </div>
   )
 }
@@ -273,7 +277,7 @@ function NavLink({
     >
       {/* Active indicator bar */}
       {active && !collapsed && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-white/80" />
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-background/80" />
       )}
 
       <item.icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-white' : ''}`} />
@@ -344,26 +348,14 @@ function SidebarFooter({ user, collapsed }: { user: PageProps['auth']['user']; c
 // Header sub-components
 // ============================================================================
 
-function ThemeToggleButton() {
-  const { resolvedTheme, setTheme } = useTheme()
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-      className="p-2 rounded-lg text-default-500 hover:text-foreground hover:bg-default-100 transition-colors"
-    >
-      {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-    </button>
-  )
-}
-
 function UserDropdown({ user }: { user: PageProps['auth']['user'] }) {
   return (
     <Dropdown>
       <Dropdown.Trigger>
-        <button
-          type="button"
-          className="hidden lg:flex items-center gap-2 rounded-lg p-2 hover:bg-default-100 transition-colors"
+        <div
+          role="button"
+          tabIndex={0}
+          className="hidden lg:flex items-center gap-2 rounded-lg p-2 hover:bg-default-100 transition-colors cursor-pointer"
         >
           <Avatar size="sm">
             <Avatar.Fallback className="bg-gradient-primary text-white text-xs font-medium">
@@ -376,7 +368,7 @@ function UserDropdown({ user }: { user: PageProps['auth']['user'] }) {
             </p>
           </div>
           <ChevronDown className="h-4 w-4 text-default-400" />
-        </button>
+        </div>
       </Dropdown.Trigger>
       <Dropdown.Popover placement="bottom end">
         <Dropdown.Menu>

@@ -81,14 +81,19 @@ export default function PlanSelection({ plans = [], errors = {} }: Props) {
               const colors = PLAN_COLORS[plan.id] || PLAN_COLORS.free
 
               return (
-                <Card
+                <div
                   key={plan.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelectPlan(plan.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectPlan(plan.id) } }}
+                >
+                <Card
                   className={`cursor-pointer transition-all duration-200 ${
                     isSelected
                       ? `ring-2 ring-primary ${colors.bg} ${colors.border}`
                       : `hover:shadow-md border ${colors.border} ${colors.bg}`
                   }`}
-                  onClick={() => handleSelectPlan(plan.id)}
                 >
                   <Card.Content className="p-4">
                     <div className="flex items-start gap-4">
@@ -153,6 +158,7 @@ export default function PlanSelection({ plans = [], errors = {} }: Props) {
                     </div>
                   </Card.Content>
                 </Card>
+                </div>
               )
             })}
           </div>

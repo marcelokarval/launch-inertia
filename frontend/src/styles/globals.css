@@ -15,6 +15,8 @@
 
 :root {
   --gradient-primary: linear-gradient(135deg, oklch(0.65 0.25 262) 0%, oklch(0.75 0.20 285) 100%);
+  --gradient-brand: linear-gradient(to bottom right, oklch(0.50 0.20 264), oklch(0.52 0.22 280), oklch(0.48 0.20 264));
+  --shadow-brand: oklch(0.55 0.25 280 / 0.20);
   --sidebar-width: 16rem;
   --sidebar-width-icon: 4rem;
   --header-height: 4rem;
@@ -61,6 +63,14 @@
 @layer utilities {
   .bg-gradient-primary {
     background: var(--gradient-primary);
+  }
+
+  .bg-gradient-brand {
+    background: var(--gradient-brand);
+  }
+
+  .shadow-brand {
+    box-shadow: 0 10px 15px -3px var(--shadow-brand), 0 4px 6px -4px var(--shadow-brand);
   }
 
   /* Smooth scrolling */

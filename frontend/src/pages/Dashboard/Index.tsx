@@ -54,35 +54,35 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: Stat
     <Card
       className={`border transition-all duration-200 animate-fade-in ${
         isGradient
-          ? 'bg-gradient-primary text-white border-transparent shadow-lg shadow-purple-500/20'
+          ? 'bg-gradient-primary text-white border-transparent shadow-lg shadow-brand'
           : 'border-default-200 hover:shadow-md hover:border-default-300'
       }`}
     >
       <Card.Content className="p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className={`text-sm mb-1 ${isGradient ? 'text-white/80' : 'text-default-500'}`}>
+            <p className={`text-sm mb-1 ${isGradient ? 'text-background/80' : 'text-default-500'}`}>
               {title}
             </p>
             <p className={`text-3xl font-bold ${isGradient ? 'text-white' : 'text-foreground'}`}>
               {value}
             </p>
           </div>
-          <div className={`p-3 rounded-xl ${isGradient ? 'bg-white/20' : 'bg-primary/10'}`}>
+          <div className={`p-3 rounded-xl ${isGradient ? 'bg-background/20' : 'bg-primary/10'}`}>
             <Icon className={`h-6 w-6 ${isGradient ? 'text-white' : 'text-primary'}`} />
           </div>
         </div>
         {trend && (
           <div className="flex items-center gap-1.5 mt-3">
             {trend.positive ? (
-              <ArrowUpRight className={`h-4 w-4 ${isGradient ? 'text-white/90' : 'text-success'}`} />
+              <ArrowUpRight className={`h-4 w-4 ${isGradient ? 'text-background/90' : 'text-success'}`} />
             ) : (
-              <TrendingDown className={`h-4 w-4 ${isGradient ? 'text-white/90' : 'text-danger'}`} />
+              <TrendingDown className={`h-4 w-4 ${isGradient ? 'text-background/90' : 'text-danger'}`} />
             )}
-            <span className={`text-sm font-medium ${isGradient ? 'text-white/90' : trend.positive ? 'text-success' : 'text-danger'}`}>
+            <span className={`text-sm font-medium ${isGradient ? 'text-background/90' : trend.positive ? 'text-success' : 'text-danger'}`}>
               {trend.value}
             </span>
-            <span className={`text-xs ${isGradient ? 'text-white/60' : 'text-default-400'}`}>
+            <span className={`text-xs ${isGradient ? 'text-background/60' : 'text-default-400'}`}>
               vs last month
             </span>
           </div>
@@ -241,7 +241,7 @@ function GettingStartedCard() {
     <Card className="border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 animate-slide-up">
       <Card.Content className="p-6">
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="p-4 rounded-2xl bg-gradient-primary flex-shrink-0 shadow-lg shadow-purple-500/20">
+          <div className="p-4 rounded-2xl bg-gradient-primary flex-shrink-0 shadow-lg shadow-brand">
             <Rocket className="h-8 w-8 text-white" />
           </div>
           <div className="flex-1 text-center sm:text-left">

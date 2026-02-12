@@ -37,7 +37,7 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* ----- Left Panel: Branding & Features ----- */}
-      <div className="order-2 lg:order-1 lg:flex-1 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 relative overflow-hidden flex">
+      <div className="order-2 lg:order-1 lg:flex-1 bg-gradient-brand relative overflow-hidden flex">
         {/* Grid pattern overlay */}
         <div
           className="absolute inset-0 opacity-10"
@@ -51,7 +51,7 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
             {/* Logo & Title */}
             <div className="space-y-4 text-center lg:text-left">
               <div className="hidden lg:flex items-center space-x-3">
-                <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
+                <div className="p-3 rounded-xl bg-background/10 backdrop-blur-sm">
                   <Rocket className="h-8 w-8" />
                 </div>
                 <div>
@@ -62,7 +62,7 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
 
               {/* Mobile compact logo */}
               <div className="lg:hidden flex flex-col items-center space-y-2">
-                <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
+                <div className="p-3 rounded-xl bg-background/10 backdrop-blur-sm">
                   <Rocket className="h-8 w-8" />
                 </div>
                 <h2 className="text-2xl font-bold">{t('authLayout.features.title')}</h2>
@@ -83,7 +83,7 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
                     className="flex items-start space-x-4"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm flex-shrink-0">
+                    <div className="p-2 rounded-lg bg-background/10 backdrop-blur-sm flex-shrink-0">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
@@ -99,7 +99,7 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
             </div>
 
             {/* Stats */}
-            <div className="pt-8 border-t border-white/20">
+            <div className="pt-8 border-t border-background/20">
               <div className="flex items-center justify-center lg:justify-start space-x-8">
                 <div className="text-center lg:text-left">
                   <p className="text-3xl font-bold">+127%</p>
@@ -119,8 +119,8 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
         </div>
 
         {/* Decorative blurred circles */}
-        <div className="absolute top-20 right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-20 w-64 h-64 bg-background/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-background/5 rounded-full blur-3xl" />
       </div>
 
       {/* ----- Right Panel: Form ----- */}
@@ -135,7 +135,7 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
           {/* Mobile logo */}
           <div className="lg:hidden text-center space-y-4">
             <div className="flex justify-center">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600">
+              <div className="p-3 rounded-xl bg-gradient-brand">
                 <Rocket className="h-8 w-8 text-white" />
               </div>
             </div>

@@ -3,7 +3,8 @@
  */
 
 import { useState } from 'react'
-import { AlertCircle, X } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
+import { CloseButton } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 
 export interface FormErrorBannerProps {
@@ -31,14 +32,11 @@ export function FormErrorBanner({
         <AlertCircle className="h-4 w-4 flex-shrink-0" />
         <span className="flex-1">{message}</span>
         {dismissible && (
-          <button
-            type="button"
-            onClick={() => setDismissed(true)}
-            className="flex-shrink-0 text-danger-400 hover:text-danger-600 transition-colors"
+          <CloseButton
+            onPress={() => setDismissed(true)}
+            className="flex-shrink-0 text-danger-400 hover:text-danger-600"
             aria-label={t('actions.dismiss')}
-          >
-            <X className="h-4 w-4" />
-          </button>
+          />
         )}
       </div>
     </div>

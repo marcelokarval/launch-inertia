@@ -13,7 +13,7 @@ const buttonStyles = tv({
   variants: {
     variant: {
       primary:
-        'bg-gradient-primary text-white shadow-lg shadow-purple-500/25 hover:opacity-90',
+        'bg-gradient-primary text-white shadow-lg shadow-brand hover:opacity-90',
       secondary:
         'bg-default-100 text-foreground hover:bg-default-200',
       outline:
