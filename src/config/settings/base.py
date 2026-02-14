@@ -86,6 +86,7 @@ PROJECT_APPS = [
     "apps.contacts.fingerprint",
     "apps.billing",
     "apps.notifications",
+    "apps.landing",
 ]
 
 INFRASTRUCTURE_APPS = [

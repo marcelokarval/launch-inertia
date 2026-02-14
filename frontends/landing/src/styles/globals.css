@@ -1,0 +1,80 @@
+/**
+ * Landing Pages - Global Styles
+ * Tailwind CSS v4 (NO HeroUI - landing uses own UI components)
+ *
+ * Design tokens ported from legacy frontend-landing-pages.
+ * Each landing page may override these via campaign-specific styles.
+ */
+
+@import "tailwindcss";
+
+/* =================================================================
+ * Design Tokens - Landing brand (Arthur Agrelli)
+ * ================================================================= */
+
+:root {
+  /* Brand colors */
+  --color-brand-primary: #6366f1;
+  --color-brand-secondary: #8b5cf6;
+  --color-brand-accent: #f59e0b;
+
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8fafc;
+  --color-surface-dark: #0f172a;
+
+  /* Text */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  /* Borders */
+  --color-border: #e2e8f0;
+  --color-border-focus: #6366f1;
+
+  /* Feedback */
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Layout */
+  --max-width-content: 1200px;
+  --max-width-form: 480px;
+}
+
+/* =================================================================
+ * Base Typography
+ * ================================================================= */
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =================================================================
+ * Utility Animations
+ * ================================================================= */
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}

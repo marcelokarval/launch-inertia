@@ -40,6 +40,8 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     # Stripe webhooks
     path("stripe/", include("djstripe.urls", namespace="djstripe")),
+    # Landing pages (public) — must be LAST (catch-all at root)
+    path("", include("apps.landing.urls")),
 ]
 
 # Debug toolbar (development only) - disabled temporarily
