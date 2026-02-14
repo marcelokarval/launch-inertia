@@ -29,12 +29,10 @@ O projeto serve **dois frontends** via Inertia.js, cada um com seu próprio Vite
 | Dashboard | `frontends/dashboard/` | Operadores (auth) | `/app/*` | 3344 |
 | Landing | `frontends/landing/` | Leads/público | `/*` | 3345 |
 
-> **NOTA sobre diretórios**: Ver `IMPLEMENTATION_PLAN.md` Fase A para detalhes.
-> - `frontends/dashboard/` = **movido** de `frontend/` via `git mv` (preserva histórico)
-> - `frontends/landing/` = **criado do zero** como novo Vite+Inertia app
+> **Fase A concluída**: `frontend/` foi movido para `frontends/dashboard/` via `git mv` (histórico preservado).
+> - `frontends/landing/` = **será criado do zero** como novo Vite+Inertia app (Fase C)
 > - `frontend-landing-pages/` = legado Next.js, **referência de consulta** (NÃO mover para frontends/)
-
-> **NOTA sobre estado atual**: Enquanto a Fase A não for executada, o diretório ainda é `frontend/` (não `frontends/dashboard/`). Verificar qual existe antes de referenciar.
+> - `package.json` raiz com npm workspaces (`@launch/dashboard`)
 
 ---
 
@@ -164,14 +162,23 @@ launch-inertia/
 ## Development Commands
 
 ```bash
-# Both servers in parallel
+# Django + Dashboard Vite in parallel
 make dev
 
 # Backend only (Django on port 8844)
 make dev-back
 
-# Frontend only (Vite on port 3344)
-make dev-front
+# Dashboard Vite only (port 3344)
+make dev-dashboard
+
+# Landing Vite only (port 3345) — after Fase C
+make dev-landing
+
+# All services (Django + Dashboard + Celery)
+make dev-all
+
+# All services including Landing
+make dev-full
 
 # Run all tests
 make test
@@ -190,11 +197,9 @@ make makemigrations
 make celery
 make celery-beat
 
-# Install all deps
+# Install all deps (Python + npm workspaces)
 make install
 ```
-
-> **NOTA pós Fase A**: Quando `frontend/` virar `frontends/dashboard/`, os comandos acima mudarão. Ver `IMPLEMENTATION_PLAN.md` Fase A.4 para os novos nomes (`dev-dashboard`, `dev-landing`, etc.).
 
 ---
 
@@ -240,8 +245,6 @@ No custom models. Relies entirely on djstripe's `Customer`, `Subscription`, `Inv
 
 `frontends/dashboard/src/types/index.ts` is the **single source of truth** for dashboard types. Pages should never define local interfaces for backend data.
 
-> **NOTA**: Enquanto a Fase A não for executada, o path ainda é `frontend/src/types/index.ts`.
-
 ---
 
 ## Key Files
@@ -256,9 +259,9 @@ No custom models. Relies entirely on djstripe's `Customer`, `Subscription`, `Inv
 | `src/apps/identity/services/` | Auth, Registration, Token services |
 | `src/apps/identity/views.py` | Auth + onboarding views |
 | `src/infrastructure/email/service.py` | EmailService (SES/console) |
-| `frontend/src/main.tsx` | React entry point + i18n |
-| `frontend/src/hooks/useAppForm.ts` | Form wrapper (forceFormData) |
-| `frontend/src/types/index.ts` | All TypeScript types |
+| `frontends/dashboard/src/main.tsx` | React entry point + i18n |
+| `frontends/dashboard/src/hooks/useAppForm.ts` | Form wrapper (forceFormData) |
+| `frontends/dashboard/src/types/index.ts` | All TypeScript types |
 | `IMPLEMENTATION_PLAN.md` | Plano sequencial de implementação (8 fases) |
 | `FRONTEND_ARCHITECTURE_ANALYSIS.md` | Decisões de arquitetura multi-frontend |
 | `CONTACTS_ANALYSIS.md` | Análise de negócio (Identity, Launch, Lifecycle) |

@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "workspaces": ["frontends/*"],
+  "scripts": {
+    "dev:dashboard": "npm -w @launch/dashboard run dev",
+    "dev:landing": "npm -w @launch/landing run dev",
+    "build:dashboard": "npm -w @launch/dashboard run build",
+    "build:landing": "npm -w @launch/landing run build",
+    "build": "npm -w @launch/dashboard run build",
+    "test:dashboard": "npm -w @launch/dashboard run test",
+    "test:landing": "npm -w @launch/landing run test",
+    "test": "npm -w @launch/dashboard run test"
+  }
+}

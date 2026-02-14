@@ -62,6 +62,8 @@ yarn-error.log*
 
 # Build outputs
 frontend/dist/
+frontends/dashboard/dist/
+frontends/landing/dist/
 static/dist/
 static/dashboard/
 static/landing/

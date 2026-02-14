@@ -1,4 +1,4 @@
-.PHONY: help dev dev-all dev-back dev-front test test-back test-front lint migrate makemigrations shell celery celery-beat celery-all install
+.PHONY: help dev dev-all dev-back dev-dashboard dev-landing test test-back test-front lint migrate makemigrations shell celery celery-beat celery-all install
 
 # Default
 help: ## Show this help
@@ -6,16 +6,25 @@ help: ## Show this help
 
 # ── Development ──────────────────────────────────────────
 
-dev: ## Run Django + Vite dev servers (parallel)
+dev: ## Run Django + Dashboard Vite dev servers (parallel)
 	@trap 'kill 0' EXIT; \
 	$(MAKE) dev-back & \
-	$(MAKE) dev-front & \
+	$(MAKE) dev-dashboard & \
 	wait
 
-dev-all: ## Run Django + Vite + Celery worker + Celery beat (parallel)
+dev-all: ## Run Django + Dashboard + Celery worker + Celery beat (parallel)
 	@trap 'kill 0' EXIT; \
 	$(MAKE) dev-back & \
-	$(MAKE) dev-front & \
+	$(MAKE) dev-dashboard & \
+	$(MAKE) celery & \
+	$(MAKE) celery-beat & \
+	wait
+
+dev-full: ## Run Django + Dashboard + Landing + Celery (parallel)
+	@trap 'kill 0' EXIT; \
+	$(MAKE) dev-back & \
+	$(MAKE) dev-dashboard & \
+	$(MAKE) dev-landing & \
 	$(MAKE) celery & \
 	$(MAKE) celery-beat & \
 	wait
@@ -23,8 +32,11 @@ dev-all: ## Run Django + Vite + Celery worker + Celery beat (parallel)
 dev-back: ## Run Django dev server (port 8844)
 	cd src && uv run python ../manage.py runserver 8844
 
-dev-front: ## Run Vite dev server (port 3344)
-	cd frontend && npm run dev
+dev-dashboard: ## Run Dashboard Vite dev server (port 3344)
+	cd frontends/dashboard && npm run dev
+
+dev-landing: ## Run Landing Vite dev server (port 3345)
+	cd frontends/landing && npm run dev
 
 # ── Testing ──────────────────────────────────────────────
 
@@ -33,13 +45,13 @@ test: test-back test-front ## Run all tests
 test-back: ## Run Django/pytest tests
 	cd src && uv run python -m pytest
 
-test-front: ## Run Vitest frontend tests
-	cd frontend && npx vitest run
+test-front: ## Run Dashboard Vitest frontend tests
+	cd frontends/dashboard && npx vitest run
 
 # ── Linting / Type checking ─────────────────────────────
 
 lint: ## Run frontend linting + type check
-	cd frontend && npm run lint && npm run typecheck
+	cd frontends/dashboard && npm run lint && npm run typecheck
 
 # ── Database ─────────────────────────────────────────────
 
@@ -76,11 +88,11 @@ celery-all: ## Run Celery worker + beat in parallel
 
 # ── Setup ────────────────────────────────────────────────
 
-install: ## Install all dependencies
-	uv pip install -e ".[dev]" && cd frontend && npm install
+install: ## Install all dependencies (Python + Node workspaces)
+	uv pip install -e ".[dev]" && npm install
 
 install-back: ## Install Python dependencies only
 	uv pip install -e ".[dev]"
 
-install-front: ## Install Node dependencies only
-	cd frontend && npm install
+install-front: ## Install Node dependencies only (all workspaces)
+	npm install
