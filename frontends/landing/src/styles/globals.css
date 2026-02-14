@@ -78,3 +78,38 @@ body {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* =================================================================
+ * Phone Input Overrides (react-international-phone)
+ * ================================================================= */
+
+.phone-input-wrapper .react-international-phone-input-container {
+  display: flex;
+  width: 100%;
+}
+
+.phone-input-wrapper .react-international-phone-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.phone-input-wrapper .react-international-phone-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.phone-input-wrapper .react-international-phone-country-selector-button {
+  border: none;
+  background: transparent;
+  padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.phone-input-wrapper .react-international-phone-country-selector-button:hover {
+  background: var(--color-surface-alt);
+}

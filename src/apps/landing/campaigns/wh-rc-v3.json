@@ -1,0 +1,42 @@
+{
+  "slug": "wh-rc-v3",
+  "meta": {
+    "title": "Workshop Repasse de Contrato - Arthur Agrelli",
+    "description": "Aprenda a investir em imoveis nos EUA com repasse de contrato"
+  },
+  "headline": {
+    "parts": [
+      {"text": "Descubra como investir em ", "type": "normal"},
+      {"text": "imoveis nos EUA", "type": "highlight"},
+      {"text": " com repasse de contrato", "type": "normal"}
+    ]
+  },
+  "badges": [
+    {"icon": "calendar", "text": "Aulas 100% online e gratuitas", "visible": true},
+    {"icon": "clock", "text": "Vagas limitadas", "visible": true},
+    {"icon": "trophy", "text": "+5.000 alunos", "visible": true}
+  ],
+  "form": {
+    "button_text": "Quero participar do workshop!",
+    "button_color": "bg-indigo-600 hover:bg-indigo-700",
+    "loading_text": "Enviando...",
+    "thank_you_url": "/obrigado/wh-rc-v3/"
+  },
+  "trust_badge": {
+    "enabled": true,
+    "text": "Suas informacoes estao seguras",
+    "icon": "shield"
+  },
+  "social_proof": {
+    "enabled": true,
+    "value": "+5.000",
+    "label": "alunos"
+  },
+  "n8n": {
+    "webhook_url": "https://n8n.arthuragrelli.com/webhook/leads-lancamento-form",
+    "launch_code": "WH0126",
+    "list_id": "424",
+    "form_id": "754ef07d",
+    "form_name": "repasse contrato wh0126"
+  }
+}

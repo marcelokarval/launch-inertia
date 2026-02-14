@@ -44,13 +44,20 @@ def inertia_render(
             }, app="landing")
     """
     layouts = getattr(settings, "INERTIA_LAYOUTS", {})
-    template_name = layouts.get(app, settings.INERTIA_LAYOUT)
+    layout_template = layouts.get(app, settings.INERTIA_LAYOUT)
+
+    # inertia-django's render() uses template_data to pass extra context
+    # to the inertia.html template. The "inertia_layout" key overrides
+    # which layout template is extended (dashboard.html vs landing.html).
+    template_data: dict[str, Any] = {}
+    if layout_template != settings.INERTIA_LAYOUT:
+        template_data["inertia_layout"] = layout_template
 
     return inertia_base_render(
         request,
         component,
         props=props or {},
-        template_name=template_name,
+        template_data=template_data if template_data else None,
     )
 
 
