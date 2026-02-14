@@ -85,12 +85,32 @@ export interface CapturePageProps extends SharedProps {
   fingerprint_api_key: string;
 }
 
+/** Thank-you page step indicator */
+export interface ThankYouStep {
+  label: string;
+  completed: boolean;
+}
+
+/** Thank-you page configuration (from campaign JSON) */
+export interface ThankYouConfig {
+  headline: string;
+  subheadline: string;
+  whatsapp_group_link: string;
+  whatsapp_button_text: string;
+  countdown_minutes: number;
+  show_social_proof: boolean;
+  social_proof_text: string;
+  steps: ThankYouStep[];
+  progress_percentage: number;
+}
+
 /** Props for the ThankYou/Index page */
 export interface ThankYouPageProps extends SharedProps {
   campaign: {
     slug: string;
     meta: CampaignMeta;
   };
+  thank_you: ThankYouConfig;
 }
 
 // ── Checkout Types ────────────────────────────────────────────────────

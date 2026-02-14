@@ -76,6 +76,21 @@ def get_campaign_or_default(slug: str) -> dict[str, Any]:
         "social_proof": {
             "enabled": False,
         },
+        "thank_you": {
+            "headline": "Inscricao confirmada!",
+            "subheadline": "Falta apenas um passo para completar.",
+            "whatsapp_group_link": "",
+            "whatsapp_button_text": "ENTRAR NO GRUPO VIP",
+            "countdown_minutes": 15,
+            "show_social_proof": True,
+            "social_proof_text": "",
+            "steps": [
+                {"label": "Cadastro", "completed": True},
+                {"label": "Confirmacao", "completed": True},
+                {"label": "Grupo VIP", "completed": False},
+            ],
+            "progress_percentage": 66,
+        },
         "n8n": {
             "webhook_url": "",
             "launch_code": "",

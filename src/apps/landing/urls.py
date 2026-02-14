@@ -62,6 +62,9 @@ urlpatterns = [
         checkout_views.checkout_page,
         name="checkout",
     ),
+    # ── Legal pages ───────────────────────────────────────────────
+    path("terms/", views.terms_page, name="terms"),
+    path("privacy/", views.privacy_page, name="privacy"),
     # Home page (last — catch-all for root "/")
     path("", views.home, name="home"),
 ]

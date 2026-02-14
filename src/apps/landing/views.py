@@ -152,14 +152,58 @@ def _handle_capture_post(
 
 
 @require_GET
+def terms_page(request: HttpRequest) -> HttpResponse:
+    """Terms of Service page.
+
+    URL: /terms/
+    """
+    return inertia_render(request, "Legal/Terms", {}, app="landing")
+
+
+@require_GET
+def privacy_page(request: HttpRequest) -> HttpResponse:
+    """Privacy Policy page.
+
+    URL: /privacy/
+    """
+    return inertia_render(request, "Legal/Privacy", {}, app="landing")
+
+
+@require_GET
 def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     """Thank-you page after successful capture.
 
     URL: /obrigado/<campaign_slug>/
 
-    Minimal placeholder — full implementation in Phase F.
+    Renders urgency-driven page with WhatsApp CTA, countdown timer,
+    and progress bar. Config comes from campaign JSON ``thank_you`` key.
     """
     campaign = get_campaign_or_default(campaign_slug)
+    thank_you_config = campaign.get("thank_you", {})
+
+    # Build thank_you props with sensible defaults
+    thank_you_props: dict[str, Any] = {
+        "headline": thank_you_config.get("headline", "Inscricao confirmada!"),
+        "subheadline": thank_you_config.get(
+            "subheadline", "Falta apenas um passo para completar."
+        ),
+        "whatsapp_group_link": thank_you_config.get("whatsapp_group_link", ""),
+        "whatsapp_button_text": thank_you_config.get(
+            "whatsapp_button_text", "ENTRAR NO GRUPO VIP"
+        ),
+        "countdown_minutes": thank_you_config.get("countdown_minutes", 15),
+        "show_social_proof": thank_you_config.get("show_social_proof", True),
+        "social_proof_text": thank_you_config.get("social_proof_text", ""),
+        "steps": thank_you_config.get(
+            "steps",
+            [
+                {"label": "Cadastro", "completed": True},
+                {"label": "Confirmacao", "completed": True},
+                {"label": "Grupo VIP", "completed": False},
+            ],
+        ),
+        "progress_percentage": thank_you_config.get("progress_percentage", 66),
+    }
 
     return inertia_render(
         request,
@@ -169,6 +213,7 @@ def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
                 "slug": campaign.get("slug", campaign_slug),
                 "meta": campaign.get("meta", {}),
             },
+            "thank_you": thank_you_props,
         },
         app="landing",
     )

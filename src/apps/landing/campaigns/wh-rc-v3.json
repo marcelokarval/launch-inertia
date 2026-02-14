@@ -32,6 +32,21 @@
     "value": "+5.000",
     "label": "alunos"
   },
+  "thank_you": {
+    "headline": "NAO FECHE ESTA PAGINA!",
+    "subheadline": "Falta apenas um passo para garantir sua vaga no Workshop.",
+    "whatsapp_group_link": "https://chat.whatsapp.com/placeholder-wh-rc-v3",
+    "whatsapp_button_text": "ENTRAR NO GRUPO VIP DO WORKSHOP",
+    "countdown_minutes": 15,
+    "show_social_proof": true,
+    "social_proof_text": "247 pessoas entraram nos ultimos 30 minutos",
+    "steps": [
+      {"label": "Cadastro", "completed": true},
+      {"label": "Confirmacao", "completed": true},
+      {"label": "Grupo VIP", "completed": false}
+    ],
+    "progress_percentage": 66
+  },
   "n8n": {
     "webhook_url": "https://n8n.arthuragrelli.com/webhook/leads-lancamento-form",
     "launch_code": "WH0126",
