@@ -7,19 +7,24 @@
   "headline": {
     "parts": [
       {"text": "Descubra como investir em ", "type": "normal"},
-      {"text": "imoveis nos EUA", "type": "highlight"},
+      {"text": "im\u00f3veis nos EUA", "type": "highlight", "color": "red"},
       {"text": " com repasse de contrato", "type": "normal"}
     ]
   },
+  "subheadline": null,
+  "background_image": null,
+  "highlight_color": "#FB061A",
   "badges": [
     {"icon": "calendar", "text": "Aulas 100% online e gratuitas", "visible": true},
     {"icon": "clock", "text": "Vagas limitadas", "visible": true},
     {"icon": "trophy", "text": "+5.000 alunos", "visible": true}
   ],
   "form": {
-    "button_text": "Quero participar do workshop!",
-    "button_color": "bg-indigo-600 hover:bg-indigo-700",
-    "loading_text": "Enviando...",
+    "button_text": "PARTICIPAR DO CURSO GRATUITO",
+    "button_color": "",
+    "button_gradient": "bg-gradient-to-r from-[#0e036b] to-[#fb061a]",
+    "button_hover_gradient": "hover:from-[#fb061a] hover:to-[#0e036b]",
+    "loading_text": "ENVIANDO...",
     "thank_you_url": "/obrigado/wh-rc-v3/"
   },
   "trust_badge": {

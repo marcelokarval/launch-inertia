@@ -1,7 +1,8 @@
 /**
  * Reusable section component for legal pages (Terms, Privacy).
  *
- * Provides consistent heading + content styling across all legal documents.
+ * Dark theme: white headings on dark background.
+ * Matches legacy Next.js termos-content.tsx styling.
  */
 export default function Section({
   title,
@@ -12,7 +13,7 @@ export default function Section({
 }) {
   return (
     <section>
-      <h3 className="mb-2 text-base font-semibold text-gray-900">{title}</h3>
+      <h3 className="mb-2 text-lg font-semibold text-white">{title}</h3>
       {children}
     </section>
   );

@@ -25,7 +25,9 @@ export interface HomeProps extends SharedProps {
 /** Headline part — styled text segment */
 export interface HeadlinePart {
   text: string;
-  type: 'normal' | 'highlight';
+  type: 'normal' | 'highlight' | 'underline';
+  /** Color hint for highlights: 'red' = bg-red pill, 'white' = plain white */
+  color?: 'red' | 'white' | 'yellow' | 'green' | 'blue';
 }
 
 /** Campaign badge (icon + text) */
@@ -39,6 +41,10 @@ export interface CampaignBadge {
 export interface CampaignFormConfig {
   button_text: string;
   button_color: string;
+  /** Optional gradient for CTA button (e.g., 'bg-gradient-to-r from-[#0e036b] to-[#fb061a]') */
+  button_gradient?: string;
+  /** Hover gradient for CTA button */
+  button_hover_gradient?: string;
   loading_text: string;
   thank_you_url: string;
 }
@@ -73,10 +79,16 @@ export interface CampaignProps {
   slug: string;
   meta: CampaignMeta;
   headline: CampaignHeadline;
+  /** Optional subheadline below the main headline */
+  subheadline?: string;
   badges: CampaignBadge[];
   form: CampaignFormConfig;
   trust_badge: CampaignTrustBadge;
   social_proof: CampaignSocialProof;
+  /** Background image URL for the capture layout */
+  background_image?: string;
+  /** Highlight color override (default: #FB061A) */
+  highlight_color?: string;
 }
 
 /** Props for the Capture/Index page */

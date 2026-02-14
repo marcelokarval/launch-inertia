@@ -14,7 +14,7 @@ export default function Privacy() {
       version="Version 2.0 — US Privacy Policy"
       lastUpdated="February 2026"
     >
-      <div className="space-y-6 text-sm leading-relaxed text-gray-700">
+      <div className="space-y-6 text-sm leading-relaxed text-gray-300">
         <Section title="1. Data Controller & Legal Basis">
           <p className="mb-2">
             We are a United States company that collects and processes personal data.

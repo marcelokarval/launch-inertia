@@ -7,7 +7,8 @@ import type { CapturePageProps, HeadlinePart } from '@/types';
 /**
  * Capture/Index — Lead capture landing page.
  *
- * Renders campaign headline, badges, capture form, and trust indicators.
+ * Dark theme, left-aligned, red accent highlights.
+ * Visual parity with legacy inscrever-wh-rc-v3-layout.tsx.
  * All data comes from Django as Inertia props (campaign JSON fixture).
  */
 export default function CaptureIndex({
@@ -15,38 +16,45 @@ export default function CaptureIndex({
   fingerprint_api_key,
   errors,
 }: CapturePageProps) {
-  const { headline, badges, form, trust_badge, social_proof, meta } = campaign;
+  const { headline, subheadline, badges, form, trust_badge, social_proof, meta } =
+    campaign;
 
   return (
-    <CaptureLayout>
+    <CaptureLayout backgroundImage={campaign.background_image}>
       <Head title={meta.title} />
 
-      <div className="rounded-2xl bg-[var(--color-surface)] p-6 shadow-2xl sm:p-8">
-        {/* Headline */}
-        <h1 className="mb-4 text-center text-2xl font-bold leading-tight text-[var(--color-text-primary)] sm:text-3xl">
-          {headline.parts.map((part: HeadlinePart, i: number) =>
-            part.type === 'highlight' ? (
-              <span
-                key={i}
-                className="text-[var(--color-brand-primary)]"
-              >
-                {part.text}
-              </span>
-            ) : (
-              <span key={i}>{part.text}</span>
-            ),
-          )}
-        </h1>
+      <div className="space-y-1 md:space-y-4">
+        {/* Headline — left-aligned, large, white text */}
+        {headline.parts.length > 0 && headline.parts[0]?.text && (
+          <div className="text-left">
+            <h1 className="text-[2.125rem] font-semibold leading-tight text-white md:text-[2.375rem]">
+              {headline.parts.map((part: HeadlinePart, i: number) => (
+                <HeadlineSegment
+                  key={i}
+                  part={part}
+                  highlightColor={campaign.highlight_color}
+                />
+              ))}
+            </h1>
+          </div>
+        )}
+
+        {/* Subheadline (optional) */}
+        {subheadline && (
+          <h2 className="text-left text-sm leading-relaxed text-white/90 min-[400px]:text-sm md:text-base">
+            {subheadline}
+          </h2>
+        )}
 
         {/* Badges */}
-        {badges.length > 0 && (
-          <div className="mb-6 flex flex-wrap justify-center gap-3">
+        {badges.filter((b) => b.visible).length > 0 && (
+          <div className="flex flex-wrap justify-between gap-2">
             {badges
               .filter((b) => b.visible)
               .map((badge, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-primary)]/10 px-3 py-1 text-xs font-medium text-[var(--color-brand-primary)]"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-[0.8125rem] font-medium text-white/80 backdrop-blur-sm"
                 >
                   <BadgeIcon icon={badge.icon} />
                   {badge.text}
@@ -57,35 +65,91 @@ export default function CaptureIndex({
 
         {/* Social proof */}
         {social_proof.enabled && social_proof.value && (
-          <p className="mb-6 text-center text-sm text-[var(--color-text-secondary)]">
-            <span className="font-semibold text-[var(--color-brand-primary)]">
+          <p className="text-left text-sm text-white/70">
+            <span className="font-semibold text-[var(--color-brand-highlight)]">
               {social_proof.value}
             </span>{' '}
             {social_proof.label}
           </p>
         )}
 
-        {/* Capture form */}
-        <CaptureForm
-          campaignSlug={campaign.slug}
-          formConfig={form}
-          fingerprintApiKey={fingerprint_api_key}
-          serverErrors={errors}
-        />
+        {/* Capture form — negative margin to bleed on mobile like legacy */}
+        <div className="-mx-5 pt-2 md:mx-0">
+          <CaptureForm
+            campaignSlug={campaign.slug}
+            formConfig={form}
+            fingerprintApiKey={fingerprint_api_key}
+            serverErrors={errors}
+          />
+        </div>
 
         {/* Trust badge */}
         {trust_badge.enabled && (
-          <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-            <TrustIcon icon={trust_badge.icon} />
-            {trust_badge.text}
-          </p>
+          <div className="pt-2">
+            <p className="flex items-center gap-1.5 text-xs text-white/50">
+              <TrustIcon icon={trust_badge.icon} />
+              {trust_badge.text}
+            </p>
+          </div>
         )}
       </div>
     </CaptureLayout>
   );
 }
 
-/** Simple icon resolver for badges. */
+/**
+ * Headline segment renderer — matches legacy highlight patterns.
+ *
+ * - 'highlight' + color='red': red background pill (#FB061A) with white text
+ * - 'highlight' + color='white': plain white text
+ * - 'highlight' (default): uses brand highlight color as text color
+ * - 'underline': underlined text
+ * - 'normal': plain text
+ */
+function HeadlineSegment({
+  part,
+  highlightColor,
+}: {
+  part: HeadlinePart;
+  highlightColor?: string;
+}) {
+  if (part.type === 'highlight') {
+    if (part.color === 'red') {
+      return (
+        <span
+          className="inline px-1 py-0.5"
+          style={{ backgroundColor: highlightColor || '#FB061A' }}
+        >
+          <span className="text-white" style={{ lineHeight: '1.5' }}>
+            {part.text}
+          </span>
+        </span>
+      );
+    }
+    if (part.color === 'white') {
+      return <span className="text-white">{part.text}</span>;
+    }
+    // Default highlight — brand color text
+    return (
+      <span style={{ color: highlightColor || 'var(--color-brand-highlight)' }}>
+        {part.text}
+      </span>
+    );
+  }
+
+  if (part.type === 'underline') {
+    return <span className="underline decoration-2">{part.text}</span>;
+  }
+
+  // Normal text — check for extra bold pattern
+  if (part.text?.includes('por uma fração do valor')) {
+    return <span className="font-extrabold">{part.text}</span>;
+  }
+
+  return <span>{part.text}</span>;
+}
+
+/** Icon resolver for campaign badges. */
 function BadgeIcon({ icon }: { icon: string }) {
   const iconMap: Record<string, string> = {
     calendar: '\u{1F4C5}',
@@ -93,11 +157,12 @@ function BadgeIcon({ icon }: { icon: string }) {
     trophy: '\u{1F3C6}',
     star: '\u{2B50}',
     check: '\u{2705}',
+    youtube: '\u{1F4BB}',
   };
   return <span aria-hidden="true">{iconMap[icon] || '\u{2022}'}</span>;
 }
 
-/** Simple icon resolver for trust badges. */
+/** Icon resolver for trust badges. */
 function TrustIcon({ icon }: { icon: string }) {
   if (icon === 'shield') {
     return (

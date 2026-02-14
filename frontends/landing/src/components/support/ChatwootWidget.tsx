@@ -34,13 +34,13 @@ interface ChatwootWidgetProps {
 }
 
 /**
- * Chatwoot SDK widget — standalone approach.
+ * Chatwoot SDK widget — EMBEDDED approach.
  *
- * Loads the Chatwoot SDK script, configures settings, and auto-opens
- * the chat widget on the support page. Shows loading/error/offline
- * states with retry capability.
+ * Unlike a simple toggle('open'), this component physically moves the
+ * Chatwoot .woot-widget-holder DOM node INTO our container div, making
+ * the chat appear inline within the page layout (not as a floating popup).
  *
- * Configuration comes from Django props (not hardcoded).
+ * Ported from legacy embedded-chat-widget.tsx.
  */
 export default function ChatwootWidget({
   config,
@@ -49,12 +49,43 @@ export default function ChatwootWidget({
 }: ChatwootWidgetProps) {
   const [widgetState, setWidgetState] = useState<WidgetState>('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
-  const readyHandledRef = useRef(false);
+  const embeddedRef = useRef(false);
+  const reopenAttemptsRef = useRef(0);
+
+  /** Move the Chatwoot widget holder into our container */
+  const embedWidget = useCallback(() => {
+    if (embeddedRef.current || !containerRef.current) return;
+
+    const holder = document.querySelector('.woot-widget-holder') as HTMLElement;
+    if (!holder) return;
+
+    embeddedRef.current = true;
+
+    // Move into our container
+    containerRef.current.appendChild(holder);
+
+    // Force styles for inline embedding
+    holder.style.position = 'absolute';
+    holder.style.inset = '0';
+    holder.style.width = '100%';
+    holder.style.height = '100%';
+    holder.style.zIndex = '1';
+    holder.style.boxShadow = 'none';
+    holder.style.borderRadius = '0';
+
+    // Style iframe inside
+    const iframe = holder.querySelector('iframe') as HTMLIFrameElement;
+    if (iframe) {
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.style.borderRadius = '0 0 16px 16px';
+    }
+  }, []);
 
   const handleReady = useCallback(() => {
-    if (readyHandledRef.current) return;
-    readyHandledRef.current = true;
     setWidgetState('ready');
 
     if (window.$chatwoot) {
@@ -67,9 +98,11 @@ export default function ChatwootWidget({
     if (autoOpen && window.$chatwoot) {
       setTimeout(() => {
         window.$chatwoot?.toggle('open');
+        // Give Chatwoot time to render, then embed
+        setTimeout(embedWidget, 300);
       }, 100);
     }
-  }, [autoOpen]);
+  }, [autoOpen, embedWidget]);
 
   const handleError = useCallback(() => {
     setWidgetState('error');
@@ -114,6 +147,7 @@ export default function ChatwootWidget({
 
     document.head.appendChild(script);
 
+    // Slow connection timeout
     const timeout = setTimeout(() => {
       setWidgetState((prev) => {
         if (prev === 'loading') {
@@ -124,17 +158,28 @@ export default function ChatwootWidget({
       });
     }, 10000);
 
+    // Poll for widget holder (backup for embed)
+    const pollInterval = setInterval(() => {
+      if (!embeddedRef.current) {
+        embedWidget();
+      } else {
+        clearInterval(pollInterval);
+      }
+    }, 500);
+
     return () => {
       clearTimeout(timeout);
+      clearInterval(pollInterval);
       window.removeEventListener('chatwoot:ready', handleReady);
       window.removeEventListener('chatwoot:error', handleError);
     };
-  }, [config, handleReady, handleError]);
+  }, [config, handleReady, handleError, embedWidget]);
 
   const handleRetry = useCallback(() => {
     setWidgetState('loading');
     setErrorMessage('');
-    readyHandledRef.current = false;
+    embeddedRef.current = false;
+    reopenAttemptsRef.current = 0;
 
     if (window.chatwootSDK) {
       window.chatwootSDK.run({
@@ -146,9 +191,11 @@ export default function ChatwootWidget({
     }
   }, [config]);
 
-  const toggleChat = useCallback(() => {
-    window.$chatwoot?.toggle();
-  }, []);
+  const handleReopen = useCallback(() => {
+    reopenAttemptsRef.current = 0;
+    window.$chatwoot?.toggle('open');
+    setTimeout(embedWidget, 300);
+  }, [embedWidget]);
 
   // Shared header
   const header = (statusColor: string, statusText: string) => (
@@ -163,18 +210,20 @@ export default function ChatwootWidget({
       </div>
       <div className="flex-1">
         <h3 className="font-semibold text-white">{config.header_title}</h3>
-        <p className={`text-xs ${statusColor.replace('bg-', 'text-')}`}>{statusText}</p>
+        <p className={`text-xs ${statusColor.replace('bg-', 'text-').replace(' animate-pulse', '')}`}>
+          {statusText}
+        </p>
       </div>
     </div>
   );
 
-  const baseClasses = `flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900 ${className}`;
+  const baseClasses = `flex flex-col rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden ${className}`;
 
   // Loading
   if (widgetState === 'loading') {
     return (
       <div className={baseClasses}>
-        {header('bg-yellow-500', 'Conectando...')}
+        {header('bg-yellow-500 animate-pulse', 'Conectando...')}
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3 text-white">
             <IconSpinner className="h-8 w-8 text-red-500" />
@@ -213,7 +262,7 @@ export default function ChatwootWidget({
   if (widgetState === 'offline') {
     return (
       <div className={baseClasses}>
-        {header('bg-yellow-500', 'Carregando...')}
+        {header('bg-yellow-500 animate-pulse', 'Carregando...')}
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="flex flex-col items-center gap-4 text-center">
             <IconSpinner className="h-10 w-10 text-yellow-500" />
@@ -227,24 +276,38 @@ export default function ChatwootWidget({
     );
   }
 
-  // Ready
+  // Ready — container for embedded Chatwoot
   return (
     <div className={baseClasses}>
       {header('bg-green-500', config.header_subtitle)}
-      <div className="flex items-center justify-end border-b border-zinc-800 px-4 py-2">
-        <button
-          onClick={toggleChat}
-          className="rounded-lg p-2 transition-colors hover:bg-zinc-700"
-          title="Toggle chat"
-        >
-          <IconMessageCircle className="h-5 w-5 text-gray-400" />
-        </button>
+
+      {/* Embedded Chatwoot container */}
+      <div
+        id="chatwoot-embed-container"
+        ref={containerRef}
+        className="relative flex-1 bg-zinc-950"
+      >
+        {/* Fallback if widget not yet embedded */}
+        {!embeddedRef.current && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <IconSpinner className="h-6 w-6 text-red-500" />
+              <span className="text-sm text-gray-500">Carregando conversa...</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="relative flex-1">
-        <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
-          <span>Chat carregado - clique para interagir</span>
-        </div>
+      {/* Reopen button (shown if chat gets minimized) */}
+      <div className="flex items-center justify-between border-t border-zinc-800 bg-zinc-800/30 px-4 py-2">
+        <span className="text-xs text-gray-500">Chat ao vivo</span>
+        <button
+          onClick={handleReopen}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 transition-colors hover:bg-zinc-700 hover:text-white"
+        >
+          <IconMessageCircle className="h-3.5 w-3.5" />
+          Reabrir chat
+        </button>
       </div>
     </div>
   );

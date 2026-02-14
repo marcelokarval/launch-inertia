@@ -1,23 +1,26 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect } from 'react';
 
-import { IconCheck } from '@/components/ui/icons';
 import CountdownTimer from '@/components/thank-you/CountdownTimer';
 import ProgressBar from '@/components/thank-you/ProgressBar';
+import RedBanner from '@/components/thank-you/RedBanner';
 import WhatsAppCTA from '@/components/thank-you/WhatsAppCTA';
-import CaptureLayout from '@/layouts/CaptureLayout';
 import type { ThankYouPageProps } from '@/types';
 
 /**
  * ThankYou/Index — Post-capture urgency page.
  *
- * Drives leads to join the WhatsApp group with:
- * - Urgency headline ("NAO FECHE ESTA PAGINA!")
- * - Progress bar showing 2/3 steps completed
- * - WhatsApp CTA with pulse animation
- * - Countdown timer creating time pressure
- * - beforeunload prevention to reduce exits
- * - Footer with terms/privacy links
+ * Matches legacy `app/(thankyou)/obrigado-us/page.tsx`:
+ * - RedBanner at top (full-width, pulsing text)
+ * - Black background
+ * - Centered max-w-2xl content
+ * - SimpleHeadline (NÃO FECHE... GRUPO VIP)
+ * - Red progress bar at 90% with stripes
+ * - Instruction paragraph in white
+ * - WhatsApp CTA button (green gradient, GRÁTIS badge, auto-redirect)
+ * - CountdownTimer
+ * - Dark footer with terms/privacy links
+ * - beforeunload prevention
  */
 export default function ThankYouIndex({ campaign, thank_you }: ThankYouPageProps) {
   const hasWhatsApp = !!thank_you.whatsapp_group_link;
@@ -27,57 +30,62 @@ export default function ThankYouIndex({ campaign, thank_you }: ThankYouPageProps
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
     };
-
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, []);
 
   return (
-    <CaptureLayout>
+    <>
       <Head title={`Obrigado - ${campaign.meta.title}`} />
 
-      <div className="flex flex-col gap-6">
-        {/* Urgency headline */}
-        <div className="rounded-2xl bg-red-50 p-4 text-center shadow-md">
-          <h1 className="text-xl font-extrabold tracking-tight text-red-600 sm:text-2xl">
-            {thank_you.headline}
-          </h1>
-          <p className="mt-1 text-sm text-red-500">
-            {thank_you.subheadline}
-          </p>
-        </div>
+      {/* Red banner at the very top */}
+      <RedBanner />
 
-        {/* Main card */}
-        <div className="rounded-2xl bg-[var(--color-surface)] p-6 shadow-2xl sm:p-8">
-          {/* Success checkmark */}
-          <div className="mb-5 flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-success)]/10">
-              <IconCheck className="h-7 w-7 text-[var(--color-success)]" />
+      {/* Main content — black bg */}
+      <div className="relative flex min-h-screen flex-col bg-black">
+        <div className="relative z-10 flex flex-grow flex-col justify-center px-4 py-12">
+          <div className="mx-auto w-full max-w-2xl space-y-8">
+            {/* Urgency headline */}
+            <div className="space-y-2 text-center md:space-y-4">
+              <h1 className="text-xl font-bold leading-tight text-white sm:text-2xl md:text-4xl lg:text-5xl">
+                <span className="text-red-500">NÃO FECHE</span> ESTA PÁGINA
+                ANTES DE
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>ENTRAR NO{' '}
+                <span className="text-green-400 underline">GRUPO VIP</span> DA
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>MENTORIA GRATUITA
+              </h1>
+              <p className="animate-pulse text-sm font-semibold text-yellow-400 sm:text-lg md:text-xl lg:text-2xl">
+                ESTA PÁGINA NÃO APARECERÁ NOVAMENTE
+              </p>
             </div>
-          </div>
 
-          {/* Progress bar */}
-          <div className="mb-6">
+            {/* Progress bar — red, 90%, with stripes */}
             <ProgressBar
-              targetPercentage={thank_you.progress_percentage}
+              targetPercentage={thank_you.progress_percentage || 90}
               steps={thank_you.steps}
             />
-          </div>
 
-          {/* WhatsApp CTA */}
-          {hasWhatsApp && (
-            <div className="mb-6">
+            {/* Instruction text */}
+            <p className="text-left text-lg text-white md:text-xl">
+              Para receber avisos, materiais e garantir que você não perca nada
+              do nosso evento, clique no botão abaixo e entre para o grupo VIP
+              no WhatsApp:
+            </p>
+
+            {/* WhatsApp CTA */}
+            {hasWhatsApp && (
               <WhatsAppCTA
                 groupLink={thank_you.whatsapp_group_link}
                 buttonText={thank_you.whatsapp_button_text}
                 showSocialProof={thank_you.show_social_proof}
                 socialProofText={thank_you.social_proof_text}
+                autoRedirectSeconds={30}
               />
-            </div>
-          )}
+            )}
 
-          {/* Countdown */}
-          <div className="border-t border-gray-100 pt-4">
+            {/* Countdown timer */}
             <CountdownTimer
               initialMinutes={thank_you.countdown_minutes}
               label="Tempo restante para garantir sua vaga"
@@ -85,23 +93,50 @@ export default function ThankYouIndex({ campaign, thank_you }: ThankYouPageProps
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="text-center text-xs text-gray-400">
-          <Link
-            href="/terms/"
-            className="underline transition-colors hover:text-gray-600"
-          >
-            Termos de Uso
-          </Link>
-          {' | '}
-          <Link
-            href="/privacy/"
-            className="underline transition-colors hover:text-gray-600"
-          >
-            Política de Privacidade
-          </Link>
+        {/* Footer — dark with legal links */}
+        <footer className="mt-auto border-t border-gray-800 bg-black/50 backdrop-blur-sm">
+          <div className="mx-auto max-w-4xl px-4 py-6">
+            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+              {/* Legal links */}
+              <div className="flex items-center gap-6 text-sm">
+                <Link
+                  href="/terms/"
+                  className="text-gray-400 transition-colors hover:text-white"
+                >
+                  Termos de Uso
+                </Link>
+                <span className="text-gray-600">&bull;</span>
+                <Link
+                  href="/privacy/"
+                  className="text-gray-400 transition-colors hover:text-white"
+                >
+                  Política de Privacidade
+                </Link>
+              </div>
+
+              {/* Copyright */}
+              <div className="text-center text-sm text-gray-400 md:text-right">
+                <p>
+                  Todos os direitos reservados &mdash;{' '}
+                  <span className="font-semibold text-white">
+                    Mestre das Casas Baratas no EUA
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* Facebook disclaimer */}
+            <div className="mt-4 border-t border-gray-800 pt-4">
+              <p className="text-center text-xs text-gray-500">
+                Este site não é afiliado ao Facebook ou a qualquer entidade do
+                Facebook. Após sair do Facebook, a responsabilidade é nossa, não
+                deles. Fazemos todos os esforços para indicar claramente e
+                mostrar todas as evidências dos produtos e usar resultados reais.
+              </p>
+            </div>
+          </div>
         </footer>
       </div>
-    </CaptureLayout>
+    </>
   );
 }

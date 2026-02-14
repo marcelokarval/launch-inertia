@@ -10,13 +10,14 @@ interface CountdownTimerProps {
 }
 
 /**
- * Countdown timer with urgency mode.
+ * Countdown timer — dark theme with urgency mode.
  *
- * Shows MM:SS format. Turns red in the last 60 seconds.
- * Calls onExpire when timer reaches zero.
- *
- * Uses a stable interval (no teardown per tick) and a ref
- * for onExpire to avoid dependency churn.
+ * Matches legacy `components/thank-you/countdown-timer.tsx`:
+ * - Dark bg-gray-800 boxes with border-gray-700
+ * - Turns red (bg-red-600 + border-red-400) in last 60s
+ * - Pulsing colon separator
+ * - "OFERTA EXPIRA EM:" label in yellow
+ * - Urgency message in last seconds
  */
 export default function CountdownTimer({
   initialMinutes = 15,
@@ -47,34 +48,75 @@ export default function CountdownTimer({
   const isUrgent = secondsLeft <= 60 && secondsLeft > 0;
   const isExpired = secondsLeft <= 0;
 
-  if (isExpired) {
-    return (
-      <div className="text-center">
-        <p className="text-sm font-medium text-red-600">
-          Tempo esgotado! As vagas podem ter sido preenchidas.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="text-center">
-      {label && (
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
-          {label}
-        </p>
-      )}
-      <div
-        className={`inline-flex items-baseline gap-1 rounded-lg px-4 py-2 font-mono text-2xl font-bold tabular-nums transition-colors ${
-          isUrgent
-            ? 'animate-pulse bg-red-50 text-red-600'
-            : 'bg-gray-100 text-gray-900'
+    <div className="space-y-2 text-center md:space-y-4">
+      {/* Label */}
+      <p
+        className={`text-sm font-semibold md:text-lg ${
+          isUrgent ? 'animate-pulse text-red-400' : 'text-yellow-400'
         }`}
       >
-        <span>{String(minutes).padStart(2, '0')}</span>
-        <span className={isUrgent ? 'animate-pulse' : ''}>:</span>
-        <span>{String(seconds).padStart(2, '0')}</span>
+        {isExpired
+          ? 'TEMPO ESGOTADO!'
+          : label || 'OFERTA EXPIRA EM:'}
+      </p>
+
+      {/* Timer display */}
+      <div className="flex justify-center gap-2 md:gap-4">
+        {/* Minutes */}
+        <div
+          className={`flex h-20 w-20 flex-col items-center justify-center rounded-lg border-2 shadow-xl sm:h-24 sm:w-24 md:h-32 md:w-32 ${
+            isUrgent
+              ? 'border-red-400 bg-red-600'
+              : 'border-gray-700 bg-gray-800'
+          }`}
+        >
+          <span className="text-2xl font-bold text-white sm:text-3xl md:text-5xl">
+            {String(minutes).padStart(2, '0')}
+          </span>
+          <span className="text-[10px] uppercase text-gray-400 sm:text-xs md:text-sm">
+            Minutos
+          </span>
+        </div>
+
+        {/* Separator */}
+        <div className="flex items-center text-2xl font-bold text-white sm:text-4xl md:text-6xl">
+          <span className="animate-blink">:</span>
+        </div>
+
+        {/* Seconds */}
+        <div
+          className={`flex h-20 w-20 flex-col items-center justify-center rounded-lg border-2 shadow-xl sm:h-24 sm:w-24 md:h-32 md:w-32 ${
+            isUrgent
+              ? 'border-red-400 bg-red-600'
+              : 'border-gray-700 bg-gray-800'
+          }`}
+        >
+          <span className="text-2xl font-bold text-white sm:text-3xl md:text-5xl">
+            {String(seconds).padStart(2, '0')}
+          </span>
+          <span className="text-[10px] uppercase text-gray-400 sm:text-xs md:text-sm">
+            Segundos
+          </span>
+        </div>
       </div>
+
+      {/* Urgency message */}
+      {isUrgent && !isExpired && (
+        <p className="animate-pulse font-semibold text-red-400">
+          ÚLTIMOS SEGUNDOS! NÃO PERCA ESTA OPORTUNIDADE!
+        </p>
+      )}
+
+      {/* Expired message */}
+      {isExpired && (
+        <div className="rounded-lg bg-red-600 p-4 text-white">
+          <p className="font-bold">O tempo acabou!</p>
+          <p className="mt-2 text-sm">
+            Clique no botão acima AGORA para não perder sua vaga!
+          </p>
+        </div>
+      )}
     </div>
   );
 }

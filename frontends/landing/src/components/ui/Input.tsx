@@ -29,7 +29,7 @@ export default function Input({
       </label>
       <input
         id={inputId}
-        className={`w-full rounded-lg border bg-white px-4 py-3 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)] ${
+        className={`w-full rounded-lg border bg-[var(--color-surface-alt)] px-4 py-3 text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)] ${
           error
             ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]'
             : 'border-[var(--color-border)]'

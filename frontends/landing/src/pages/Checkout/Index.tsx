@@ -66,8 +66,8 @@ export default function CheckoutIndex({
   if (!checkout_config.line_items.length) {
     return (
       <CheckoutLayout title={campaign_meta?.title}>
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-center">
-          <p className="text-yellow-800">
+        <div className="rounded-lg border border-yellow-600/50 bg-yellow-900/20 p-6 text-center">
+          <p className="text-yellow-400">
             Configuração de checkout não disponível para esta campanha.
           </p>
         </div>
@@ -78,8 +78,8 @@ export default function CheckoutIndex({
   return (
     <CheckoutLayout title={campaign_meta?.title}>
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="mb-6 rounded-lg border border-red-600/50 bg-red-900/20 p-4 text-center">
+          <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
       <div id="checkout">

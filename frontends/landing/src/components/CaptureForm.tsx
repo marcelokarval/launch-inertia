@@ -122,7 +122,7 @@ export default function CaptureForm({
           size="lg"
           isLoading={processing}
           loadingText={formConfig.loading_text}
-          className={`w-full ${formConfig.button_color}`}
+          className={`w-full uppercase tracking-wide ${formConfig.button_gradient || formConfig.button_color} ${formConfig.button_hover_gradient || ''}`}
         >
           {formConfig.button_text}
         </Button>

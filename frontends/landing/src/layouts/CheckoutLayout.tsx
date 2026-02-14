@@ -8,15 +8,15 @@ interface CheckoutLayoutProps {
 /**
  * Layout for checkout/payment pages.
  *
- * Clean, minimal layout focused on payment flow.
- * No distracting navigation or footer.
+ * Dark theme, minimal layout focused on payment flow.
+ * No distracting navigation — just title + content.
  */
 export default function CheckoutLayout({ children, title }: CheckoutLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-[var(--color-surface-dark)]">
       {title && (
-        <header className="border-b border-gray-200 px-4 py-4">
-          <h1 className="text-center text-lg font-semibold text-gray-900">
+        <header className="border-b border-gray-800 px-4 py-4">
+          <h1 className="text-center text-lg font-semibold text-white">
             {title}
           </h1>
         </header>

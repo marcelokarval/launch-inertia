@@ -14,11 +14,11 @@ export default function Terms() {
       version="Version 2.0 — US Subscription Service Terms"
       lastUpdated="February 2026"
     >
-      <div className="space-y-6 text-sm leading-relaxed text-gray-700">
+      <div className="space-y-6 text-sm leading-relaxed text-gray-300">
         {/* NO REFUND NOTICE */}
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <h3 className="mb-1 font-bold text-red-700">IMPORTANT: NO REFUND POLICY</h3>
-          <p className="font-medium text-gray-900">
+        <div className="rounded-lg border border-red-600/50 bg-red-900/20 p-4">
+          <h3 className="mb-2 text-lg font-bold text-red-400">⚠️ IMPORTANT: NO REFUND POLICY</h3>
+          <p className="text-sm font-semibold text-white">
             This is a digital subscription service with immediate access to content.
             NO REFUNDS are available after your subscription is activated.
             You may cancel future billing at any time.
