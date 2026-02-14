@@ -151,6 +151,129 @@ def _handle_capture_post(
     return redirect(thank_you_url)
 
 
+# ── Support page configuration ────────────────────────────────────────
+# Site-wide (not per-campaign). Chatwoot credentials and FAQ data.
+
+_CHATWOOT_CONFIG: dict[str, str] = {
+    "website_token": "7c97wiFhBxyidsXA6tXN5kJc",
+    "base_url": "https://atend.arthuragrelli.com",
+    "locale": "pt_BR",
+    "header_title": "Suporte Arthur Agrelli",
+    "header_subtitle": "Online",
+    "business_hours": (
+        "Suporte disponivel de Segunda a Sexta, das 9h as 18h (Horario de Brasilia)"
+    ),
+}
+
+_FAQ_ITEMS: list[dict[str, str]] = [
+    {
+        "id": "1",
+        "category": "Metodo iREI",
+        "question": "O que e o Metodo iREI?",
+        "answer": (
+            "O Metodo iREI e um sistema completo de investimento imobiliario "
+            "nos EUA que ensina como ganhar +$10 mil/mes repassando casas sem "
+            "tirar dinheiro do seu bolso."
+        ),
+    },
+    {
+        "id": "2",
+        "category": "Metodo iREI",
+        "question": "Preciso ter dinheiro para comecar?",
+        "answer": (
+            "Nao! O diferencial do metodo e justamente permitir que voce "
+            "comece sem investir seu proprio capital. Voce aprende tecnicas "
+            "de wholesale (repasse) onde o lucro vem da intermediacao."
+        ),
+    },
+    {
+        "id": "3",
+        "category": "Metodo iREI",
+        "question": "Preciso morar nos EUA?",
+        "answer": (
+            "Nao necessariamente. O metodo pode ser aplicado remotamente do "
+            "Brasil, mas tambem funciona para quem mora nos EUA. Temos alunos "
+            "em ambas situacoes obtendo resultados."
+        ),
+    },
+    {
+        "id": "4",
+        "category": "Pagamento",
+        "question": "Quais formas de pagamento sao aceitas?",
+        "answer": (
+            "Aceitamos cartao de credito (com parcelamento em ate 12x), PIX, "
+            "boleto bancario e pagamentos internacionais via PayPal e cartoes "
+            "internacionais."
+        ),
+    },
+    {
+        "id": "5",
+        "category": "Pagamento",
+        "question": "Tem garantia de devolucao?",
+        "answer": (
+            "Sim! Oferecemos garantia incondicional de 7 dias. Se por qualquer "
+            "motivo voce nao ficar satisfeito, devolvemos 100%% do seu "
+            "investimento sem perguntas."
+        ),
+    },
+    {
+        "id": "6",
+        "category": "Acesso",
+        "question": "Como acesso o conteudo apos a compra?",
+        "answer": (
+            "Imediatamente apos a confirmacao do pagamento, voce recebe um "
+            "e-mail com suas credenciais de acesso a area de membros. Todo "
+            "conteudo fica disponivel 24/7 na nossa plataforma."
+        ),
+    },
+    {
+        "id": "7",
+        "category": "Acesso",
+        "question": "Por quanto tempo tenho acesso?",
+        "answer": (
+            "Seu acesso e valido por 1 ano completo a partir da inscricao. "
+            "Ao final desse periodo, voce pode renovar com condicoes especiais "
+            "para alunos."
+        ),
+    },
+    {
+        "id": "8",
+        "category": "Suporte",
+        "question": "Como funciona o suporte aos alunos?",
+        "answer": (
+            "Oferecemos suporte atraves deste chat, e-mail e nossa comunidade "
+            "exclusiva. Alem disso, temos mentorias em grupo semanais onde voce "
+            "pode tirar duvidas diretamente com nossa equipe."
+        ),
+    },
+]
+
+_FAQ_CATEGORIES: list[str] = ["Metodo iREI", "Pagamento", "Acesso", "Suporte"]
+
+
+@require_GET
+def support_page(request: HttpRequest) -> HttpResponse:
+    """Support page with live chat and FAQ.
+
+    URL: /suporte/
+
+    Renders the Central de Suporte page with Chatwoot widget and FAQ panel.
+    Config is site-wide (not campaign-specific).
+    """
+    return inertia_render(
+        request,
+        "Support/Index",
+        {
+            "support": {
+                "chatwoot": _CHATWOOT_CONFIG,
+                "faq_items": _FAQ_ITEMS,
+                "faq_categories": _FAQ_CATEGORIES,
+            },
+        },
+        app="landing",
+    )
+
+
 @require_GET
 def terms_page(request: HttpRequest) -> HttpResponse:
     """Terms of Service page.

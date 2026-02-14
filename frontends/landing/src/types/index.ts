@@ -113,6 +113,38 @@ export interface ThankYouPageProps extends SharedProps {
   thank_you: ThankYouConfig;
 }
 
+// ── Support Types ─────────────────────────────────────────────────────
+
+/** FAQ item (question + answer with category) */
+export interface FAQItem {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+}
+
+/** Chatwoot configuration passed from Django */
+export interface ChatwootConfig {
+  website_token: string;
+  base_url: string;
+  locale: string;
+  header_title: string;
+  header_subtitle: string;
+  business_hours: string;
+}
+
+/** Support page configuration */
+export interface SupportConfig {
+  chatwoot: ChatwootConfig;
+  faq_items: FAQItem[];
+  faq_categories: string[];
+}
+
+/** Props for the Support/Index page */
+export interface SupportPageProps extends SharedProps {
+  support: SupportConfig;
+}
+
 // ── Checkout Types ────────────────────────────────────────────────────
 
 /** Line item configuration for Stripe checkout */

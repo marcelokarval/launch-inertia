@@ -62,6 +62,8 @@ urlpatterns = [
         checkout_views.checkout_page,
         name="checkout",
     ),
+    # ── Support page ─────────────────────────────────────────────
+    path("suporte/", views.support_page, name="support"),
     # ── Legal pages ───────────────────────────────────────────────
     path("terms/", views.terms_page, name="terms"),
     path("privacy/", views.privacy_page, name="privacy"),
