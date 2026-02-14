@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+import { IconAlertCircle, IconMessageCircle, IconSpinner } from '@/components/ui/icons';
 import type { ChatwootConfig } from '@/types';
 
 /** Chatwoot SDK global types */
@@ -108,7 +109,7 @@ export default function ChatwootWidget({
 
     script.onerror = () => {
       setWidgetState('error');
-      setErrorMessage('Nao foi possivel carregar o chat');
+      setErrorMessage('Não foi possível carregar o chat');
     };
 
     document.head.appendChild(script);
@@ -116,7 +117,7 @@ export default function ChatwootWidget({
     const timeout = setTimeout(() => {
       setWidgetState((prev) => {
         if (prev === 'loading') {
-          setErrorMessage('Conexao lenta. O chat pode demorar para carregar.');
+          setErrorMessage('Conexão lenta. O chat pode demorar para carregar.');
           return 'offline';
         }
         return prev;
@@ -176,11 +177,7 @@ export default function ChatwootWidget({
         {header('bg-yellow-500', 'Conectando...')}
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3 text-white">
-            {/* Spinner */}
-            <svg className="h-8 w-8 animate-spin text-red-500" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <IconSpinner className="h-8 w-8 text-red-500" />
             <span className="text-gray-400">Carregando chat...</span>
           </div>
         </div>
@@ -195,12 +192,7 @@ export default function ChatwootWidget({
         {header('bg-red-500', 'Offline')}
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="flex flex-col items-center gap-4 text-center">
-            {/* Alert icon */}
-            <svg className="h-12 w-12 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            <IconAlertCircle className="h-12 w-12 text-red-500" />
             <div>
               <p className="mb-1 font-medium text-white">Erro ao conectar</p>
               <p className="text-sm text-gray-400">{errorMessage}</p>
@@ -224,12 +216,9 @@ export default function ChatwootWidget({
         {header('bg-yellow-500', 'Carregando...')}
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="flex flex-col items-center gap-4 text-center">
-            <svg className="h-10 w-10 animate-spin text-yellow-500" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <IconSpinner className="h-10 w-10 text-yellow-500" />
             <div>
-              <p className="mb-1 font-medium text-white">Conexao lenta</p>
+              <p className="mb-1 font-medium text-white">Conexão lenta</p>
               <p className="text-sm text-gray-400">{errorMessage}</p>
             </div>
           </div>
@@ -241,26 +230,14 @@ export default function ChatwootWidget({
   // Ready
   return (
     <div className={baseClasses}>
-      <div className="flex items-center gap-3 border-b border-zinc-700 bg-zinc-800/50 p-4">
-        <div className="relative">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-700">
-            <span className="text-sm font-bold text-white">AA</span>
-          </div>
-          <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-zinc-800 bg-green-500" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-white">{config.header_title}</h3>
-          <p className="text-xs text-green-400">{config.header_subtitle}</p>
-        </div>
+      {header('bg-green-500', config.header_subtitle)}
+      <div className="flex items-center justify-end border-b border-zinc-800 px-4 py-2">
         <button
           onClick={toggleChat}
           className="rounded-lg p-2 transition-colors hover:bg-zinc-700"
           title="Toggle chat"
         >
-          {/* MessageCircle icon */}
-          <svg className="h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-          </svg>
+          <IconMessageCircle className="h-5 w-5 text-gray-400" />
         </button>
       </div>
 

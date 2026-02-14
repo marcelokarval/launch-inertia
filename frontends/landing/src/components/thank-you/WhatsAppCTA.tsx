@@ -5,7 +5,7 @@ interface WhatsAppCTAProps {
   buttonText?: string;
   /** Show social proof counter */
   showSocialProof?: boolean;
-  /** Social proof text (e.g., "247 pessoas entraram nos ultimos 30 minutos") */
+  /** Social proof text (e.g., "247 pessoas entraram nos últimos 30 minutos") */
   socialProofText?: string;
 }
 
@@ -15,11 +15,13 @@ interface WhatsAppCTAProps {
  * The primary conversion action on thank-you pages.
  * Opens WhatsApp group link in a new tab.
  */
-export default function WhatsAppCTA({
+import { memo } from 'react';
+
+export default memo(function WhatsAppCTA({
   groupLink,
   buttonText = 'ENTRAR NO GRUPO VIP',
   showSocialProof = true,
-  socialProofText = '247 pessoas entraram nos ultimos 30 minutos',
+  socialProofText = '247 pessoas entraram nos últimos 30 minutos',
 }: WhatsAppCTAProps) {
   return (
     <div className="flex flex-col items-center gap-3">
@@ -39,9 +41,9 @@ export default function WhatsAppCTA({
 
         <span className="relative">{buttonText}</span>
 
-        {/* GRATIS badge */}
+        {/* GRÁTIS badge */}
         <span className="absolute -right-2 -top-2 rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-bold text-yellow-900 shadow">
-          GRATIS
+          GRÁTIS
         </span>
       </a>
 
@@ -52,4 +54,4 @@ export default function WhatsAppCTA({
       )}
     </div>
   );
-}
+});

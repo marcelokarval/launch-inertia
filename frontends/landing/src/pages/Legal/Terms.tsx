@@ -1,4 +1,5 @@
-import LegalLayout from '../../layouts/LegalLayout';
+import Section from '@/components/legal/Section';
+import LegalLayout from '@/layouts/LegalLayout';
 
 /**
  * Terms of Service page.
@@ -183,11 +184,3 @@ export default function Terms() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h3 className="mb-2 text-base font-semibold text-gray-900">{title}</h3>
-      {children}
-    </section>
-  );
-}

@@ -1,23 +1,23 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   EmbeddedCheckout,
   EmbeddedCheckoutProvider,
 } from '@stripe/react-stripe-js';
 
-import CheckoutLayout from '../../layouts/CheckoutLayout';
-import { csrfFetch } from '../../lib/csrf';
+import CheckoutLayout from '@/layouts/CheckoutLayout';
+import { csrfFetch } from '@/lib/csrf';
 import type {
   CheckoutPageProps,
   CreateSessionResponse,
   CheckoutErrorResponse,
-} from '../../types';
+} from '@/types';
 
 /**
  * Embedded Stripe Checkout page.
  *
  * Receives campaign checkout config from Django props, then:
- * 1. Loads Stripe.js with the publishable key
+ * 1. Loads Stripe.js with the publishable key (memoized)
  * 2. Creates a Checkout Session via Django JSON endpoint
  * 3. Mounts the <EmbeddedCheckout> component with the client secret
  *
@@ -31,7 +31,11 @@ export default function CheckoutIndex({
 }: CheckoutPageProps) {
   const [error, setError] = useState<string | null>(null);
 
-  const stripePromise = loadStripe(stripe_publishable_key);
+  // Memoize to avoid calling loadStripe on every render
+  const stripePromise = useMemo(
+    () => loadStripe(stripe_publishable_key),
+    [stripe_publishable_key],
+  );
 
   const fetchClientSecret = useCallback(async (): Promise<string> => {
     const returnUrl = `${window.location.origin}/checkout/return/?session_id={CHECKOUT_SESSION_ID}`;
@@ -64,7 +68,7 @@ export default function CheckoutIndex({
       <CheckoutLayout title={campaign_meta?.title}>
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-center">
           <p className="text-yellow-800">
-            Checkout configuration is not available for this campaign.
+            Configuração de checkout não disponível para esta campanha.
           </p>
         </div>
       </CheckoutLayout>

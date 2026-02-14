@@ -47,6 +47,8 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks: {
           'vendor-inertia': ['react', 'react-dom', '@inertiajs/react', '@inertiajs/core'],
+          'vendor-stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
+          'vendor-phone': ['react-international-phone'],
         },
       },
     },

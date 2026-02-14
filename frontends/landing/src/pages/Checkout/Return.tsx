@@ -1,11 +1,13 @@
+import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
-import CheckoutLayout from '../../layouts/CheckoutLayout';
-import { csrfFetch } from '../../lib/csrf';
+import { IconCheck, IconClock, IconWarning, IconX } from '@/components/ui/icons';
+import CheckoutLayout from '@/layouts/CheckoutLayout';
+import { csrfFetch } from '@/lib/csrf';
 import type {
   CheckoutReturnProps,
   SessionStatusResponse,
-} from '../../types';
+} from '@/types';
 
 type PageState = 'loading' | 'success' | 'processing' | 'failed' | 'error';
 
@@ -90,9 +92,7 @@ function SuccessState({ email }: { email?: string }) {
   return (
     <div className="text-center">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-        <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
+        <IconCheck className="h-8 w-8 text-green-600" />
       </div>
       <h2 className="mb-2 text-2xl font-bold text-gray-900">
         Pagamento confirmado!
@@ -100,15 +100,15 @@ function SuccessState({ email }: { email?: string }) {
       <p className="mb-6 text-gray-600">
         Obrigado pela sua compra.
         {email && (
-          <> Um e-mail de confirmacao foi enviado para <strong>{email}</strong>.</>
+          <> Um e-mail de confirmação foi enviado para <strong>{email}</strong>.</>
         )}
       </p>
-      <a
+      <Link
         href="/"
         className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
       >
-        Voltar ao inicio
-      </a>
+        Voltar ao início
+      </Link>
     </div>
   );
 }
@@ -117,15 +117,13 @@ function ProcessingState() {
   return (
     <div className="text-center">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
-        <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+        <IconClock className="h-8 w-8 text-yellow-600" />
       </div>
       <h2 className="mb-2 text-2xl font-bold text-gray-900">
         Pagamento em processamento
       </h2>
       <p className="text-gray-600">
-        Seu pagamento esta sendo processado. Voce recebera um e-mail de confirmacao em breve.
+        Seu pagamento está sendo processado. Você receberá um e-mail de confirmação em breve.
       </p>
     </div>
   );
@@ -135,22 +133,20 @@ function FailedState() {
   return (
     <div className="text-center">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-        <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <IconX className="h-8 w-8 text-red-600" />
       </div>
       <h2 className="mb-2 text-2xl font-bold text-gray-900">
-        Pagamento nao concluido
+        Pagamento não concluído
       </h2>
       <p className="mb-6 text-gray-600">
         Houve um problema com seu pagamento. Por favor, tente novamente ou entre em contato com nosso suporte.
       </p>
-      <a
+      <Link
         href="/"
         className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
       >
-        Voltar ao inicio
-      </a>
+        Voltar ao início
+      </Link>
     </div>
   );
 }
@@ -159,20 +155,18 @@ function ErrorState({ message }: { message: string }) {
   return (
     <div className="text-center">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-        <svg className="h-8 w-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
+        <IconWarning className="h-8 w-8 text-gray-500" />
       </div>
       <h2 className="mb-2 text-2xl font-bold text-gray-900">
         Algo deu errado
       </h2>
       <p className="mb-6 text-gray-600">{message}</p>
-      <a
+      <Link
         href="/"
         className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
       >
-        Voltar ao inicio
-      </a>
+        Voltar ao início
+      </Link>
     </div>
   );
 }

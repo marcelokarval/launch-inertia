@@ -1,4 +1,5 @@
-import LegalLayout from '../../layouts/LegalLayout';
+import Section from '@/components/legal/Section';
+import LegalLayout from '@/layouts/LegalLayout';
 
 /**
  * Privacy Policy page.
@@ -199,11 +200,3 @@ export default function Privacy() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h3 className="mb-2 text-base font-semibold text-gray-900">{title}</h3>
-      {children}
-    </section>
-  );
-}

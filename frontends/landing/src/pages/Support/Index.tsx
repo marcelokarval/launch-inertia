@@ -2,14 +2,15 @@ import { Head, Link } from '@inertiajs/react';
 
 import ChatwootWidget from '@/components/support/ChatwootWidget';
 import FAQPanel from '@/components/support/FAQPanel';
+import { IconArrowLeft, IconHelpCircle, IconMessageCircle } from '@/components/ui/icons';
 import type { SupportPageProps } from '@/types';
 
 /**
  * Support/Index — Central de Suporte page.
  *
- * Two-panel layout:
+ * Single responsive layout — components rendered once, CSS handles reflow.
  * - Desktop: FAQ left, Chat right (grid 2-col)
- * - Mobile: Chat on top (60vh), FAQ below (50vh)
+ * - Mobile: stacked (chat first via order, then FAQ)
  *
  * Dark theme to match the Chatwoot widget aesthetic.
  * All config comes from Django props (Chatwoot token, FAQ items, etc.).
@@ -34,11 +35,7 @@ export default function SupportIndex({ support }: SupportPageProps) {
               href="/"
               className="flex items-center gap-2 text-gray-400 transition-colors hover:text-white"
             >
-              {/* ArrowLeft icon */}
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
+              <IconArrowLeft className="h-4 w-4" />
               <span className="text-sm">Voltar</span>
             </Link>
 
@@ -48,74 +45,33 @@ export default function SupportIndex({ support }: SupportPageProps) {
               </span>
             </h1>
 
-            {/* Spacer for centering */}
             <div className="w-20" />
           </div>
         </header>
 
-        {/* Main panels */}
+        {/* Single responsive grid — components rendered once */}
         <main className="flex-1 overflow-hidden p-4 md:p-6">
-          <div className="mx-auto h-full max-w-7xl overflow-hidden">
-            {/* Mobile layout: chat top, FAQ below */}
-            <div className="flex h-full flex-col gap-4 lg:hidden">
-              {/* Chat — mobile */}
-              <div className="h-[60vh] min-h-[400px]">
-                <div className="mb-3 flex items-center gap-2">
-                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                  </svg>
-                  <h2 className="font-semibold text-white">Chat ao Vivo</h2>
-                </div>
-                <ChatwootWidget config={chatwoot} className="h-[calc(100%-32px)]" />
+          <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
+            {/* FAQ panel — order-2 on mobile (below chat), order-1 on desktop (left) */}
+            <div className="flex min-h-[300px] flex-col overflow-hidden order-2 lg:order-1">
+              <div className="mb-3 flex shrink-0 items-center gap-2">
+                <IconHelpCircle className="h-5 w-5 text-amber-500" />
+                <h2 className="font-semibold text-white">Perguntas Frequentes</h2>
               </div>
-
-              {/* FAQ — mobile */}
-              <div className="h-[50vh] min-h-[350px]">
-                <div className="mb-3 flex items-center gap-2">
-                  <svg className="h-5 w-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  <h2 className="font-semibold text-white">Perguntas Frequentes</h2>
-                </div>
-                <FAQPanel
-                  items={faq_items}
-                  categories={faq_categories}
-                  className="h-[calc(100%-32px)]"
-                />
-              </div>
+              <FAQPanel
+                items={faq_items}
+                categories={faq_categories}
+                className="flex-1 overflow-hidden"
+              />
             </div>
 
-            {/* Desktop layout: FAQ left, Chat right */}
-            <div className="hidden h-full gap-6 overflow-hidden lg:grid lg:grid-cols-2">
-              {/* FAQ — desktop (left) */}
-              <div className="flex flex-col overflow-hidden">
-                <div className="mb-3 flex shrink-0 items-center gap-2">
-                  <svg className="h-5 w-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  <h2 className="font-semibold text-white">Perguntas Frequentes</h2>
-                </div>
-                <FAQPanel
-                  items={faq_items}
-                  categories={faq_categories}
-                  className="flex-1 overflow-hidden"
-                />
+            {/* Chat panel — order-1 on mobile (above FAQ), order-2 on desktop (right) */}
+            <div className="flex min-h-[350px] flex-col overflow-hidden order-1 lg:order-2">
+              <div className="mb-3 flex shrink-0 items-center gap-2">
+                <IconMessageCircle className="h-5 w-5 text-red-500" />
+                <h2 className="font-semibold text-white">Chat ao Vivo</h2>
               </div>
-
-              {/* Chat — desktop (right) */}
-              <div className="flex flex-col overflow-hidden">
-                <div className="mb-3 flex shrink-0 items-center gap-2">
-                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                  </svg>
-                  <h2 className="font-semibold text-white">Chat ao Vivo</h2>
-                </div>
-                <ChatwootWidget config={chatwoot} className="flex-1 overflow-hidden" />
-              </div>
+              <ChatwootWidget config={chatwoot} className="flex-1 overflow-hidden" />
             </div>
           </div>
         </main>

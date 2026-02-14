@@ -56,11 +56,16 @@ export default function CaptureForm({
       'utm_id',
     ] as const;
 
+    const utmValues: Record<string, string> = {};
     for (const field of utmFields) {
       const value = params.get(field);
       if (value) {
-        setData(field, value);
+        utmValues[field] = value;
       }
+    }
+
+    if (Object.keys(utmValues).length > 0) {
+      setData((prev) => ({ ...prev, ...utmValues }));
     }
   }, [setData]);
 

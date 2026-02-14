@@ -1,6 +1,7 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useEffect } from 'react';
 
+import { IconCheck } from '@/components/ui/icons';
 import CountdownTimer from '@/components/thank-you/CountdownTimer';
 import ProgressBar from '@/components/thank-you/ProgressBar';
 import WhatsAppCTA from '@/components/thank-you/WhatsAppCTA';
@@ -51,19 +52,7 @@ export default function ThankYouIndex({ campaign, thank_you }: ThankYouPageProps
           {/* Success checkmark */}
           <div className="mb-5 flex justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-success)]/10">
-              <svg
-                className="h-7 w-7 text-[var(--color-success)]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+              <IconCheck className="h-7 w-7 text-[var(--color-success)]" />
             </div>
           </div>
 
@@ -98,19 +87,19 @@ export default function ThankYouIndex({ campaign, thank_you }: ThankYouPageProps
 
         {/* Footer */}
         <footer className="text-center text-xs text-gray-400">
-          <a
+          <Link
             href="/terms/"
             className="underline transition-colors hover:text-gray-600"
           >
             Termos de Uso
-          </a>
+          </Link>
           {' | '}
-          <a
+          <Link
             href="/privacy/"
             className="underline transition-colors hover:text-gray-600"
           >
-            Politica de Privacidade
-          </a>
+            Política de Privacidade
+          </Link>
         </footer>
       </div>
     </CaptureLayout>

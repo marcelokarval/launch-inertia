@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface CountdownTimerProps {
   /** Total countdown duration in minutes */
@@ -14,6 +14,9 @@ interface CountdownTimerProps {
  *
  * Shows MM:SS format. Turns red in the last 60 seconds.
  * Calls onExpire when timer reaches zero.
+ *
+ * Uses a stable interval (no teardown per tick) and a ref
+ * for onExpire to avoid dependency churn.
  */
 export default function CountdownTimer({
   initialMinutes = 15,
@@ -21,18 +24,15 @@ export default function CountdownTimer({
   label,
 }: CountdownTimerProps) {
   const [secondsLeft, setSecondsLeft] = useState(initialMinutes * 60);
+  const onExpireRef = useRef(onExpire);
+  onExpireRef.current = onExpire;
 
   useEffect(() => {
-    if (secondsLeft <= 0) {
-      onExpire?.();
-      return;
-    }
-
     const interval = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          onExpire?.();
+          onExpireRef.current?.();
           return 0;
         }
         return prev - 1;
@@ -40,7 +40,7 @@ export default function CountdownTimer({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [secondsLeft, onExpire]);
+  }, []);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;

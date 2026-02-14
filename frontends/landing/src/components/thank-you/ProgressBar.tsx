@@ -23,6 +23,7 @@ export default function ProgressBar({
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    let rafId: number;
     const start = performance.now();
     const animate = (now: number) => {
       const elapsed = now - start;
@@ -32,10 +33,12 @@ export default function ProgressBar({
       setProgress(eased * targetPercentage);
 
       if (pct < 1) {
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
       }
     };
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(rafId);
   }, [targetPercentage, duration]);
 
   return (
