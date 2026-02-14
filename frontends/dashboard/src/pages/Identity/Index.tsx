@@ -152,7 +152,7 @@ function EmptyState() {
       <p className="text-sm text-default-500 mb-4 text-center max-w-sm">
         {t('identities.index.emptyDesc', 'Start by importing your first identity to begin resolution.')}
       </p>
-      <Link href="/identities/create/">
+      <Link href="/app/identities/create/">
         <Button variant="primary">
           <Plus className="w-4 h-4" />
           {t('identities.index.addFirst', 'Import your first identity')}
@@ -248,10 +248,10 @@ function IdentityRow({ identity }: { identity: IdentityListItem }) {
   return (
     <tr
       className="cursor-pointer hover:bg-default-50 transition-colors border-b border-divider last:border-b-0"
-      onClick={() => router.visit(`/identities/${identity.id}/`)}
+      onClick={() => router.visit(`/app/identities/${identity.id}/`)}
       role="link"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') router.visit(`/identities/${identity.id}/`) }}
+      onKeyDown={(e) => { if (e.key === 'Enter') router.visit(`/app/identities/${identity.id}/`) }}
     >
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
@@ -326,12 +326,12 @@ export default function IdentitiesIndex({ identities, filters, pagination }: Pro
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    router.get('/identities/', { q: search }, { preserveState: true })
+    router.get('/app/identities/', { q: search }, { preserveState: true })
   }
 
   const handlePageChange = (page: number) => {
     router.get(
-      '/identities/',
+      '/app/identities/',
       { page, ...(search ? { q: search } : {}) },
       { preserveState: true },
     )
@@ -351,7 +351,7 @@ export default function IdentitiesIndex({ identities, filters, pagination }: Pro
             {t('identities.index.totalCount', { count: pagination.total, defaultValue: '{{count}} identities' })}
           </p>
         </div>
-        <Link href="/identities/create/">
+        <Link href="/app/identities/create/">
           <Button variant="primary">
             <Plus className="w-4 h-4" />
             {t('identities.index.importIdentity', 'Import Identity')}

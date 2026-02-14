@@ -26,7 +26,7 @@ export default function Security({ user: _user, errors = {} }: Props) {
       new_password: '' as string,
       new_password_confirmation: '' as string,
     },
-    url: '/settings/security/',
+    url: '/app/settings/security/',
     method: 'post',
     onSuccess: () => {
       reset()

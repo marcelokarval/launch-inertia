@@ -32,14 +32,14 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
   }
 
   const markAsRead = (id: string) => {
-    router.post(`/notifications/${id}/read/`, {}, {
+    router.post(`/app/notifications/${id}/read/`, {}, {
       preserveScroll: true,
       forceFormData: true,
     })
   }
 
   const markAllRead = () => {
-    router.post('/notifications/mark-all-read/', {}, {
+    router.post('/app/notifications/mark-all-read/', {}, {
       preserveScroll: true,
       forceFormData: true,
     })
@@ -76,7 +76,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
 
         {/* Filters */}
         <div className="flex gap-2 mb-6">
-          <Link href="/notifications/">
+          <Link href="/app/notifications/">
             <Chip
               color={filter === 'all' ? 'accent' : 'default'}
               variant={filter === 'all' ? 'soft' : 'soft'}
@@ -85,7 +85,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
               {t('notifications.filters.all')}
             </Chip>
           </Link>
-          <Link href="/notifications/?status=unread">
+          <Link href="/app/notifications/?status=unread">
             <Chip
               color={filter === 'unread' ? 'accent' : 'default'}
               variant="soft"
@@ -94,7 +94,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
               {t('notifications.filters.unread')}
             </Chip>
           </Link>
-          <Link href="/notifications/?status=read">
+          <Link href="/app/notifications/?status=read">
             <Chip
               color={filter === 'read' ? 'accent' : 'default'}
               variant="soft"
@@ -196,7 +196,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
               size="sm"
               isIconOnly
               isDisabled={pagination.page <= 1}
-              onPress={() => router.get('/notifications/', {
+              onPress={() => router.get('/app/notifications/', {
                 page: pagination.page - 1,
                 ...(filter !== 'all' ? { status: filter } : {}),
               }, { preserveState: true })}
@@ -210,7 +210,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
                 variant={page === pagination.page ? 'primary' : 'ghost'}
                 size="sm"
                 className="min-w-8"
-                onPress={() => router.get('/notifications/', {
+                onPress={() => router.get('/app/notifications/', {
                   page,
                   ...(filter !== 'all' ? { status: filter } : {}),
                 }, { preserveState: true })}
@@ -223,7 +223,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
               size="sm"
               isIconOnly
               isDisabled={pagination.page >= pagination.pages}
-              onPress={() => router.get('/notifications/', {
+              onPress={() => router.get('/app/notifications/', {
                 page: pagination.page + 1,
                 ...(filter !== 'all' ? { status: filter } : {}),
               }, { preserveState: true })}

@@ -18,7 +18,7 @@ export default function IdentityDelete({ identity }: Props) {
   const { t } = useTranslation()
   const { submit, isSubmitting } = useAppForm({
     initialData: {},
-    url: `/identities/${identity.id}/delete/`,
+    url: `/app/identities/${identity.id}/delete/`,
     method: 'post',
   })
 
@@ -30,7 +30,7 @@ export default function IdentityDelete({ identity }: Props) {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link
-            href={`/identities/${identity.id}/`}
+            href={`/app/identities/${identity.id}/`}
             className="p-2 rounded-lg hover:bg-default-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-default-500" />
@@ -66,7 +66,7 @@ export default function IdentityDelete({ identity }: Props) {
             </p>
 
             <Form onSubmit={submit} className="flex items-center justify-center gap-4">
-              <Link href={`/identities/${identity.id}/`}>
+              <Link href={`/app/identities/${identity.id}/`}>
                 <Button type="button" variant="secondary">
                   {t('identities.delete.cancel', 'Cancel')}
                 </Button>

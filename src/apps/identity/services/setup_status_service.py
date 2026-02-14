@@ -53,7 +53,7 @@ class SetupStatus:
     completed_stages: list[SetupStage] = field(default_factory=list)
     progress_percentage: int = 0
     is_complete: bool = False
-    redirect_url: str = "/onboarding/"
+    redirect_url: str = "/onboarding/"  # Default; stages override with specific URLs
 
     def to_dict(self) -> dict:
         """Serialize for Inertia props."""
@@ -161,7 +161,7 @@ class SetupStatusService:
             completed_stages=completed_stages,
             progress_percentage=100,
             is_complete=True,
-            redirect_url="/dashboard/",
+            redirect_url="/app/",
         )
 
     @staticmethod

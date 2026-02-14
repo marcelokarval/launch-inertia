@@ -225,7 +225,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 LOGIN_URL = "/auth/login/"
-LOGIN_REDIRECT_URL = "/dashboard/"
+LOGIN_REDIRECT_URL = "/app/"
 LOGOUT_REDIRECT_URL = "/auth/login/"
 
 # =============================================================================
@@ -497,9 +497,9 @@ SECURITY_HEADERS_ENABLED = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8844",
     "http://127.0.0.1:8844",
-    "http://localhost:3344",   # Dashboard Vite
+    "http://localhost:3344",  # Dashboard Vite
     "http://127.0.0.1:3344",
-    "http://localhost:3345",   # Landing Vite
+    "http://localhost:3345",  # Landing Vite
     "http://127.0.0.1:3345",
 ]
 CORS_ALLOW_CREDENTIALS = True

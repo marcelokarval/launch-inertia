@@ -54,8 +54,8 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { key: 'dashboard', href: '/dashboard/', icon: Home },
-  { key: 'identities', href: '/identities/', icon: Users },
+  { key: 'dashboard', href: '/app/', icon: Home },
+  { key: 'identities', href: '/app/identities/', icon: Users },
   { key: 'campaigns', href: '#', icon: Target, badge: { label: 'Soon', color: 'warning' } },
   { key: 'automations', href: '#', icon: Zap, badge: { label: 'Pro', color: 'accent' } },
   { key: 'schedule', href: '#', icon: Calendar },
@@ -63,14 +63,14 @@ const mainNavItems: NavItem[] = [
 ]
 
 const secondaryNavItems: NavItem[] = [
-  { key: 'billing', href: '/billing/', icon: CreditCard },
-  { key: 'notifications', href: '/notifications/', icon: Bell },
-  { key: 'settings', href: '/settings/', icon: Settings },
+  { key: 'billing', href: '/app/billing/', icon: CreditCard },
+  { key: 'notifications', href: '/app/notifications/', icon: Bell },
+  { key: 'settings', href: '/app/settings/', icon: Settings },
 ]
 
 function isActive(href: string, currentUrl: string): boolean {
   if (href === '#') return false
-  if (href === '/dashboard/') return currentUrl === '/dashboard/' || currentUrl === '/'
+  if (href === '/app/') return currentUrl === '/app/' || currentUrl === '/'
   return currentUrl.startsWith(href)
 }
 
@@ -142,7 +142,7 @@ export default function DashboardLayout({ children, title }: Props) {
 
             {/* Notifications */}
             <Link
-              href="/notifications/"
+              href="/app/notifications/"
               className="relative p-2 rounded-lg text-default-500 hover:text-foreground hover:bg-default-100 transition-colors"
             >
               <Bell className="h-5 w-5" />
@@ -171,7 +171,7 @@ export default function DashboardLayout({ children, title }: Props) {
 function SidebarHeader({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   return (
     <div className="h-16 flex items-center justify-between px-4 border-b border-divider flex-shrink-0">
-      <Link href="/dashboard/" className="flex items-center gap-2.5 overflow-hidden">
+      <Link href="/app/" className="flex items-center gap-2.5 overflow-hidden">
         <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center flex-shrink-0">
           <Rocket className="h-4.5 w-4.5 text-white" />
         </div>
@@ -377,7 +377,7 @@ function UserDropdown({ user }: { user: PageProps['auth']['user'] }) {
       </Dropdown.Trigger>
       <Dropdown.Popover placement="bottom end">
         <Dropdown.Menu>
-          <Dropdown.Item id="profile" onAction={() => router.visit('/settings/profile/')}>
+          <Dropdown.Item id="profile" onAction={() => router.visit('/app/settings/profile/')}>
             <div className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               <span>Profile Settings</span>

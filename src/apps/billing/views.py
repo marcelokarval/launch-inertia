@@ -45,8 +45,8 @@ def checkout(request, price_id: str):
         checkout_url = BillingService.create_checkout_session(
             user=request.user,
             price_id=price_id,
-            success_url=request.build_absolute_uri("/billing/success/"),
-            cancel_url=request.build_absolute_uri("/billing/cancel/"),
+            success_url=request.build_absolute_uri("/app/billing/success/"),
+            cancel_url=request.build_absolute_uri("/app/billing/cancel/"),
         )
         return redirect(checkout_url)
 
@@ -86,7 +86,7 @@ def portal(request):
     try:
         portal_url = BillingService.create_portal_session(
             user=request.user,
-            return_url=request.build_absolute_uri("/billing/"),
+            return_url=request.build_absolute_uri("/app/billing/"),
         )
         return redirect(portal_url)
 

@@ -54,7 +54,7 @@ def on_email_verified_create_notification(sender, user, **kwargs):
             notification_type="success",
             title="Email Verified",
             body="Your email has been verified successfully. Welcome to Launch!",
-            action_url="/dashboard/",
+            action_url="/app/",
         )
     except Exception:
         logger.exception(

@@ -18,7 +18,7 @@ export default function IdentityCreate({ errors = {} }: Props) {
       phone: '',
       display_name: '',
     },
-    url: '/identities/create/',
+    url: '/app/identities/create/',
     method: 'post',
   })
 
@@ -32,7 +32,7 @@ export default function IdentityCreate({ errors = {} }: Props) {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link
-            href="/identities/"
+            href="/app/identities/"
             className="p-2 rounded-lg hover:bg-default-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-default-500" />
@@ -117,7 +117,7 @@ export default function IdentityCreate({ errors = {} }: Props) {
                 >
                   {t('identities.create.submit', 'Import')}
                 </Button>
-                <Link href="/identities/">
+                <Link href="/app/identities/">
                   <Button type="button" variant="secondary">
                     {t('identities.create.cancel', 'Cancel')}
                   </Button>

@@ -1,5 +1,7 @@
 """
 Identity URL configuration.
+
+Split into auth/onboarding (root level) and dashboard (under /app/).
 """
 
 from django.urls import path
@@ -8,8 +10,8 @@ from . import views
 
 app_name = "identity"
 
-urlpatterns = [
-    # Auth pages
+# ── Auth pages (pre-login, NOT under /app/) ──────────────────────
+auth_urlpatterns = [
     path("auth/login/", views.login_view, name="login"),
     path("auth/register/", views.register_view, name="register"),
     path("auth/verify-email/", views.auth_verify_email_view, name="auth-verify-email"),
@@ -20,13 +22,10 @@ urlpatterns = [
         views.reset_password_view,
         name="reset-password",
     ),
-    # Dashboard
-    path("dashboard/", views.dashboard_view, name="dashboard"),
-    # Profile & Settings
-    path("settings/", views.settings_view, name="settings"),
-    path("settings/profile/", views.profile_view, name="profile"),
-    path("settings/security/", views.settings_security_view, name="settings-security"),
-    # Onboarding (Phase 4)
+]
+
+# ── Onboarding pages (pre-dashboard, NOT under /app/) ────────────
+onboarding_urlpatterns = [
     path("onboarding/", views.onboarding_view, name="onboarding"),
     path(
         "onboarding/verify-email/",
@@ -51,7 +50,18 @@ urlpatterns = [
     ),
 ]
 
-# Shortcut for dashboard as home
-urlpatterns += [
-    path("", views.dashboard_view, name="home"),
+# ── Dashboard pages (under /app/ via root urls.py) ───────────────
+dashboard_urlpatterns = [
+    # Dashboard home: /app/
+    path("", views.dashboard_view, name="dashboard"),
+    # Settings: /app/settings/
+    path("settings/", views.settings_view, name="settings"),
+    path("settings/profile/", views.profile_view, name="profile"),
+    path("settings/security/", views.settings_security_view, name="settings-security"),
+    # Delinquent: /app/delinquent/
+    path("delinquent/", views.dashboard_view, name="delinquent"),
 ]
+
+# Combined urlpatterns for backward compatibility with include()
+# Root urls.py should use the specific lists instead.
+urlpatterns = auth_urlpatterns + onboarding_urlpatterns

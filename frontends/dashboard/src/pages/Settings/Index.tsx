@@ -18,25 +18,25 @@ interface SettingsLink {
 
 const settingsLinks: SettingsLink[] = [
   {
-    href: '/settings/profile/',
+    href: '/app/settings/profile/',
     icon: User,
     titleKey: 'settings.index.nav.profile',
     descriptionKey: 'settings.index.nav.profileDesc',
   },
   {
-    href: '/notifications/',
+    href: '/app/notifications/',
     icon: Bell,
     titleKey: 'settings.index.nav.notifications',
     descriptionKey: 'settings.index.nav.notificationsDesc',
   },
   {
-    href: '/billing/',
+    href: '/app/billing/',
     icon: CreditCard,
     titleKey: 'settings.index.nav.billing',
     descriptionKey: 'settings.index.nav.billingDesc',
   },
   {
-    href: '/settings/security/',
+    href: '/app/settings/security/',
     icon: Shield,
     titleKey: 'settings.index.nav.security',
     descriptionKey: 'settings.index.nav.securityDesc',

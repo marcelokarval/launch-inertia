@@ -26,7 +26,7 @@ export default function BillingSuccess() {
               {t('billing.success.description')}
             </p>
 
-            <Link href="/dashboard/">
+            <Link href="/app/">
               <Button variant="primary" fullWidth>
                 {t('billing.success.goToDashboard')}
                 <ArrowRight className="w-4 h-4 ml-2" />

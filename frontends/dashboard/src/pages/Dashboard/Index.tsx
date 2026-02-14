@@ -100,10 +100,10 @@ function QuickActionsCard() {
   const { t } = useTranslation()
 
   const actions = [
-    { href: '/identities/create/', icon: Plus, label: t('dashboard.quickActions.importIdentity', 'Import Identity'), color: 'text-primary' },
+    { href: '/app/identities/create/', icon: Plus, label: t('dashboard.quickActions.importIdentity', 'Import Identity'), color: 'text-primary' },
     { href: '#', icon: Target, label: t('dashboard.quickActions.newCampaign', 'New Campaign'), color: 'text-warning' },
-    { href: '/billing/', icon: CreditCard, label: t('dashboard.quickActions.manageBilling', 'Billing'), color: 'text-success' },
-    { href: '/settings/', icon: Settings, label: t('dashboard.quickActions.viewSettings', 'Settings'), color: 'text-default-500' },
+    { href: '/app/billing/', icon: CreditCard, label: t('dashboard.quickActions.manageBilling', 'Billing'), color: 'text-success' },
+    { href: '/app/settings/', icon: Settings, label: t('dashboard.quickActions.viewSettings', 'Settings'), color: 'text-default-500' },
   ]
 
   return (
@@ -145,7 +145,7 @@ function RecentActivityCard() {
           <h2 className="text-lg font-semibold text-foreground">
             {t('dashboard.recentActivity.title', 'Recent Activity')}
           </h2>
-          <Link href="/notifications/">
+          <Link href="/app/notifications/">
             <Button variant="ghost" size="sm">
               {t('dashboard.recentActivity.viewAll', 'View All')}
             </Button>
@@ -252,7 +252,7 @@ function GettingStartedCard() {
               {t('dashboard.gettingStarted.description', 'Import your first identity to start managing your launch campaigns.')}
             </p>
           </div>
-          <Link href="/identities/create/" className="flex-shrink-0">
+          <Link href="/app/identities/create/" className="flex-shrink-0">
             <Button variant="primary" size="lg">
               <Plus className="h-4 w-4" />
               {t('dashboard.gettingStarted.cta', 'Import First Identity')}

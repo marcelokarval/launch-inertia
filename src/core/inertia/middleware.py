@@ -193,18 +193,9 @@ class _DashboardOnlyMiddleware:
     DASHBOARD_PREFIXES. All other routes are skipped automatically.
     """
 
-    # Only these prefixes trigger guard checks.
-    # Landing pages, admin, static, etc. are always allowed through.
-    DASHBOARD_PREFIXES = (
-        "/app/",
-        # Temporary: existing routes before /app/ migration
-        "/dashboard/",
-        "/identities/",
-        "/billing/",
-        "/notifications/",
-        "/settings/",
-        "/delinquent/",
-    )
+    # Only /app/ prefix triggers guard checks.
+    # Landing pages, admin, static, auth, onboarding are always allowed through.
+    DASHBOARD_PREFIXES = ("/app/",)
 
     def _is_dashboard_route(self, path: str) -> bool:
         """Return True if this path belongs to the dashboard frontend."""
@@ -296,9 +287,9 @@ class DelinquentMiddleware(_DashboardOnlyMiddleware):
     """
 
     ALLOWED_PREFIXES = (
-        "/delinquent/",
+        "/app/delinquent/",
+        "/app/billing/",
         "/auth/logout/",
-        "/billing/",
         "/support/",
         "/api/billing/",
         "/static/",
@@ -330,7 +321,7 @@ class DelinquentMiddleware(_DashboardOnlyMiddleware):
                     return self.get_response(request)
 
                 # Redirect to delinquent page
-                return HttpResponseRedirect("/delinquent/")
+                return HttpResponseRedirect("/app/delinquent/")
         except Exception:
             logger.exception(
                 "DelinquentMiddleware error for user %s - failing open",

@@ -47,7 +47,7 @@ def handle_subscription_deleted(sender, event, **kwargs):
             "Your subscription has been cancelled. "
             "You can resubscribe at any time from the billing page."
         ),
-        action_url="/billing/",
+        action_url="/app/billing/",
     )
 
 
@@ -117,7 +117,11 @@ def _get_user_from_customer(stripe_customer_id: str):
 
 
 def _create_notification(
-    user, notification_type: str, title: str, body: str, action_url: str = "/billing/"
+    user,
+    notification_type: str,
+    title: str,
+    body: str,
+    action_url: str = "/app/billing/",
 ):
     """Create an in-app notification for subscription events."""
     try:

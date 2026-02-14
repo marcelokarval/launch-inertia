@@ -38,7 +38,7 @@ class TestRequireOwnershipDecorator:
 
     def test_owner_can_access(self):
         view = self._make_view()
-        request = self.rf.get(f"/notifications/{self.notification.public_id}/")
+        request = self.rf.get(f"/app/notifications/{self.notification.public_id}/")
         request.user = self.user
 
         response = view(request, public_id=self.notification.public_id)
@@ -47,7 +47,7 @@ class TestRequireOwnershipDecorator:
 
     def test_non_owner_gets_permission_denied(self):
         view = self._make_view()
-        request = self.rf.get(f"/notifications/{self.notification.public_id}/")
+        request = self.rf.get(f"/app/notifications/{self.notification.public_id}/")
         request.user = self.other
         request.META["REMOTE_ADDR"] = "1.2.3.4"
 
@@ -56,7 +56,7 @@ class TestRequireOwnershipDecorator:
 
     def test_nonexistent_object_raises_404(self):
         view = self._make_view()
-        request = self.rf.get("/notifications/ntf_nonexistent/")
+        request = self.rf.get("/app/notifications/ntf_nonexistent/")
         request.user = self.user
 
         with pytest.raises(Http404):
@@ -65,7 +65,7 @@ class TestRequireOwnershipDecorator:
     def test_staff_can_access_others_notification(self):
         staff = UserFactory(email="staffaccess@test.com", staff=True)
         view = self._make_view()
-        request = self.rf.get(f"/notifications/{self.notification.public_id}/")
+        request = self.rf.get(f"/app/notifications/{self.notification.public_id}/")
         request.user = staff
 
         response = view(request, public_id=self.notification.public_id)
@@ -74,7 +74,7 @@ class TestRequireOwnershipDecorator:
     def test_superuser_can_access_others_notification(self):
         admin = UserFactory(email="superaccess@test.com", superuser=True)
         view = self._make_view()
-        request = self.rf.get(f"/notifications/{self.notification.public_id}/")
+        request = self.rf.get(f"/app/notifications/{self.notification.public_id}/")
         request.user = admin
 
         response = view(request, public_id=self.notification.public_id)
@@ -92,7 +92,7 @@ class TestRequireOwnershipDecorator:
         def view(request, public_id):
             return MagicMock(status_code=200)
 
-        request = self.rf.get(f"/notifications/{self.notification.public_id}/")
+        request = self.rf.get(f"/app/notifications/{self.notification.public_id}/")
         request.user = staff
         request.META["REMOTE_ADDR"] = "1.2.3.4"
 
@@ -101,7 +101,7 @@ class TestRequireOwnershipDecorator:
 
     def test_verified_object_attached_to_request(self):
         view = self._make_view()
-        request = self.rf.get(f"/notifications/{self.notification.public_id}/")
+        request = self.rf.get(f"/app/notifications/{self.notification.public_id}/")
         request.user = self.user
 
         view(request, public_id=self.notification.public_id)

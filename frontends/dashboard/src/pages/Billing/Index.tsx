@@ -26,7 +26,7 @@ export default function BillingIndex({ subscription, invoices }: Props) {
   }
 
   const openPortal = () => {
-    router.post('/billing/portal/', {}, { forceFormData: true })
+    router.post('/app/billing/portal/', {}, { forceFormData: true })
   }
 
   return (

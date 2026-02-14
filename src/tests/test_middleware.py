@@ -26,14 +26,14 @@ class TestSetupStatusMiddleware:
         self.middleware = SetupStatusMiddleware(self.get_response)
 
     def test_anonymous_user_passes_through(self, db):
-        request = self.rf.get("/dashboard/")
+        request = self.rf.get("/app/")
         request.user = AnonymousUser()
         self.middleware(request)
         self.get_response.assert_called_once_with(request)
 
     def test_staff_user_passes_through(self, db):
         user = UserFactory(email="staff@test.com", staff=True, incomplete_setup=True)
-        request = self.rf.get("/dashboard/")
+        request = self.rf.get("/app/")
         request.user = user
         self.middleware(request)
         self.get_response.assert_called_once_with(request)
@@ -51,10 +51,10 @@ class TestSetupStatusMiddleware:
         user = UserFactory(email="complete@test.com", setup_status="complete")
         mock_status = MagicMock()
         mock_status.is_complete = True
-        mock_status.redirect_url = "/dashboard/"
+        mock_status.redirect_url = "/app/"
         mock_service_cls.get_setup_status.return_value = mock_status
 
-        request = self.rf.get("/dashboard/")
+        request = self.rf.get("/app/")
         request.user = user
         self.middleware(request)
         self.get_response.assert_called_once_with(request)
@@ -67,7 +67,7 @@ class TestSetupStatusMiddleware:
         mock_status.redirect_url = "/onboarding/verify-email/"
         mock_service_cls.get_setup_status.return_value = mock_status
 
-        request = self.rf.get("/dashboard/")
+        request = self.rf.get("/app/")
         request.user = user
 
         response = self.middleware(request)
@@ -85,14 +85,14 @@ class TestDelinquentMiddleware:
         self.middleware = DelinquentMiddleware(self.get_response)
 
     def test_anonymous_user_passes_through(self, db):
-        request = self.rf.get("/dashboard/")
+        request = self.rf.get("/app/")
         request.user = AnonymousUser()
         self.middleware(request)
         self.get_response.assert_called_once_with(request)
 
     def test_non_delinquent_user_passes(self, db):
         user = UserFactory(email="good@test.com")
-        request = self.rf.get("/dashboard/")
+        request = self.rf.get("/app/")
         request.user = user
         self.middleware(request)
         self.get_response.assert_called_once_with(request)
@@ -100,7 +100,7 @@ class TestDelinquentMiddleware:
     def test_delinquent_user_redirected(self, db):
         user = UserFactory(email="deli@test.com")
 
-        request = self.rf.get("/dashboard/")
+        request = self.rf.get("/app/")
         request.user = user
 
         with patch.object(
@@ -108,12 +108,12 @@ class TestDelinquentMiddleware:
         ):
             response = self.middleware(request)
         assert response.status_code == 302
-        assert response.url == "/delinquent/"
+        assert response.url == "/app/delinquent/"
 
     def test_delinquent_user_can_access_billing(self, db):
         user = UserFactory(email="deli2@test.com")
 
-        request = self.rf.get("/billing/")
+        request = self.rf.get("/app/billing/")
         request.user = user
 
         with patch.object(

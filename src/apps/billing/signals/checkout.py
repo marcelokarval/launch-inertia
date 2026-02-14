@@ -117,7 +117,7 @@ def _create_payment_notification(user, title: str, body: str):
             notification_type="success",
             title=title,
             body=body,
-            action_url="/billing/",
+            action_url="/app/billing/",
         )
     except Exception:
         logger.exception(

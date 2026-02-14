@@ -1,6 +1,7 @@
 """
 Inertia.js helper functions for Django views.
 """
+
 from typing import Any
 
 from django.conf import settings
@@ -63,8 +64,8 @@ def flash(request: HttpRequest, message: str, level: str = "info") -> None:
         level: Message level (success, error, warning, info)
 
     Usage:
-        flash(request, "Contact created successfully!", "success")
-        return redirect("contacts:index")
+        flash(request, "Identity created successfully!", "success")
+        return redirect("identities:index")
     """
     level_map = {
         "success": messages.SUCCESS,

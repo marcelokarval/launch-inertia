@@ -548,7 +548,7 @@ export default function IdentityShow({ identity }: Props) {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link
-            href="/identities/"
+            href="/app/identities/"
             className="p-2 rounded-lg hover:bg-default-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-default-500" />
@@ -565,13 +565,13 @@ export default function IdentityShow({ identity }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/identities/${identity.id}/edit/`}>
+          <Link href={`/app/identities/${identity.id}/edit/`}>
             <Button variant="primary">
               <Edit className="w-4 h-4" />
               {t('identities.show.edit', 'Edit')}
             </Button>
           </Link>
-          <Link href={`/identities/${identity.id}/delete/`}>
+          <Link href={`/app/identities/${identity.id}/delete/`}>
             <Button variant="danger">
               <Trash2 className="w-4 h-4" />
               {t('identities.show.delete', 'Delete')}

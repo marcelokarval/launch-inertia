@@ -83,7 +83,7 @@ def handle_invoice_payment_failed(sender, event, **kwargs):
             "We were unable to process your payment. "
             "Please update your billing information to avoid service interruption."
         ),
-        action_url="/billing/",
+        action_url="/app/billing/",
     )
 
 
@@ -105,7 +105,11 @@ def _get_user_from_customer(stripe_customer_id: str):
 
 
 def _create_notification(
-    user, notification_type: str, title: str, body: str, action_url: str = "/billing/"
+    user,
+    notification_type: str,
+    title: str,
+    body: str,
+    action_url: str = "/app/billing/",
 ):
     """Create an in-app notification for billing events."""
     try:

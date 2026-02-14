@@ -37,7 +37,7 @@ export default function Profile({ user, profile, errors = {} }: ProfileProps) {
       state: profile?.address?.state || '',
       city: profile?.address?.city || '',
     },
-    url: '/settings/profile/',
+    url: '/app/settings/profile/',
     method: 'post',
   })
 

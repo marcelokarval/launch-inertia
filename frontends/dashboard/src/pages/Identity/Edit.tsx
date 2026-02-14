@@ -23,7 +23,7 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
       display_name: identity.display_name || '',
       operator_notes: identity.operator_notes || '',
     },
-    url: `/identities/${identity.id}/edit/`,
+    url: `/app/identities/${identity.id}/edit/`,
     method: 'post',
   })
 
@@ -35,7 +35,7 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link
-            href={`/identities/${identity.id}/`}
+            href={`/app/identities/${identity.id}/`}
             className="p-2 rounded-lg hover:bg-default-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-default-500" />
@@ -103,7 +103,7 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
                 >
                   {t('identities.edit.submit', 'Save Changes')}
                 </Button>
-                <Link href={`/identities/${identity.id}/`}>
+                <Link href={`/app/identities/${identity.id}/`}>
                   <Button type="button" variant="secondary">
                     {t('identities.edit.cancel', 'Cancel')}
                   </Button>
