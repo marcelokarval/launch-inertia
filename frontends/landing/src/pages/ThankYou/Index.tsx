@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
 
+import LandingFooter from '@/components/LandingFooter';
 import CountdownTimer from '@/components/thank-you/CountdownTimer';
 import ProgressBar from '@/components/thank-you/ProgressBar';
 import RedBanner from '@/components/thank-you/RedBanner';
@@ -93,49 +94,8 @@ export default function ThankYouIndex({ campaign, thank_you }: ThankYouPageProps
           </div>
         </div>
 
-        {/* Footer — dark with legal links */}
-        <footer className="mt-auto border-t border-gray-800 bg-black/50 backdrop-blur-sm">
-          <div className="mx-auto max-w-4xl px-4 py-6">
-            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-              {/* Legal links */}
-              <div className="flex items-center gap-6 text-sm">
-                <Link
-                  href="/terms/"
-                  className="text-gray-400 transition-colors hover:text-white"
-                >
-                  Termos de Uso
-                </Link>
-                <span className="text-gray-600">&bull;</span>
-                <Link
-                  href="/privacy/"
-                  className="text-gray-400 transition-colors hover:text-white"
-                >
-                  Política de Privacidade
-                </Link>
-              </div>
-
-              {/* Copyright */}
-              <div className="text-center text-sm text-gray-400 md:text-right">
-                <p>
-                  Todos os direitos reservados &mdash;{' '}
-                  <span className="font-semibold text-white">
-                    Mestre das Casas Baratas no EUA
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            {/* Facebook disclaimer */}
-            <div className="mt-4 border-t border-gray-800 pt-4">
-              <p className="text-center text-xs text-gray-500">
-                Este site não é afiliado ao Facebook ou a qualquer entidade do
-                Facebook. Após sair do Facebook, a responsabilidade é nossa, não
-                deles. Fazemos todos os esforços para indicar claramente e
-                mostrar todas as evidências dos produtos e usar resultados reais.
-              </p>
-            </div>
-          </div>
-        </footer>
+        {/* Footer — dark with legal modals */}
+        <LandingFooter />
       </div>
     </>
   );
