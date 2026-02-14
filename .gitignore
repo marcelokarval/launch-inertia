@@ -63,6 +63,11 @@ yarn-error.log*
 # Build outputs
 frontend/dist/
 static/dist/
+static/dashboard/
+static/landing/
+
+# Legacy reference (Next.js landing pages — consultation only, not part of this repo)
+frontend-landing-pages/
 
 # Coverage
 htmlcov/

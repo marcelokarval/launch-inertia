@@ -6,9 +6,10 @@ All settings flow through flags for consistency.
 """
 
 import os
+import socket
 from pathlib import Path
 
-from config.environment import load_environment
+from config.environment import is_development, load_environment
 from config.settings.flags import flags
 
 # =============================================================================
@@ -250,28 +251,69 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # =============================================================================
-# DJANGO VITE CONFIGURATION
+# DJANGO VITE CONFIGURATION (multi-app)
 # =============================================================================
 
+_VITE_DEV_HOST = "localhost"
+
+
+def _detect_vite_dev_mode(port: int) -> bool:
+    """Auto-detect if a Vite dev server is running on the given port.
+
+    Priority:
+    1. Explicit DJANGO_VITE_DEV_MODE env var (overrides auto-detection)
+    2. Non-dev environments (production/staging) -> always False
+    3. TCP socket check to Vite dev server (<100ms timeout)
+    """
+    explicit = os.getenv("DJANGO_VITE_DEV_MODE", "").lower()
+    if explicit in ("true", "1", "yes"):
+        return True
+    if explicit in ("false", "0", "no"):
+        return False
+    if not is_development():
+        return False
+    try:
+        with socket.create_connection((_VITE_DEV_HOST, port), timeout=0.1):
+            return True
+    except (ConnectionRefusedError, OSError, TimeoutError):
+        return False
+
+
 DJANGO_VITE = {
-    "default": {
-        "dev_mode": flags.vite_dev_mode,
+    "dashboard": {
+        "dev_mode": _detect_vite_dev_mode(port=3344),
         "dev_server_protocol": "http",
-        "dev_server_host": "localhost",
+        "dev_server_host": _VITE_DEV_HOST,
         "dev_server_port": 3344,
-        "manifest_path": SRC_DIR / "static" / "dist" / ".vite" / "manifest.json",
-        "static_url_prefix": "",
-    }
+        "static_url_prefix": "dashboard",
+        "manifest_path": SRC_DIR / "static" / "dashboard" / ".vite" / "manifest.json",
+    },
+    "landing": {
+        "dev_mode": _detect_vite_dev_mode(port=3345),
+        "dev_server_protocol": "http",
+        "dev_server_host": _VITE_DEV_HOST,
+        "dev_server_port": 3345,
+        "static_url_prefix": "landing",
+        "manifest_path": SRC_DIR / "static" / "landing" / ".vite" / "manifest.json",
+    },
 }
 
 # =============================================================================
 # INERTIA.JS CONFIGURATION
 # =============================================================================
 
-INERTIA_LAYOUT = "base.html"
+# Default layout used by dashboard views.
+# Landing views must pass template_name="landing.html" explicitly.
+INERTIA_LAYOUT = "dashboard.html"
 INERTIA_SSR_ENABLED = False
 INERTIA_SSR_URL = "http://localhost:13714"
 INERTIA_VERSION = "1.0"
+
+# Layout map for the inertia_render helper
+INERTIA_LAYOUTS = {
+    "dashboard": "dashboard.html",
+    "landing": "landing.html",
+}
 
 # =============================================================================
 # CSRF CONFIGURATION
@@ -455,8 +497,10 @@ SECURITY_HEADERS_ENABLED = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8844",
     "http://127.0.0.1:8844",
-    "http://localhost:3344",
+    "http://localhost:3344",   # Dashboard Vite
     "http://127.0.0.1:3344",
+    "http://localhost:3345",   # Landing Vite
+    "http://127.0.0.1:3345",
 ]
 CORS_ALLOW_CREDENTIALS = True
 

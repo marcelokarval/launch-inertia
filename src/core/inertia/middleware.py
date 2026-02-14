@@ -181,18 +181,46 @@ class InertiaShareMiddleware:
         }
 
 
-class SetupStatusMiddleware:
+class _DashboardOnlyMiddleware:
+    """Base class for middleware that only applies to dashboard routes.
+
+    Landing pages (public routes) are never subject to dashboard guards
+    like onboarding or billing checks. This base class provides the
+    path-matching logic shared by SetupStatusMiddleware and
+    DelinquentMiddleware.
+
+    A route is considered a dashboard route if it starts with one of
+    DASHBOARD_PREFIXES. All other routes are skipped automatically.
+    """
+
+    # Only these prefixes trigger guard checks.
+    # Landing pages, admin, static, etc. are always allowed through.
+    DASHBOARD_PREFIXES = (
+        "/app/",
+        # Temporary: existing routes before /app/ migration
+        "/dashboard/",
+        "/identities/",
+        "/billing/",
+        "/notifications/",
+        "/settings/",
+        "/delinquent/",
+    )
+
+    def _is_dashboard_route(self, path: str) -> bool:
+        """Return True if this path belongs to the dashboard frontend."""
+        return any(path.startswith(prefix) for prefix in self.DASHBOARD_PREFIXES)
+
+
+class SetupStatusMiddleware(_DashboardOnlyMiddleware):
     """
     Middleware that redirects users with incomplete onboarding to the
     appropriate onboarding step.
 
-    Intercepts ALL requests for authenticated, non-staff users whose
-    setup_status != "complete" and redirects them to the correct
-    onboarding stage.
+    Only applies to dashboard routes (authenticated area). Landing pages
+    and other public routes are never intercepted.
 
-    Exempt paths (these are always allowed through):
-    - /static/, /auth/, /onboarding/, /api/, /accounts/, /admin/,
-      /stripe/, /media/
+    Exempt paths within dashboard scope:
+    - /auth/, /onboarding/, /api/, /accounts/
 
     Fails open: if an exception occurs during status checking, the
     request is allowed through (with error logged).
@@ -220,8 +248,17 @@ class SetupStatusMiddleware:
         if request.user.is_staff:
             return self.get_response(request)
 
-        # Check if path is exempt
         path = request.path
+
+        # Skip non-dashboard routes (landing pages, admin, static, etc.)
+        if not self._is_dashboard_route(path):
+            # Still check explicit exempt prefixes for dashboard-adjacent routes
+            if any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
+                return self.get_response(request)
+            # Non-dashboard, non-exempt: let through (public landing pages)
+            return self.get_response(request)
+
+        # Check if path is exempt within dashboard scope
         if any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
             return self.get_response(request)
 
@@ -245,17 +282,17 @@ class SetupStatusMiddleware:
         return self.get_response(request)
 
 
-class DelinquentMiddleware:
+class DelinquentMiddleware(_DashboardOnlyMiddleware):
     """
     Middleware that restricts access for users with delinquent billing.
 
-    If user.is_delinquent is True, only allows access to a limited set
-    of paths (billing, support, logout, etc.) and redirects everything
-    else to /delinquent/.
+    Only applies to dashboard routes. Landing pages and other public
+    routes are never intercepted — a delinquent user can still view
+    public pages normally.
 
-    Allowed paths for delinquent users:
-    - /delinquent/, /auth/logout/, /billing/, /support/,
-      /api/billing/, /static/, /media/, /admin/
+    If user.is_delinquent is True, only allows access to a limited set
+    of dashboard paths (billing, support, logout, etc.) and redirects
+    everything else to /delinquent/.
     """
 
     ALLOWED_PREFIXES = (
@@ -277,13 +314,17 @@ class DelinquentMiddleware:
         if not request.user.is_authenticated:
             return self.get_response(request)
 
+        path = request.path
+
+        # Skip non-dashboard routes (landing pages are always accessible)
+        if not self._is_dashboard_route(path):
+            return self.get_response(request)
+
         # Check delinquent status
         try:
             is_delinquent = getattr(request.user, "is_delinquent", False)
 
             if is_delinquent:
-                path = request.path
-
                 # Allow access to permitted paths
                 if any(path.startswith(prefix) for prefix in self.ALLOWED_PREFIXES):
                     return self.get_response(request)

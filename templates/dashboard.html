@@ -28,13 +28,13 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
     {# Vite HMR client - only in development #}
-    {% vite_hmr_client %}
+    {% vite_hmr_client app="dashboard" %}
 
     {# React Fast Refresh for HMR - only in development #}
-    {% vite_react_refresh %}
+    {% vite_react_refresh app="dashboard" %}
 
     {# Main entry point - loads JS and CSS #}
-    {% vite_asset "src/main.tsx" %}
+    {% vite_asset "src/main.tsx" app="dashboard" %}
 
     {% block inertia_head %}{% endblock inertia_head %}
 </head>

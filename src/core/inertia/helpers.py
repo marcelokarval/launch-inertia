@@ -3,6 +3,7 @@ Inertia.js helper functions for Django views.
 """
 from typing import Any
 
+from django.conf import settings
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from inertia import render as inertia_base_render
@@ -12,28 +13,44 @@ def inertia_render(
     request: HttpRequest,
     component: str,
     props: dict[str, Any] | None = None,
+    *,
+    app: str = "dashboard",
 ) -> HttpResponse:
     """
-    Render an Inertia response.
-
-    This is a thin wrapper around inertia.render that provides
-    a consistent interface and allows for future enhancements.
+    Render an Inertia response with multi-frontend layout support.
 
     Args:
         request: The HTTP request
         component: The React component name (e.g., "Dashboard/Index")
         props: Props to pass to the component
+        app: Which frontend app to render with ("dashboard" or "landing").
+             Determines the base template used.
 
     Returns:
         HttpResponse: Inertia response
 
     Usage:
+        # Dashboard (default — uses dashboard.html template)
         def index(request):
             return inertia_render(request, "Dashboard/Index", {
                 "stats": get_dashboard_stats(),
             })
+
+        # Landing (uses landing.html template)
+        def capture(request):
+            return inertia_render(request, "Capture/Index", {
+                "campaign": "wh-rc-v1",
+            }, app="landing")
     """
-    return inertia_base_render(request, component, props=props or {})
+    layouts = getattr(settings, "INERTIA_LAYOUTS", {})
+    template_name = layouts.get(app, settings.INERTIA_LAYOUT)
+
+    return inertia_base_render(
+        request,
+        component,
+        props=props or {},
+        template_name=template_name,
+    )
 
 
 def flash(request: HttpRequest, message: str, level: str = "info") -> None:

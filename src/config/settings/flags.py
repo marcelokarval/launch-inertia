@@ -57,8 +57,10 @@ class FeatureFlags:
             return [
                 "http://localhost:8844",
                 "http://127.0.0.1:8844",
-                "http://localhost:3344",
+                "http://localhost:3344",   # Dashboard Vite
                 "http://127.0.0.1:3344",
+                "http://localhost:3345",   # Landing Vite
+                "http://127.0.0.1:3345",
             ]
         return get_list_env("CSRF_TRUSTED_ORIGINS", default=[])
 
@@ -175,10 +177,6 @@ class FeatureFlags:
     # =========================================================================
     # Vite
     # =========================================================================
-
-    @property
-    def vite_dev_mode(self) -> bool:
-        return is_development()
 
     @property
     def vite_dev_server_url(self) -> str:

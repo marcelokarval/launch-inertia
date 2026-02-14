@@ -13,7 +13,7 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
-  base: '/static/',
+  base: '/static/dashboard/',
   server: {
     host: '0.0.0.0',
     port: 3344,
@@ -42,13 +42,13 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../src/static/dist',
+    outDir: '../src/static/dashboard',
     emptyOutDir: true,
     manifest: true,
     rollupOptions: {
       input: resolve(__dirname, 'src/main.tsx'),
       output: {
-        entryFileNames: 'assets/[name].js',
+        entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks: {

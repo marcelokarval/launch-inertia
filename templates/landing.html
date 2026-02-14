@@ -1,0 +1,38 @@
+{% load django_vite %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title inertia>{% block title %}Arthur Agrelli{% endblock %}</title>
+
+    {# Favicon #}
+    {% load static %}
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
+
+    {# Fonts #}
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
+
+    {# Vite HMR client - only in development #}
+    {% vite_hmr_client app="landing" %}
+
+    {# React Fast Refresh for HMR - only in development #}
+    {% vite_react_refresh app="landing" %}
+
+    {# Main entry point - loads JS and CSS #}
+    {% vite_asset "src/main.tsx" app="landing" %}
+
+    {# Analytics — landing pages only #}
+    {% block analytics %}{% endblock analytics %}
+
+    {% block inertia_head %}{% endblock inertia_head %}
+</head>
+<body>
+    {% block inertia %}{% endblock inertia %}
+
+    {# Tracking scripts — landing pages only #}
+    {% block tracking %}{% endblock tracking %}
+</body>
+</html>
