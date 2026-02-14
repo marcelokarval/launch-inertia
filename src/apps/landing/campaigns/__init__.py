@@ -55,19 +55,24 @@ def get_campaign_or_default(slug: str) -> dict[str, Any]:
             "title": "Arthur Agrelli",
             "description": "Inscreva-se agora",
         },
-        "form": {
-            "button_text": "Quero me inscrever!",
-            "button_color": "bg-indigo-600",
-            "loading_text": "Enviando...",
-            "thank_you_url": f"/obrigado/{slug}/",
-        },
         "headline": {
             "parts": [
                 {"text": "Inscreva-se", "type": "normal"},
-                {"text": " agora", "type": "highlight"},
+                {"text": " agora", "type": "highlight", "color": "red"},
             ],
         },
+        "subheadline": None,
+        "background_image": None,
+        "highlight_color": "#FB061A",
         "badges": [],
+        "form": {
+            "button_text": "QUERO ME INSCREVER!",
+            "button_color": "",
+            "button_gradient": "bg-gradient-to-r from-[#0e036b] to-[#fb061a]",
+            "button_hover_gradient": "hover:from-[#fb061a] hover:to-[#0e036b]",
+            "loading_text": "ENVIANDO...",
+            "thank_you_url": f"/obrigado/{slug}/",
+        },
         "trust_badge": {
             "enabled": True,
             "text": "Suas informacoes estao seguras",
@@ -77,8 +82,8 @@ def get_campaign_or_default(slug: str) -> dict[str, Any]:
             "enabled": False,
         },
         "thank_you": {
-            "headline": "Inscricao confirmada!",
-            "subheadline": "Falta apenas um passo para completar.",
+            "headline": "NAO FECHE ESTA PAGINA!",
+            "subheadline": "Falta apenas um passo para garantir sua vaga.",
             "whatsapp_group_link": "",
             "whatsapp_button_text": "ENTRAR NO GRUPO VIP",
             "countdown_minutes": 15,
@@ -89,7 +94,7 @@ def get_campaign_or_default(slug: str) -> dict[str, Any]:
                 {"label": "Confirmacao", "completed": True},
                 {"label": "Grupo VIP", "completed": False},
             ],
-            "progress_percentage": 66,
+            "progress_percentage": 90,
         },
         "n8n": {
             "webhook_url": "",

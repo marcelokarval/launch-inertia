@@ -54,8 +54,12 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
 def _build_campaign_props(
     campaign: dict[str, Any], campaign_slug: str
 ) -> dict[str, Any]:
-    """Build the campaign props dict for the Capture page."""
-    return {
+    """Build the campaign props dict for the Capture page.
+
+    Includes all visual-parity fields (background_image, highlight_color,
+    subheadline, button_gradient) used by the dark-theme landing frontend.
+    """
+    props: dict[str, Any] = {
         "slug": campaign.get("slug", campaign_slug),
         "meta": campaign.get("meta", {}),
         "headline": campaign.get("headline", {}),
@@ -64,6 +68,14 @@ def _build_campaign_props(
         "trust_badge": campaign.get("trust_badge", {}),
         "social_proof": campaign.get("social_proof", {}),
     }
+
+    # Optional visual-parity fields — only include when present
+    for field in ("subheadline", "background_image", "highlight_color"):
+        value = campaign.get(field)
+        if value is not None:
+            props[field] = value
+
+    return props
 
 
 def _render_capture_page(
