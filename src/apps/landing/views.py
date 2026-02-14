@@ -3,6 +3,8 @@ Landing page views.
 
 Capture views handle both GET (render landing page) and POST (process form).
 All landing views use app="landing" for the landing.html Inertia template.
+
+Fallback: non-existent campaign slugs redirect to the default landing page.
 """
 
 import logging
@@ -15,24 +17,23 @@ from django.views.decorators.http import require_GET
 
 from core.inertia.helpers import inertia_render
 
-from apps.landing.campaigns import get_campaign_or_default
+from apps.landing.campaigns import get_campaign, get_campaign_or_default
 from apps.landing.services.capture import CaptureService
 from apps.landing.tasks import send_to_n8n_task
 
 logger = logging.getLogger(__name__)
 
+# Default campaign slug — used as fallback for non-existent slugs.
+DEFAULT_CAMPAIGN_SLUG = "wh-rc-v3"
+
 
 def home(request: HttpRequest) -> HttpResponse:
-    """Landing home page — placeholder for Phase C smoke test."""
-    return inertia_render(
-        request,
-        "Home/Index",
-        {
-            "title": "Arthur Agrelli",
-            "description": "Plataforma de lancamentos digitais. Em breve.",
-        },
-        app="landing",
-    )
+    """Landing home page — redirects to default capture page.
+
+    URL: /
+    Legacy parity: root page redirects to /inscrever-wh-rc-v3/.
+    """
+    return redirect(f"/inscrever-{DEFAULT_CAMPAIGN_SLUG}/")
 
 
 def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
@@ -42,8 +43,17 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
 
     GET: Serves the landing page with campaign config as Inertia props.
     POST: Validates form, resolves identity, forwards to N8N, redirects.
+
+    Fallback: non-existent slugs redirect to /inscrever-wh-rc-v3/.
     """
-    campaign = get_campaign_or_default(campaign_slug)
+    campaign = get_campaign(campaign_slug)
+
+    # Fallback: redirect to default campaign if slug doesn't exist
+    if campaign is None:
+        if campaign_slug != DEFAULT_CAMPAIGN_SLUG:
+            return redirect(f"/inscrever-{DEFAULT_CAMPAIGN_SLUG}/")
+        # Safety: if even the default doesn't exist, use generated defaults
+        campaign = get_campaign_or_default(campaign_slug)
 
     if request.method == "POST":
         return _handle_capture_post(request, campaign, campaign_slug)
@@ -312,8 +322,12 @@ def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
 
     Renders urgency-driven page with WhatsApp CTA, countdown timer,
     and progress bar. Config comes from campaign JSON ``thank_you`` key.
+
+    Fallback: non-existent slugs redirect to home.
     """
-    campaign = get_campaign_or_default(campaign_slug)
+    campaign = get_campaign(campaign_slug)
+    if campaign is None:
+        return redirect("/")
     thank_you_config = campaign.get("thank_you", {})
 
     # Build thank_you props with sensible defaults
@@ -352,3 +366,34 @@ def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
         },
         app="landing",
     )
+
+
+# ── Placeholder routes (legacy parity) ────────────────────────────────
+# These routes exist in the legacy Next.js project and must return a
+# response (not 404) for SEO/link parity. Pages that aren't yet ported
+# to Inertia redirect to the default capture page.
+
+
+@require_GET
+def support_launch_page(request: HttpRequest) -> HttpResponse:
+    """Support page variant for active launches.
+
+    URL: /suporte-launch/
+
+    Legacy: auto-opens Chatwoot with UTM context.
+    Currently: same as /suporte/ (shared support page).
+    """
+    return support_page(request)
+
+
+@require_GET
+def placeholder_redirect(request: HttpRequest) -> HttpResponse:
+    """Redirect placeholder for legacy routes not yet ported.
+
+    Used for: /lembrete-bf/, /recado-importante/, /onboarding/,
+    /agrelliflix/, /agrelliflix-aula-{1..4}/.
+
+    These are complex pages (sales funnels, video platforms,
+    post-purchase flows) that will be implemented in later phases.
+    """
+    return redirect("/")

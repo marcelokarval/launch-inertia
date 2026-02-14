@@ -11,8 +11,12 @@ Route format matches legacy Next.js project exactly:
   /checkout/return/    (post-payment return — new, internal)
   /checkout/*          (Stripe API endpoints — internal)
   /suporte/            (support)
+  /suporte-launch/     (support — launch variant)
   /terms-of-service/   (legal)
   /privacy-policy/     (legal)
+
+Non-existent capture slugs redirect to /inscrever-wh-rc-v3/ (default).
+Non-existent obrigado/checkout slugs redirect to / (home).
 """
 
 from django.urls import path, re_path
@@ -24,6 +28,7 @@ app_name = "landing"
 urlpatterns = [
     # ── Capture pages ─────────────────────────────────────────────
     # Legacy format: /inscrever-wh-rc-v3/, /inscrever-bf-v1/, etc.
+    # Non-existent slugs → redirect to /inscrever-wh-rc-v3/
     re_path(
         r"^inscrever-(?P<campaign_slug>[\w-]+)/$",
         views.capture_page,
@@ -31,6 +36,7 @@ urlpatterns = [
     ),
     # ── Thank-you pages ───────────────────────────────────────────
     # Legacy format: /obrigado-wh-rc-v3/, /obrigado-us/, etc.
+    # Non-existent slugs → redirect to /
     re_path(
         r"^obrigado-(?P<campaign_slug>[\w-]+)/$",
         views.thank_you_page,
@@ -71,16 +77,45 @@ urlpatterns = [
     ),
     # ── Checkout page (Inertia) ───────────────────────────────────
     # Legacy format: /checkout-wh/, /checkout-bf/, /checkout-z10k/
+    # Non-existent slugs → redirect to /
     re_path(
         r"^checkout-(?P<campaign_slug>[\w-]+)/$",
         checkout_views.checkout_page,
         name="checkout",
     ),
-    # ── Support page ──────────────────────────────────────────────
+    # ── Capture aliases (legacy routes without inscrever- prefix) ──
+    # /insc-base/ and /lista-de-espera/ are capture pages in the legacy
+    # that don't follow the inscrever-{slug} pattern.
+    path(
+        "insc-base/",
+        views.capture_page,
+        {"campaign_slug": "insc-base"},
+        name="capture_insc_base",
+    ),
+    path(
+        "lista-de-espera/",
+        views.capture_page,
+        {"campaign_slug": "lista-de-espera"},
+        name="capture_lista_espera",
+    ),
+    # ── Support pages ─────────────────────────────────────────────
     path("suporte/", views.support_page, name="support"),
+    path("suporte-launch/", views.support_launch_page, name="support_launch"),
     # ── Legal pages (legacy format) ───────────────────────────────
     path("terms-of-service/", views.terms_page, name="terms"),
     path("privacy-policy/", views.privacy_page, name="privacy"),
+    # ── Placeholder routes (legacy parity) ────────────────────────
+    # Complex pages not yet ported to Inertia. Redirect to home
+    # so legacy URLs don't 404.
+    path("lembrete-bf/", views.placeholder_redirect, name="lembrete_bf"),
+    path("recado-importante/", views.placeholder_redirect, name="recado_importante"),
+    path("onboarding/", views.placeholder_redirect, name="onboarding"),
+    path("agrelliflix/", views.placeholder_redirect, name="agrelliflix"),
+    path("agrelliflix-aula-1/", views.placeholder_redirect, name="agrelliflix_aula_1"),
+    path("agrelliflix-aula-2/", views.placeholder_redirect, name="agrelliflix_aula_2"),
+    path("agrelliflix-aula-3/", views.placeholder_redirect, name="agrelliflix_aula_3"),
+    path("agrelliflix-aula-4/", views.placeholder_redirect, name="agrelliflix_aula_4"),
     # ── Home page (last — catch-all for root "/") ─────────────────
+    # Legacy: redirects to /inscrever-wh-rc-v3/
     path("", views.home, name="home"),
 ]

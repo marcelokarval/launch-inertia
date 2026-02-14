@@ -363,12 +363,17 @@ class TestCaptureView:
         assert "campaign" in body["props"]
         assert "fingerprint_api_key" in body["props"]
 
-    def test_get_unknown_slug_returns_default(self):
-        """GET with unknown slug should use default campaign config."""
-        response = self._make_get_request(slug="unknown-thing")
-        assert response.status_code == 200
-        body = json.loads(response.content)
-        assert body["props"]["campaign"]["slug"] == "unknown-thing"
+    def test_get_unknown_slug_redirects_to_default(self):
+        """GET with unknown slug should redirect to default campaign."""
+        from apps.landing.views import capture_page
+
+        request = self.rf.get("/inscrever-unknown-thing/")
+        request.session = {}
+        request.data = {}
+
+        response = capture_page(request, "unknown-thing")
+        assert response.status_code == 302
+        assert "/inscrever-wh-rc-v3/" in response.url
 
     def test_post_valid_data_redirects(self):
         """POST with valid data should redirect to thank-you page."""

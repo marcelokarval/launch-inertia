@@ -38,21 +38,26 @@ class TestCheckoutPageView:
     """Tests for GET /checkout-<campaign_slug>/ (Inertia page)."""
 
     def test_renders_checkout_page(self, client, db):
-        """Should return 200 with Inertia props."""
-        response = client.get("/checkout-test-campaign/")
+        """Should return 200 with Inertia props for existing campaign."""
+        response = client.get("/checkout-wh-rc-v3/")
         assert response.status_code == 200
 
     def test_passes_stripe_key(self, client, db):
         """Should include stripe_publishable_key in response."""
-        response = client.get("/checkout-test-campaign/")
+        response = client.get("/checkout-wh-rc-v3/")
         assert response.status_code == 200
         # Inertia returns HTML with embedded JSON props
         content = response.content.decode()
         assert "pk_test_fake" in content
 
+    def test_unknown_slug_redirects_to_home(self, client, db):
+        """Non-existent campaign slug should redirect to home."""
+        response = client.get("/checkout-nonexistent/")
+        assert response.status_code == 302
+
     def test_only_allows_get(self, client, db):
-        """POST should return 405."""
-        response = client.post("/checkout-test-campaign/")
+        """POST should return 405 for existing campaign."""
+        response = client.post("/checkout-wh-rc-v3/")
         assert response.status_code == 405
 
 
@@ -660,6 +665,6 @@ class TestURLOrdering:
         assert response.status_code == 400
 
     def test_slug_still_works(self, client, db):
-        """GET to checkout/<slug>/ should render Inertia page."""
-        response = client.get("/checkout-my-campaign/")
+        """GET to checkout-<slug>/ should render Inertia page for existing campaign."""
+        response = client.get("/checkout-wh-rc-v3/")
         assert response.status_code == 200

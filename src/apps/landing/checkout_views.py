@@ -23,7 +23,7 @@ from apps.billing.services.billing_service import (
     BillingService,
     LineItem,
 )
-from apps.landing.campaigns import get_campaign_or_default
+from apps.landing.campaigns import get_campaign, get_campaign_or_default
 from core.inertia.helpers import inertia_render
 
 logger = logging.getLogger(__name__)
@@ -85,8 +85,14 @@ def checkout_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
 
     Passes campaign checkout config + Stripe publishable key as props
     so the frontend can initialize Stripe.js and create a session.
+
+    Fallback: non-existent slugs redirect to home.
     """
-    campaign = get_campaign_or_default(campaign_slug)
+    campaign = get_campaign(campaign_slug)
+    if campaign is None:
+        from django.shortcuts import redirect
+
+        return redirect("/")
     checkout_config = campaign.get("checkout", {})
 
     props: dict[str, Any] = {
