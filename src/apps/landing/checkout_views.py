@@ -81,7 +81,7 @@ def _error_response(message: str, status: int = 400) -> JsonResponse:
 def checkout_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     """Render the embedded Checkout page.
 
-    URL: /checkout/<campaign_slug>/
+    URL: /checkout-<campaign_slug>/
 
     Passes campaign checkout config + Stripe publishable key as props
     so the frontend can initialize Stripe.js and create a session.

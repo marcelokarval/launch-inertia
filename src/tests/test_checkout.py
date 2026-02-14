@@ -35,16 +35,16 @@ def csrf_client():
 
 
 class TestCheckoutPageView:
-    """Tests for GET /checkout/<campaign_slug>/ (Inertia page)."""
+    """Tests for GET /checkout-<campaign_slug>/ (Inertia page)."""
 
     def test_renders_checkout_page(self, client, db):
         """Should return 200 with Inertia props."""
-        response = client.get("/checkout/test-campaign/")
+        response = client.get("/checkout-test-campaign/")
         assert response.status_code == 200
 
     def test_passes_stripe_key(self, client, db):
         """Should include stripe_publishable_key in response."""
-        response = client.get("/checkout/test-campaign/")
+        response = client.get("/checkout-test-campaign/")
         assert response.status_code == 200
         # Inertia returns HTML with embedded JSON props
         content = response.content.decode()
@@ -52,7 +52,7 @@ class TestCheckoutPageView:
 
     def test_only_allows_get(self, client, db):
         """POST should return 405."""
-        response = client.post("/checkout/test-campaign/")
+        response = client.post("/checkout-test-campaign/")
         assert response.status_code == 405
 
 
@@ -661,5 +661,5 @@ class TestURLOrdering:
 
     def test_slug_still_works(self, client, db):
         """GET to checkout/<slug>/ should render Inertia page."""
-        response = client.get("/checkout/my-campaign/")
+        response = client.get("/checkout-my-campaign/")
         assert response.status_code == 200

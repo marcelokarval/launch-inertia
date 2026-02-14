@@ -71,7 +71,7 @@ def get_campaign_or_default(slug: str) -> dict[str, Any]:
             "button_gradient": "bg-gradient-to-r from-[#0e036b] to-[#fb061a]",
             "button_hover_gradient": "hover:from-[#fb061a] hover:to-[#0e036b]",
             "loading_text": "ENVIANDO...",
-            "thank_you_url": f"/obrigado/{slug}/",
+            "thank_you_url": f"/obrigado-{slug}/",
         },
         "trust_badge": {
             "enabled": True,

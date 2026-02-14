@@ -3,29 +3,42 @@ Landing page URL configuration.
 
 These routes are public (no auth required).
 Mounted at the root "/" in config/urls.py — must be LAST.
+
+Route format matches legacy Next.js project exactly:
+  /inscrever-{slug}/   (capture pages)
+  /obrigado-{slug}/    (thank-you pages)
+  /checkout-{slug}/    (checkout pages)
+  /checkout/return/    (post-payment return — new, internal)
+  /checkout/*          (Stripe API endpoints — internal)
+  /suporte/            (support)
+  /terms-of-service/   (legal)
+  /privacy-policy/     (legal)
 """
 
-from django.urls import path
+from django.urls import path, re_path
 
 from apps.landing import checkout_views, views
 
 app_name = "landing"
 
 urlpatterns = [
-    # Capture pages
-    path(
-        "inscrever/<slug:campaign_slug>/",
+    # ── Capture pages ─────────────────────────────────────────────
+    # Legacy format: /inscrever-wh-rc-v3/, /inscrever-bf-v1/, etc.
+    re_path(
+        r"^inscrever-(?P<campaign_slug>[\w-]+)/$",
         views.capture_page,
         name="capture",
     ),
-    # Thank-you pages (placeholder — full implementation in Phase F)
-    path(
-        "obrigado/<slug:campaign_slug>/",
+    # ── Thank-you pages ───────────────────────────────────────────
+    # Legacy format: /obrigado-wh-rc-v3/, /obrigado-us/, etc.
+    re_path(
+        r"^obrigado-(?P<campaign_slug>[\w-]+)/$",
         views.thank_you_page,
         name="thank_you",
     ),
-    # ── Checkout API endpoints (JSON) ─────────────────────────────
-    # These MUST come before checkout/<slug> to avoid slug capture
+    # ── Checkout API endpoints (JSON, internal) ───────────────────
+    # These use /checkout/ prefix (with slash) — no conflict with
+    # /checkout-{slug}/ (with hyphen) page routes.
     path(
         "checkout/return/",
         checkout_views.checkout_return,
@@ -56,17 +69,18 @@ urlpatterns = [
         checkout_views.session_status,
         name="checkout_session_status",
     ),
-    # ── Checkout page (Inertia — slug capture, must be LAST) ─────
-    path(
-        "checkout/<slug:campaign_slug>/",
+    # ── Checkout page (Inertia) ───────────────────────────────────
+    # Legacy format: /checkout-wh/, /checkout-bf/, /checkout-z10k/
+    re_path(
+        r"^checkout-(?P<campaign_slug>[\w-]+)/$",
         checkout_views.checkout_page,
         name="checkout",
     ),
-    # ── Support page ─────────────────────────────────────────────
+    # ── Support page ──────────────────────────────────────────────
     path("suporte/", views.support_page, name="support"),
-    # ── Legal pages ───────────────────────────────────────────────
-    path("terms/", views.terms_page, name="terms"),
-    path("privacy/", views.privacy_page, name="privacy"),
-    # Home page (last — catch-all for root "/")
+    # ── Legal pages (legacy format) ───────────────────────────────
+    path("terms-of-service/", views.terms_page, name="terms"),
+    path("privacy-policy/", views.privacy_page, name="privacy"),
+    # ── Home page (last — catch-all for root "/") ─────────────────
     path("", views.home, name="home"),
 ]

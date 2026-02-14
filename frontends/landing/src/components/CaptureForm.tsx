@@ -85,7 +85,7 @@ export default function CaptureForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post(`/inscrever/${campaignSlug}/`, {
+    post(`/inscrever-${campaignSlug}/`, {
       forceFormData: true,
     });
   };

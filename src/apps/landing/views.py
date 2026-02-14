@@ -38,7 +38,7 @@ def home(request: HttpRequest) -> HttpResponse:
 def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     """Capture landing page — GET renders form, POST processes lead.
 
-    URL: /inscrever/<campaign_slug>/
+    URL: /inscrever-<campaign_slug>/
 
     GET: Serves the landing page with campaign config as Inertia props.
     POST: Validates form, resolves identity, forwards to N8N, redirects.
@@ -158,7 +158,7 @@ def _handle_capture_post(
 
     # Redirect to thank-you page
     thank_you_url = campaign.get("form", {}).get(
-        "thank_you_url", f"/obrigado/{campaign.get('slug', '')}/"
+        "thank_you_url", f"/obrigado-{campaign.get('slug', '')}/"
     )
     return redirect(thank_you_url)
 
@@ -290,7 +290,7 @@ def support_page(request: HttpRequest) -> HttpResponse:
 def terms_page(request: HttpRequest) -> HttpResponse:
     """Terms of Service page.
 
-    URL: /terms/
+    URL: /terms-of-service/
     """
     return inertia_render(request, "Legal/Terms", {}, app="landing")
 
@@ -299,7 +299,7 @@ def terms_page(request: HttpRequest) -> HttpResponse:
 def privacy_page(request: HttpRequest) -> HttpResponse:
     """Privacy Policy page.
 
-    URL: /privacy/
+    URL: /privacy-policy/
     """
     return inertia_render(request, "Legal/Privacy", {}, app="landing")
 
@@ -308,7 +308,7 @@ def privacy_page(request: HttpRequest) -> HttpResponse:
 def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     """Thank-you page after successful capture.
 
-    URL: /obrigado/<campaign_slug>/
+    URL: /obrigado-<campaign_slug>/
 
     Renders urgency-driven page with WhatsApp CTA, countdown timer,
     and progress bar. Config comes from campaign JSON ``thank_you`` key.

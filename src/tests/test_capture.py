@@ -143,7 +143,7 @@ class TestN8NProxyServicePayload:
                     "form_name": "test form",
                 },
             },
-            "page_url": "https://example.com/inscrever/wh-rc-v3/",
+            "page_url": "https://example.com/inscrever-wh-rc-v3/",
             "referrer": "https://google.com",
         }
         defaults.update(overrides)
@@ -183,7 +183,7 @@ class TestN8NProxyServicePayload:
 
     def test_origin_tracking(self):
         payload = self._build_payload()
-        assert payload["origem_lead_cp"] == "https://example.com/inscrever/wh-rc-v3/"
+        assert payload["origem_lead_cp"] == "https://example.com/inscrever-wh-rc-v3/"
         assert payload["origem_lead_history_1"] == "https://google.com"
 
     def test_versao_page_from_slug(self):
@@ -342,14 +342,14 @@ class TestCaptureView:
     def _make_get_request(self, slug="wh-rc-v3"):
         from apps.landing.views import capture_page
 
-        request = self.rf.get(f"/inscrever/{slug}/")
+        request = self.rf.get(f"/inscrever-{slug}/")
         request.session = {}
         request.META["HTTP_X_INERTIA"] = "true"
         request.data = {}
         return capture_page(request, slug)
 
     def test_get_returns_200(self):
-        """GET /inscrever/<slug>/ should return 200."""
+        """GET /inscrever-<slug>/ should return 200."""
         response = self._make_get_request()
         assert response.status_code == 200
 
@@ -375,7 +375,7 @@ class TestCaptureView:
         from apps.landing.views import capture_page
 
         request = self.rf.post(
-            "/inscrever/wh-rc-v3/",
+            "/inscrever-wh-rc-v3/",
             content_type="application/json",
         )
         request.session = {}
@@ -398,7 +398,7 @@ class TestCaptureView:
                 response = capture_page(request, "wh-rc-v3")
 
                 assert response.status_code == 302
-                assert "/obrigado/wh-rc-v3/" in response.url
+                assert "/obrigado-wh-rc-v3/" in response.url
                 mock_task.delay.assert_called_once()
 
     def test_post_invalid_data_returns_errors(self):
@@ -406,7 +406,7 @@ class TestCaptureView:
         from apps.landing.views import capture_page
 
         request = self.rf.post(
-            "/inscrever/wh-rc-v3/",
+            "/inscrever-wh-rc-v3/",
             content_type="application/json",
         )
         request.session = {}
@@ -426,7 +426,7 @@ class TestCaptureView:
         from apps.landing.views import capture_page
 
         request = self.rf.post(
-            "/inscrever/wh-rc-v3/",
+            "/inscrever-wh-rc-v3/",
             content_type="application/json",
         )
         request.session = {}
@@ -456,7 +456,7 @@ class TestThankYouView:
     def test_get_returns_200(self):
         from apps.landing.views import thank_you_page
 
-        request = self.rf.get("/obrigado/wh-rc-v3/")
+        request = self.rf.get("/obrigado-wh-rc-v3/")
         request.session = {}
         request.META["HTTP_X_INERTIA"] = "true"
         request.data = {}
@@ -467,7 +467,7 @@ class TestThankYouView:
     def test_get_returns_inertia_response(self):
         from apps.landing.views import thank_you_page
 
-        request = self.rf.get("/obrigado/wh-rc-v3/")
+        request = self.rf.get("/obrigado-wh-rc-v3/")
         request.session = {}
         request.META["HTTP_X_INERTIA"] = "true"
         request.data = {}

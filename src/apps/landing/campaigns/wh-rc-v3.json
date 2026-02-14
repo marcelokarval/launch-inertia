@@ -25,7 +25,7 @@
     "button_gradient": "bg-gradient-to-r from-[#0e036b] to-[#fb061a]",
     "button_hover_gradient": "hover:from-[#fb061a] hover:to-[#0e036b]",
     "loading_text": "ENVIANDO...",
-    "thank_you_url": "/obrigado/wh-rc-v3/"
+    "thank_you_url": "/obrigado-wh-rc-v3/"
   },
   "trust_badge": {
     "enabled": true,
