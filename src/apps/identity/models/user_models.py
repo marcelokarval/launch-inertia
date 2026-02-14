@@ -158,11 +158,15 @@ class User(PublicIDMixin, SoftDeleteMixin, MetadataMixin, AbstractUser):
 
     @property
     def is_delinquent(self) -> bool:
+        """Check if user has delinquent billing status.
+
+        Delegates to BillingService which checks djstripe Subscription
+        for 'past_due' or 'unpaid' status. Fails open (returns False)
+        to avoid blocking users on errors.
         """
-        Check if user has delinquent billing status.
-        Returns False for now - will be implemented with billing integration.
-        """
-        return False
+        from apps.billing.services.billing_service import BillingService
+
+        return BillingService.is_user_delinquent(self)
 
     def get_full_name(self):
         """Return first_name + last_name."""

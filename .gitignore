@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!frontends/*/src/lib/
 lib64/
 parts/
 sdist/
@@ -67,6 +68,8 @@ frontends/landing/dist/
 static/dist/
 static/dashboard/
 static/landing/
+src/static/dashboard/
+src/static/landing/
 
 # Legacy reference (Next.js landing pages — consultation only, not part of this repo)
 frontend-landing-pages/
