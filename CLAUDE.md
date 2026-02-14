@@ -17,7 +17,24 @@ Full-stack Django + Inertia.js + React application for launch management platfor
 ### Ports
 
 - Django dev: **8844**
-- Vite dev: **3344**
+- Vite Dashboard dev: **3344**
+- Vite Landing dev: **3345** (quando existir)
+
+### Multi-Frontend Architecture
+
+O projeto serve **dois frontends** via Inertia.js, cada um com seu próprio Vite build:
+
+| Frontend | Diretório | Audiência | URL prefix | Vite port |
+|----------|-----------|-----------|------------|-----------|
+| Dashboard | `frontends/dashboard/` | Operadores (auth) | `/app/*` | 3344 |
+| Landing | `frontends/landing/` | Leads/público | `/*` | 3345 |
+
+> **NOTA sobre diretórios**: Ver `IMPLEMENTATION_PLAN.md` Fase A para detalhes.
+> - `frontends/dashboard/` = **movido** de `frontend/` via `git mv` (preserva histórico)
+> - `frontends/landing/` = **criado do zero** como novo Vite+Inertia app
+> - `frontend-landing-pages/` = legado Next.js, **referência de consulta** (NÃO mover para frontends/)
+
+> **NOTA sobre estado atual**: Enquanto a Fase A não for executada, o diretório ainda é `frontend/` (não `frontends/dashboard/`). Verificar qual existe antes de referenciar.
 
 ---
 
@@ -102,31 +119,36 @@ launch-inertia/
 │       ├── test_contacts_service.py
 │       ├── test_middleware.py
 │       └── test_security.py
-├── frontend/
-│   └── src/
-│       ├── components/ui/       # Button, InputField, PasswordInput, Card, FormErrorBanner, ThemeToggle, LanguageSelector
-│       ├── hooks/               # useAppForm, useTheme
-│       ├── layouts/             # AuthLayout, DashboardLayout, OnboardingLayout
-│       ├── lib/                 # i18n config
-│       ├── pages/
-│       │   ├── Auth/            # Login, Register, ResetPassword
-│       │   ├── Onboarding/      # VerifyEmail, Legal, ProfileCompletion, PlanSelection
-│       │   ├── Dashboard/       # Index
-│       │   ├── Contacts/        # Index, Show, Create, Edit, Delete
-│       │   ├── Billing/         # Index
-│       │   ├── Notifications/   # Index
-│       │   ├── Settings/        # Index, Profile, Security
-│       │   └── Delinquent.tsx
-│       ├── tests/               # Vitest component tests
-│       │   ├── setup.ts
-│       │   ├── Button.test.tsx
-│       │   ├── FormErrorBanner.test.tsx
-│       │   └── InputField.test.tsx
-│       └── types/               # TypeScript types (single source of truth)
-│           ├── index.ts
-│           └── inertia.d.ts
+├── frontends/                   # Todos os frontends React (npm workspaces)
+│   ├── dashboard/               # Dashboard operacional (movido de frontend/ via git mv)
+│   │   └── src/
+│   │       ├── components/ui/   # Button, InputField, PasswordInput, Card, FormErrorBanner, ThemeToggle, LanguageSelector
+│   │       ├── hooks/           # useAppForm, useTheme
+│   │       ├── layouts/         # AuthLayout, DashboardLayout, OnboardingLayout
+│   │       ├── lib/             # i18n config
+│   │       ├── pages/
+│   │       │   ├── Auth/        # Login, Register, ResetPassword
+│   │       │   ├── Onboarding/  # VerifyEmail, Legal, ProfileCompletion, PlanSelection
+│   │       │   ├── Dashboard/   # Index
+│   │       │   ├── Identity/    # Index, Show, Create, Edit, Delete
+│   │       │   ├── Billing/     # Index
+│   │       │   ├── Notifications/ # Index
+│   │       │   ├── Settings/    # Index, Profile, Security
+│   │       │   └── Delinquent.tsx
+│   │       ├── tests/           # Vitest component tests
+│   │       └── types/           # TypeScript types (single source of truth)
+│   ├── landing/                 # Landing pages públicas (criado do zero na Fase C)
+│   │   └── src/
+│   │       ├── pages/           # Capture/, Checkout/, ThankYou/, Content/
+│   │       ├── layouts/         # CaptureLayout, CheckoutLayout
+│   │       ├── components/      # CaptureForm, PhoneInput, StripeCheckout
+│   │       └── hooks/           # useFingerprint, useCaptureForm
+│   └── shared/                  # Código compartilhado (criado na Fase H)
+├── frontend-landing-pages/      # LEGADO Next.js — referência de consulta apenas
+│                                # NÃO mover para frontends/. Deletar após Fase F.
 ├── templates/
-│   ├── base.html                # Inertia layout (django-vite)
+│   ├── dashboard.html           # Inertia layout dashboard (django-vite app="dashboard")
+│   ├── landing.html             # Inertia layout landing (django-vite app="landing")
 │   └── emails/                  # Django email templates
 │       ├── email_verification.{txt,html}
 │       ├── password_reset.{txt,html}
@@ -172,6 +194,8 @@ make celery-beat
 make install
 ```
 
+> **NOTA pós Fase A**: Quando `frontend/` virar `frontends/dashboard/`, os comandos acima mudarão. Ver `IMPLEMENTATION_PLAN.md` Fase A.4 para os novos nomes (`dev-dashboard`, `dev-landing`, etc.).
+
 ---
 
 ## Architecture Decisions
@@ -214,7 +238,9 @@ No custom models. Relies entirely on djstripe's `Customer`, `Subscription`, `Inv
 
 ### Frontend Types
 
-`frontend/src/types/index.ts` is the **single source of truth**. Pages should never define local interfaces for backend data.
+`frontends/dashboard/src/types/index.ts` is the **single source of truth** for dashboard types. Pages should never define local interfaces for backend data.
+
+> **NOTA**: Enquanto a Fase A não for executada, o path ainda é `frontend/src/types/index.ts`.
 
 ---
 
@@ -233,6 +259,9 @@ No custom models. Relies entirely on djstripe's `Customer`, `Subscription`, `Inv
 | `frontend/src/main.tsx` | React entry point + i18n |
 | `frontend/src/hooks/useAppForm.ts` | Form wrapper (forceFormData) |
 | `frontend/src/types/index.ts` | All TypeScript types |
+| `IMPLEMENTATION_PLAN.md` | Plano sequencial de implementação (8 fases) |
+| `FRONTEND_ARCHITECTURE_ANALYSIS.md` | Decisões de arquitetura multi-frontend |
+| `CONTACTS_ANALYSIS.md` | Análise de negócio (Identity, Launch, Lifecycle) |
 
 ---
 
@@ -266,3 +295,4 @@ Location: `.claude/skills/inertia-django/SKILL.md`
 ---
 
 *Last updated: 2026-02*
+
