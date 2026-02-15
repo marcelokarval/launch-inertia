@@ -62,7 +62,7 @@ def get_campaign_or_default(slug: str) -> dict[str, Any]:
             ],
         },
         "subheadline": None,
-        "background_image": None,
+        "background_image": "/static/images/bg-eua-flag-dark.jpg",
         "highlight_color": "#FB061A",
         "badges": [],
         "form": {

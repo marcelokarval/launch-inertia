@@ -1,26 +1,25 @@
 {
   "slug": "wh-rc-v3",
   "meta": {
-    "title": "Workshop Repasse de Contrato - Arthur Agrelli",
-    "description": "Aprenda a investir em imoveis nos EUA com repasse de contrato"
+    "title": "WH0126 \u2013 REPASSE CONTRATO \u2013 V3 \u2013 ArthurAgrelli",
+    "description": "Mentoria Pr\u00e1tica e Gratuita para Imigrantes: 4 Aulas Online sobre como Lucrar com Im\u00f3veis na Am\u00e9rica"
   },
   "headline": {
     "parts": [
-      {"text": "Descubra como investir em ", "type": "normal"},
-      {"text": "im\u00f3veis nos EUA", "type": "highlight", "color": "red"},
-      {"text": " com repasse de contrato", "type": "normal"}
+      {"text": "Descubra como imigrantes brasileiros est\u00e3o ", "type": "normal"},
+      {"text": "ganhando +$10mil por m\u00eas nos EUA", "type": "highlight", "color": "red"},
+      {"text": " repassando casas sem tirar 1 centavo do bolso!", "type": "normal"}
     ]
   },
   "subheadline": null,
-  "background_image": null,
+  "background_image": "/static/images/bg-arthur-mostra-mao.jpg",
   "highlight_color": "#FB061A",
   "badges": [
-    {"icon": "calendar", "text": "Aulas 100% online e gratuitas", "visible": true},
-    {"icon": "clock", "text": "Vagas limitadas", "visible": true},
-    {"icon": "trophy", "text": "+5.000 alunos", "visible": true}
+    {"icon": "calendar", "text": "20 a 26 de Janeiro \u00e0s 8pm (MIAMI)", "visible": true},
+    {"icon": "youtube", "text": "Ao vivo no Youtube", "visible": true}
   ],
   "form": {
-    "button_text": "PARTICIPAR DO CURSO GRATUITO",
+    "button_text": "QUERO PARTICIPAR GRATUITAMENTE",
     "button_color": "",
     "button_gradient": "bg-gradient-to-r from-[#0e036b] to-[#fb061a]",
     "button_hover_gradient": "hover:from-[#fb061a] hover:to-[#0e036b]",

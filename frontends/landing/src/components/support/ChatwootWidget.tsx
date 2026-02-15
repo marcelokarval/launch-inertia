@@ -109,49 +109,58 @@ export default function ChatwootWidget({
     setErrorMessage('Erro ao conectar com o suporte');
   }, []);
 
-  // Load SDK
+  // Load SDK (or reuse if already loaded by ChatwootGlobalLoader)
   useEffect(() => {
     if (scriptLoadedRef.current) return;
     scriptLoadedRef.current = true;
 
-    window.chatwootSettings = {
-      hideMessageBubble: true,
-      position: 'right',
-      locale: config.locale,
-      type: 'expanded_bubble',
-      darkMode: 'dark',
-      launcherTitle: config.header_title,
-    };
-
     window.addEventListener('chatwoot:ready', handleReady);
     window.addEventListener('chatwoot:error', handleError);
 
-    const script = document.createElement('script');
-    script.src = `${config.base_url}/packs/js/sdk.js`;
-    script.async = true;
-    script.defer = true;
+    // If Chatwoot SDK is already loaded globally (ChatwootGlobalLoader),
+    // reconfigure settings for embedded mode and trigger ready flow
+    if (window.$chatwoot) {
+      handleReady();
+    } else if (window.chatwootSDK) {
+      // SDK loaded but not yet ready — just wait for the event
+    } else {
+      // First load — inject script
+      window.chatwootSettings = {
+        hideMessageBubble: true,
+        position: 'right',
+        locale: config.locale,
+        type: 'expanded_bubble',
+        darkMode: 'dark',
+        launcherTitle: config.header_title,
+      };
 
-    script.onload = () => {
-      if (window.chatwootSDK) {
-        window.chatwootSDK.run({
-          websiteToken: config.website_token,
-          baseUrl: config.base_url,
-        });
-      }
-    };
+      const script = document.createElement('script');
+      script.src = `${config.base_url}/packs/js/sdk.js`;
+      script.async = true;
+      script.defer = true;
 
-    script.onerror = () => {
-      setWidgetState('error');
-      setErrorMessage('Não foi possível carregar o chat');
-    };
+      script.onload = () => {
+        if (window.chatwootSDK) {
+          window.chatwootSDK.run({
+            websiteToken: config.website_token,
+            baseUrl: config.base_url,
+          });
+        }
+      };
 
-    document.head.appendChild(script);
+      script.onerror = () => {
+        setWidgetState('error');
+        setErrorMessage('Nao foi possivel carregar o chat');
+      };
+
+      document.head.appendChild(script);
+    }
 
     // Slow connection timeout
     const timeout = setTimeout(() => {
       setWidgetState((prev) => {
         if (prev === 'loading') {
-          setErrorMessage('Conexão lenta. O chat pode demorar para carregar.');
+          setErrorMessage('Conexao lenta. O chat pode demorar para carregar.');
           return 'offline';
         }
         return prev;

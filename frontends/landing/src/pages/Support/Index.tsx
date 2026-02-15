@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import ChatwootWidget from '@/components/support/ChatwootWidget';
@@ -5,18 +7,21 @@ import FAQPanel from '@/components/support/FAQPanel';
 import { IconArrowLeft, IconHelpCircle, IconMessageCircle } from '@/components/ui/icons';
 import type { SupportPageProps } from '@/types';
 
+type MobileTab = 'chat' | 'faq';
+
 /**
  * Support/Index — Central de Suporte page.
  *
- * Single responsive layout — components rendered once, CSS handles reflow.
- * - Desktop: FAQ left, Chat right (grid 2-col)
- * - Mobile: stacked (chat first via order, then FAQ)
+ * Responsive layout:
+ * - Mobile: pill tabs (Chat | FAQ), full-area per tab, only one visible at a time
+ * - Desktop (lg+): side-by-side grid (FAQ left, Chat right), no tabs
  *
- * Dark theme to match the Chatwoot widget aesthetic.
- * All config comes from Django props (Chatwoot token, FAQ items, etc.).
+ * Components are always rendered (never unmounted) so Chatwoot keeps its
+ * connection alive when switching to FAQ tab. Visibility is toggled via CSS.
  */
 export default function SupportIndex({ support }: SupportPageProps) {
   const { chatwoot, faq_items, faq_categories } = support;
+  const [activeTab, setActiveTab] = useState<MobileTab>('chat');
 
   return (
     <div className="h-screen overflow-hidden bg-black">
@@ -49,12 +54,49 @@ export default function SupportIndex({ support }: SupportPageProps) {
           </div>
         </header>
 
-        {/* Single responsive grid — components rendered once */}
+        {/* Mobile tab bar — hidden on desktop (lg:hidden) */}
+        <div className="shrink-0 border-b border-zinc-800/50 px-4 py-3 lg:hidden">
+          <div className="mx-auto flex max-w-md gap-2 rounded-xl bg-zinc-800/60 p-1">
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === 'chat'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-900/30'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <IconMessageCircle className="h-4 w-4" />
+              Chat
+            </button>
+            <button
+              onClick={() => setActiveTab('faq')}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === 'faq'
+                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/30'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <IconHelpCircle className="h-4 w-4" />
+              FAQ
+            </button>
+          </div>
+        </div>
+
+        {/* Content area */}
         <main className="flex-1 overflow-hidden p-4 md:p-6">
           <div className="mx-auto grid h-full max-w-7xl grid-cols-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
-            {/* FAQ panel — order-2 on mobile (below chat), order-1 on desktop (left) */}
-            <div className="flex min-h-[300px] flex-col overflow-hidden order-2 lg:order-1">
-              <div className="mb-3 flex shrink-0 items-center gap-2">
+            {/*
+              FAQ panel
+              - Mobile: visible only when faq tab is active (hidden/flex toggle)
+              - Desktop: always visible, order-1 (left column)
+            */}
+            <div
+              className={`min-h-0 flex-col overflow-hidden lg:order-1 lg:flex ${
+                activeTab === 'faq' ? 'flex' : 'hidden'
+              }`}
+            >
+              {/* Section label — desktop only (mobile has tab bar) */}
+              <div className="mb-3 hidden shrink-0 items-center gap-2 lg:flex">
                 <IconHelpCircle className="h-5 w-5 text-amber-500" />
                 <h2 className="font-semibold text-white">Perguntas Frequentes</h2>
               </div>
@@ -65,9 +107,18 @@ export default function SupportIndex({ support }: SupportPageProps) {
               />
             </div>
 
-            {/* Chat panel — order-1 on mobile (above FAQ), order-2 on desktop (right) */}
-            <div className="flex min-h-[350px] flex-col overflow-hidden order-1 lg:order-2">
-              <div className="mb-3 flex shrink-0 items-center gap-2">
+            {/*
+              Chat panel
+              - Mobile: visible only when chat tab is active (hidden/flex toggle)
+              - Desktop: always visible, order-2 (right column)
+            */}
+            <div
+              className={`min-h-0 flex-col overflow-hidden lg:order-2 lg:flex ${
+                activeTab === 'chat' ? 'flex' : 'hidden'
+              }`}
+            >
+              {/* Section label — desktop only (mobile has tab bar) */}
+              <div className="mb-3 hidden shrink-0 items-center gap-2 lg:flex">
                 <IconMessageCircle className="h-5 w-5 text-red-500" />
                 <h2 className="font-semibold text-white">Chat ao Vivo</h2>
               </div>

@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import ChatwootGlobalLoader from '@/components/ChatwootGlobalLoader';
 import './styles/globals.css';
 
 createInertiaApp({
@@ -17,7 +18,12 @@ createInertiaApp({
   },
   setup({ el, App, props }) {
     const root = createRoot(el);
-    root.render(createElement(App, props));
+    root.render(
+      createElement('div', null,
+        createElement(ChatwootGlobalLoader),
+        createElement(App, props),
+      ),
+    );
   },
   progress: {
     color: '#E50914',
