@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 CACHE_PREFIX = "capture_page_config"
 FULL_CACHE_PREFIX = "capture_page_full"
+MODEL_CACHE_PREFIX = "capture_page_model"
 CACHE_TIMEOUT = 3600  # 1 hour
 
 
@@ -30,10 +31,11 @@ def _cache_key(slug: str) -> str:
 
 
 def _all_cache_keys(slug: str) -> list[str]:
-    """Return all cache keys for a given slug (both layers)."""
+    """Return all cache keys for a given slug (all layers)."""
     return [
         f"{CACHE_PREFIX}:{slug}",
         f"{FULL_CACHE_PREFIX}:{slug}",
+        f"{MODEL_CACHE_PREFIX}:{slug}",
     ]
 
 

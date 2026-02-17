@@ -39,27 +39,29 @@ DEFAULT_CAMPAIGN_SLUG = "wh-rc-v3"
 
 def _resolve_campaign_config(
     slug: str,
-) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, Any]:
     """Resolve campaign config: DB first, then JSON fallback.
 
     Returns:
-        Tuple of (frontend_props, backend_config).
+        Tuple of (frontend_props, backend_config, capture_page_model).
         - frontend_props: For Inertia rendering (no n8n keys).
         - backend_config: For POST handling (includes n8n, thank_you, etc.).
-        Both are None if slug not found anywhere.
+        - capture_page_model: CapturePage instance or None.
+        All None if slug not found anywhere.
     """
-    # Try DB first (CapturePageService)
-    frontend_props = CapturePageService.get_page_config(slug)
-    if frontend_props is not None:
+    # Try DB first (CapturePageService) — single model fetch
+    page = CapturePageService.get_page(slug)
+    if page is not None:
+        frontend_props = CapturePageService.get_page_config(slug)
         backend_config = CapturePageService.get_full_config(slug)
-        return frontend_props, backend_config
+        return frontend_props, backend_config, page
 
     # Fallback to JSON files (migration period)
     json_config = get_campaign(slug)
     if json_config is not None:
-        return json_config, json_config
+        return json_config, json_config, None
 
-    return None, None
+    return None, None, None
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -84,7 +86,9 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     Config resolution: DB (CapturePageService) → JSON fallback → defaults.
     Fallback: non-existent slugs redirect to /inscrever-wh-rc-v3/.
     """
-    frontend_props, backend_config = _resolve_campaign_config(campaign_slug)
+    frontend_props, backend_config, capture_page_model = _resolve_campaign_config(
+        campaign_slug
+    )
 
     # Fallback: redirect to default campaign if slug doesn't exist
     if frontend_props is None:
@@ -94,9 +98,6 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
         default_config = get_campaign_or_default(campaign_slug)
         frontend_props = default_config
         backend_config = default_config
-
-    # Resolve CapturePage model instance for FK on events (DB pages only)
-    capture_page_model = CapturePageService.get_page(campaign_slug)
 
     if request.method == "POST":
         return _handle_capture_post(
@@ -652,7 +653,7 @@ def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     Fallback: non-existent slugs redirect to home.
     """
     # DB first, then JSON fallback
-    _, backend_config = _resolve_campaign_config(campaign_slug)
+    _, backend_config, capture_page_model = _resolve_campaign_config(campaign_slug)
 
     if backend_config is None:
         return redirect("/")
@@ -666,7 +667,7 @@ def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
         page_path=page_path,
         page_category=CaptureEvent.PageCategory.THANK_YOU,
         request=request,
-        capture_page=CapturePageService.get_page(campaign_slug),
+        capture_page=capture_page_model,
     )
 
     campaign = backend_config

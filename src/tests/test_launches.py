@@ -437,34 +437,39 @@ class TestResolveConfig:
         """DB config is returned when page exists in DB."""
         from apps.landing.views import _resolve_campaign_config
 
-        CapturePageFactory(
+        page = CapturePageFactory(
             slug="db-first",
             config={
                 "meta": {"title": "From DB"},
                 "headline": {"parts": []},
             },
         )
-        frontend, backend = _resolve_campaign_config("db-first")
+        frontend, backend, model = _resolve_campaign_config("db-first")
         assert frontend is not None
         assert frontend["meta"]["title"] == "From DB"
         assert backend is not None
         # Backend should have full config including slug
         assert backend["slug"] == "db-first"
+        # Model instance returned for FK usage
+        assert model is not None
+        assert model.pk == page.pk
 
     def test_resolve_json_fallback(self):
         """JSON fallback when slug not in DB."""
         from apps.landing.views import _resolve_campaign_config
 
         # wh-rc-v3 exists as JSON file
-        frontend, backend = _resolve_campaign_config("wh-rc-v3")
+        frontend, backend, model = _resolve_campaign_config("wh-rc-v3")
         # Should resolve (from JSON)
         assert frontend is not None
         assert backend is not None
+        assert model is None  # No DB model for JSON fallback
 
     def test_resolve_none_for_missing(self):
-        """Returns (None, None) when slug not in DB or JSON."""
+        """Returns (None, None, None) when slug not in DB or JSON."""
         from apps.landing.views import _resolve_campaign_config
 
-        frontend, backend = _resolve_campaign_config("totally-nonexistent-xyz")
+        frontend, backend, model = _resolve_campaign_config("totally-nonexistent-xyz")
         assert frontend is None
         assert backend is None
+        assert model is None
