@@ -394,6 +394,7 @@ class TestCaptureView:
         with patch("apps.landing.views.CaptureService.process_lead") as mock_process:
             mock_process.return_value = {
                 "resolution": {},
+                "identity": None,
                 "identity_id": "ident_abc123",
                 "is_new": True,
                 "n8n_payload": {"E-mail": "test@example.com"},

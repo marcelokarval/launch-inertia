@@ -87,6 +87,12 @@ PROJECT_APPS = [
     "apps.billing",
     "apps.notifications",
     "apps.landing",
+    "apps.launches",
+    "apps.ads",
+]
+
+CORE_FRAMEWORK_APPS = [
+    "core.tracking",
 ]
 
 INFRASTRUCTURE_APPS = [
@@ -102,6 +108,7 @@ INSTALLED_APPS = (
     + DJANGO_APPS
     + THIRD_PARTY_APPS
     + PROJECT_APPS
+    + CORE_FRAMEWORK_APPS
     + INFRASTRUCTURE_APPS
 )
 
@@ -122,6 +129,8 @@ MIDDLEWARE = [
     # Security (custom)
     "core.security.middleware.SecurityHeadersMiddleware",
     "core.security.middleware.RateLimitMiddleware",
+    # Visitor tracking (identification, device profiling, GeoIP)
+    "core.tracking.middleware.VisitorMiddleware",
     # Inertia.js
     "inertia.middleware.InertiaMiddleware",
     # JSON body parser (request.data)
@@ -570,6 +579,16 @@ UNFOLD = {
         ],
     },
 }
+
+
+# =============================================================================
+# GEOIP (MaxMind GeoLite2)
+# =============================================================================
+
+GEOIP_CITY_DB = os.getenv(
+    "GEOIP_CITY_DB", str(BASE_DIR / "data" / "GeoLite2-City.mmdb")
+)
+GEOIP_ASN_DB = os.getenv("GEOIP_ASN_DB", str(BASE_DIR / "data" / "GeoLite2-ASN.mmdb"))
 
 
 def environment_callback(request):

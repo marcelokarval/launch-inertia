@@ -11,6 +11,8 @@ interface CaptureFormProps {
   campaignSlug: string;
   formConfig: CampaignFormConfig;
   fingerprintApiKey: string;
+  /** Server-generated UUID linking events of the same page load session */
+  captureToken: string;
   serverErrors?: Record<string, string>;
 }
 
@@ -24,6 +26,7 @@ export default function CaptureForm({
   campaignSlug,
   formConfig,
   fingerprintApiKey,
+  captureToken,
   serverErrors,
 }: CaptureFormProps) {
   const hasSetUtm = useRef(false);
@@ -33,20 +36,27 @@ export default function CaptureForm({
     phone: '',
     visitor_id: '',
     request_id: '',
+    capture_token: captureToken,
     utm_source: '',
     utm_medium: '',
     utm_campaign: '',
     utm_content: '',
     utm_term: '',
     utm_id: '',
+    // Ad tracking params (Meta CAPI, Voluum)
+    fbclid: '',
+    vk_ad_id: '',
+    vk_source: '',
   });
 
-  // Populate UTM parameters from URL on mount
+  // Populate UTM + ad tracking parameters from URL on mount
   useEffect(() => {
     if (hasSetUtm.current) return;
     hasSetUtm.current = true;
 
     const params = new URLSearchParams(window.location.search);
+
+    // Standard UTM fields
     const utmFields = [
       'utm_source',
       'utm_medium',
@@ -56,16 +66,27 @@ export default function CaptureForm({
       'utm_id',
     ] as const;
 
-    const utmValues: Record<string, string> = {};
+    // Ad tracking fields (fbclid for Meta CAPI, vk_ad_id, vk_source from Voluum)
+    const adFields = ['fbclid', 'vk_ad_id', 'vk_source'] as const;
+
+    const allValues: Record<string, string> = {};
+
     for (const field of utmFields) {
       const value = params.get(field);
       if (value) {
-        utmValues[field] = value;
+        allValues[field] = value;
       }
     }
 
-    if (Object.keys(utmValues).length > 0) {
-      setData((prev) => ({ ...prev, ...utmValues }));
+    for (const field of adFields) {
+      const value = params.get(field);
+      if (value) {
+        allValues[field] = value;
+      }
+    }
+
+    if (Object.keys(allValues).length > 0) {
+      setData((prev) => ({ ...prev, ...allValues }));
     }
   }, [setData]);
 

@@ -193,6 +193,7 @@ class CaptureService:
 
         return {
             "resolution": resolution_result,
+            "identity": identity,
             "identity_id": resolution_result.get("identity_id"),
             "is_new": resolution_result.get("is_new", True),
             "n8n_payload": n8n_payload,

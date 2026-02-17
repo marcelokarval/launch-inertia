@@ -14,6 +14,7 @@ import type { CapturePageProps, HeadlinePart } from '@/types';
 export default function CaptureIndex({
   campaign,
   fingerprint_api_key,
+  capture_token,
   errors,
 }: CapturePageProps) {
   const { headline, subheadline, badges, form, trust_badge, social_proof, meta } =
@@ -79,6 +80,7 @@ export default function CaptureIndex({
             campaignSlug={campaign.slug}
             formConfig={form}
             fingerprintApiKey={fingerprint_api_key}
+            captureToken={capture_token}
             serverErrors={errors}
           />
         </div>

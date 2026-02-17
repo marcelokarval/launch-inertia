@@ -95,6 +95,8 @@ export interface CampaignProps {
 export interface CapturePageProps extends SharedProps {
   campaign: CampaignProps;
   fingerprint_api_key: string;
+  /** Server-generated UUID linking events of the same page load session */
+  capture_token: string;
 }
 
 /** Thank-you page step indicator */

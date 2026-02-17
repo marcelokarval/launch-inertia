@@ -1,0 +1,282 @@
+"""
+Tracking services — device profiling and event recording.
+
+DeviceProfileService: Hash-based dedup for device dimension table.
+TrackingService: Create CaptureEvents and manage capture sessions.
+"""
+
+import logging
+import uuid
+from typing import Any, Optional
+
+from django.core.cache import cache
+from django.http import HttpRequest
+
+from core.tracking.models import CaptureEvent, DeviceProfile
+
+logger = logging.getLogger(__name__)
+
+# Redis TTL for capture sessions (30 minutes)
+CAPTURE_SESSION_TTL = 1800
+
+
+class DeviceProfileService:
+    """Service for managing device profiles (dimension table)."""
+
+    @classmethod
+    def get_or_create_from_request(
+        cls, request: HttpRequest
+    ) -> Optional[DeviceProfile]:
+        """Get or create a DeviceProfile from request.device_data.
+
+        Expects VisitorMiddleware to have set request.device_data dict.
+        Returns None if device_data is not available.
+        """
+        device_data = getattr(request, "device_data", None)
+        if not device_data:
+            return None
+
+        return cls.get_or_create_from_data(
+            device_data,
+            ua_sample=request.META.get("HTTP_USER_AGENT", ""),
+        )
+
+    @classmethod
+    def get_or_create_from_data(
+        cls,
+        device_data: dict[str, Any],
+        ua_sample: str = "",
+    ) -> DeviceProfile:
+        """Get or create a DeviceProfile from parsed device data.
+
+        Args:
+            device_data: Dict with browser_family, browser_version,
+                os_family, os_version, device_type, etc.
+            ua_sample: Example UA string for debug.
+
+        Returns:
+            DeviceProfile instance (existing or newly created).
+        """
+        browser_family = device_data.get("browser_family", "unknown")
+        browser_version = device_data.get("browser_version", "")
+        os_family = device_data.get("os_family", "unknown")
+        os_version = device_data.get("os_version", "")
+        device_type = device_data.get("device_type", "unknown")
+
+        profile_hash = DeviceProfile.compute_hash(
+            browser_family=browser_family,
+            browser_version=browser_version,
+            os_family=os_family,
+            os_version=os_version,
+            device_type=device_type,
+        )
+
+        # Major version only for storage
+        major_version = browser_version.split(".")[0] if browser_version else ""
+
+        profile, created = DeviceProfile.objects.get_or_create(
+            profile_hash=profile_hash,
+            defaults={
+                "browser_family": browser_family,
+                "browser_version": major_version,
+                "browser_engine": device_data.get("browser_engine", ""),
+                "os_family": os_family,
+                "os_version": os_version,
+                "device_type": device_type,
+                "device_brand": device_data.get("device_brand", ""),
+                "device_model": device_data.get("device_model", ""),
+                "is_bot": device_data.get("is_bot", False),
+                "bot_name": device_data.get("bot_name", ""),
+                "bot_category": device_data.get("bot_category", ""),
+                "user_agent_sample": ua_sample[:500] if ua_sample else "",
+            },
+        )
+
+        if created:
+            logger.info("New DeviceProfile created: %s (%s)", profile_hash, profile)
+
+        return profile
+
+
+class TrackingService:
+    """Service for recording tracking events and managing capture sessions."""
+
+    @classmethod
+    def generate_capture_token(cls) -> str:
+        """Generate a new capture_token (UUID v4) for a page load."""
+        return str(uuid.uuid4())
+
+    @classmethod
+    def create_event(
+        cls,
+        *,
+        event_type: str,
+        capture_token: str,
+        page_path: str,
+        page_category: str = "other",
+        request: Optional[HttpRequest] = None,
+        capture_page: Any = None,
+        extra_data: Optional[dict] = None,
+    ) -> CaptureEvent:
+        """Create a CaptureEvent with enriched data from the request.
+
+        Args:
+            event_type: One of CaptureEvent.EventType choices.
+            capture_token: UUID linking events of the same page load.
+            page_path: URL path (e.g., /inscrever-wh-rc-v3/).
+            page_category: One of CaptureEvent.PageCategory choices.
+            request: HttpRequest (enriched by VisitorMiddleware).
+            capture_page: Optional CapturePage model instance.
+            extra_data: Optional extra metadata dict.
+
+        Returns:
+            Created CaptureEvent instance.
+        """
+        event_kwargs: dict[str, Any] = {
+            "event_type": event_type,
+            "capture_token": capture_token,
+            "page_path": page_path,
+            "page_category": page_category,
+        }
+
+        if capture_page is not None:
+            event_kwargs["capture_page"] = capture_page
+
+        if extra_data:
+            event_kwargs["extra_data"] = extra_data
+
+        # Enrich from request if available (VisitorMiddleware attributes)
+        if request is not None:
+            event_kwargs["page_url"] = request.build_absolute_uri()
+            event_kwargs["referrer"] = request.META.get("HTTP_REFERER", "")[:500]
+            event_kwargs["accept_language"] = request.META.get(
+                "HTTP_ACCEPT_LANGUAGE", ""
+            )[:100]
+
+            # Visitor identification
+            event_kwargs["visitor_id"] = getattr(request, "visitor_id", "")
+            event_kwargs["fingerprint_identity"] = getattr(
+                request, "fingerprint_identity", None
+            )
+            event_kwargs["identity"] = getattr(request, "identity", None)
+
+            # Device profile
+            event_kwargs["device_profile"] = getattr(request, "device_profile", None)
+
+            # Network
+            event_kwargs["ip_address"] = getattr(request, "client_ip", "") or None
+            event_kwargs["geo_data"] = getattr(request, "geo_data", {})
+
+        event = CaptureEvent.objects.create(**event_kwargs)
+
+        logger.debug(
+            "CaptureEvent created: %s %s @ %s (token=%s)",
+            event_type,
+            page_category,
+            page_path,
+            capture_token[:8],
+        )
+
+        return event
+
+    @classmethod
+    def start_capture_session(
+        cls,
+        capture_token: str,
+        slug: str,
+        request: Optional[HttpRequest] = None,
+    ) -> None:
+        """Store capture session data in Redis for dedup and state tracking.
+
+        Args:
+            capture_token: The session's capture token.
+            slug: Campaign/page slug.
+            request: HttpRequest for extracting IP and visitor_id.
+        """
+        from django.utils import timezone
+
+        session_data = {
+            "slug": slug,
+            "started_at": timezone.now().isoformat(),
+            "ip": getattr(request, "client_ip", "") if request else "",
+            "visitor_id": getattr(request, "visitor_id", "") if request else "",
+            "status": "viewing",
+        }
+        cache.set(
+            f"capture:session:{capture_token}",
+            session_data,
+            timeout=CAPTURE_SESSION_TTL,
+        )
+
+    @classmethod
+    def get_capture_session(cls, capture_token: str) -> Optional[dict]:
+        """Retrieve capture session data from Redis."""
+        return cache.get(f"capture:session:{capture_token}")
+
+    @classmethod
+    def update_capture_session(
+        cls,
+        capture_token: str,
+        updates: dict[str, Any],
+    ) -> None:
+        """Update capture session data in Redis.
+
+        Merges updates into existing session data.
+        """
+        session_data = cls.get_capture_session(capture_token)
+        if session_data is None:
+            return
+
+        session_data.update(updates)
+        cache.set(
+            f"capture:session:{capture_token}",
+            session_data,
+            timeout=CAPTURE_SESSION_TTL,
+        )
+
+    @classmethod
+    def bind_events_to_identity(
+        cls,
+        capture_token: str,
+        identity: Any,
+        visitor_id: str = "",
+    ) -> int:
+        """Retroactively bind anonymous events to a resolved identity.
+
+        After form_success, links all previous events with the same
+        capture_token that don't have an identity yet.
+
+        Returns:
+            Number of events updated.
+        """
+        update_kwargs: dict[str, Any] = {"identity": identity}
+        if visitor_id:
+            update_kwargs["visitor_id"] = visitor_id
+
+        count = CaptureEvent.objects.filter(
+            capture_token=capture_token,
+            identity__isnull=True,
+        ).update(**update_kwargs)
+
+        if count > 0:
+            logger.info(
+                "Bound %d anonymous events to identity %s (token=%s)",
+                count,
+                getattr(identity, "public_id", "?"),
+                str(capture_token)[:8],
+            )
+
+        return count
+
+    @classmethod
+    def extract_utm_from_request(cls, request: HttpRequest) -> dict[str, str]:
+        """Extract UTM parameters from request.data or GET params."""
+        data = getattr(request, "data", request.GET)
+        return {
+            "utm_source": data.get("utm_source", ""),
+            "utm_medium": data.get("utm_medium", ""),
+            "utm_campaign": data.get("utm_campaign", ""),
+            "utm_content": data.get("utm_content", ""),
+            "utm_term": data.get("utm_term", ""),
+            "utm_id": data.get("utm_id", ""),
+        }

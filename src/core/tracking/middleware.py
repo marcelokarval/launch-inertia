@@ -1,0 +1,255 @@
+"""
+VisitorMiddleware — identifies visitor and profiles device on each request.
+
+Three responsibilities:
+1. IDENTIFICATION: Reads cookie fpjs_vid, resolves FingerprintIdentity + Identity
+2. DEVICE PROFILING: Parses User-Agent via device-detector, creates DeviceProfile
+3. GEO: Resolves IP to location and ASN/ISP via geoip2 + django-ipware
+
+Attributes set on request:
+    Identification:
+        request.visitor_id: str
+        request.fingerprint_identity: FingerprintIdentity | None
+        request.identity: Identity | None
+        request.is_known_visitor: bool
+
+    Device:
+        request.device_profile: DeviceProfile | None
+        request.device_data: dict
+
+    Geo:
+        request.client_ip: str
+        request.geo_data: dict
+
+    Client Hints:
+        request.client_hints: dict
+"""
+
+import logging
+from pathlib import Path
+from typing import Any
+
+from django.conf import settings
+from django.core.cache import cache
+from django.http import HttpRequest, HttpResponse
+
+logger = logging.getLogger(__name__)
+
+# Cache TTLs
+_VISITOR_CACHE_TTL = 3600  # 1 hour
+_GEO_CACHE_TTL = 86400  # 24 hours
+
+
+class VisitorMiddleware:
+    """Identify visitor, profile device, resolve GeoIP on each request."""
+
+    def __init__(self, get_response: Any) -> None:
+        self.get_response = get_response
+        self._city_reader = None
+        self._asn_reader = None
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        # ─── 1. IDENTIFICATION (cookie fpjs_vid) ───
+        self._identify_visitor(request)
+
+        # ─── 2. DEVICE PROFILING (User-Agent + Client Hints) ───
+        self._profile_device(request)
+
+        # ─── 3. GEO (IP → MaxMind GeoLite2) ───
+        self._resolve_geo(request)
+
+        # ─── RESPONSE ───
+        response = self.get_response(request)
+
+        # Request high-entropy Client Hints for subsequent requests
+        response["Accept-CH"] = (
+            "Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, "
+            "Sec-CH-UA-Full-Version-List, Sec-CH-UA-Arch"
+        )
+
+        return response
+
+    def _identify_visitor(self, request: HttpRequest) -> None:
+        """Read fpjs_vid cookie and resolve to FingerprintIdentity + Identity."""
+        visitor_id = request.COOKIES.get("fpjs_vid", "")
+        request.visitor_id = visitor_id
+        request.fingerprint_identity = None
+        request.identity = None
+        request.is_known_visitor = False
+
+        if not visitor_id:
+            return
+
+        # Try cache first
+        cached = cache.get(f"visitor:{visitor_id}")
+        if cached:
+            try:
+                self._load_cached_visitor(request, cached)
+                return
+            except Exception:
+                logger.debug("Cached visitor data stale for %s", visitor_id[:8])
+
+        # DB lookup
+        try:
+            from apps.contacts.fingerprint.models import FingerprintIdentity
+
+            fp = FingerprintIdentity.objects.filter(fingerprint_hash=visitor_id).first()
+            if fp:
+                request.fingerprint_identity = fp
+                # Resolve identity via the junction table
+                identity = None
+                try:
+                    contact = fp.contacts.first()
+                    if contact and hasattr(contact, "identity"):
+                        identity = contact.identity
+                except Exception:
+                    pass
+
+                if identity:
+                    request.identity = identity
+
+                request.is_known_visitor = True
+
+                # Cache for subsequent requests
+                cache.set(
+                    f"visitor:{visitor_id}",
+                    {
+                        "fp_id": fp.pk,
+                        "identity_id": identity.pk if identity else None,
+                    },
+                    timeout=_VISITOR_CACHE_TTL,
+                )
+        except Exception:
+            logger.debug("Visitor identification failed for %s", visitor_id[:8])
+
+    def _load_cached_visitor(self, request: HttpRequest, cached: dict) -> None:
+        """Load visitor from cached data."""
+        from apps.contacts.fingerprint.models import FingerprintIdentity
+        from apps.contacts.identity.models import Identity
+
+        fp_id = cached.get("fp_id")
+        if fp_id:
+            request.fingerprint_identity = FingerprintIdentity.objects.get(pk=fp_id)
+            identity_id = cached.get("identity_id")
+            if identity_id:
+                request.identity = Identity.objects.get(pk=identity_id)
+            request.is_known_visitor = True
+
+    def _profile_device(self, request: HttpRequest) -> None:
+        """Parse User-Agent and Client Hints to build device profile."""
+        from device_detector import DeviceDetector
+
+        from core.tracking.services import DeviceProfileService
+
+        ua_string = request.META.get("HTTP_USER_AGENT", "")
+        dd = DeviceDetector(ua_string).parse()
+
+        # Engine extraction (device-detector v6 returns dict or str)
+        engine_raw = dd.engine()
+        if isinstance(engine_raw, dict):
+            engine = engine_raw.get("default", "")
+        else:
+            engine = str(engine_raw) if engine_raw else ""
+
+        request.device_data = {
+            "browser_family": dd.client_name() or "unknown",
+            "browser_version": dd.client_version() or "",
+            "browser_engine": engine,
+            "os_family": dd.os_name() or "unknown",
+            "os_version": dd.os_version() or "",
+            "device_type": dd.device_type() or "unknown",
+            "device_brand": dd.device_brand() or "",
+            "device_model": dd.device_model() or "",
+            "is_bot": dd.is_bot(),
+            "bot_name": "",
+            "bot_category": "",
+            "client_type": dd.client_type() or "",
+        }
+
+        # Client Hints (Chromium only — more precise than User-Agent)
+        request.client_hints = {
+            "ua": request.META.get("HTTP_SEC_CH_UA", ""),
+            "mobile": request.META.get("HTTP_SEC_CH_UA_MOBILE", ""),
+            "platform": request.META.get("HTTP_SEC_CH_UA_PLATFORM", ""),
+            "model": request.META.get("HTTP_SEC_CH_UA_MODEL", ""),
+            "platform_version": request.META.get("HTTP_SEC_CH_UA_PLATFORM_VERSION", ""),
+            "full_version": request.META.get("HTTP_SEC_CH_UA_FULL_VERSION_LIST", ""),
+            "arch": request.META.get("HTTP_SEC_CH_UA_ARCH", ""),
+        }
+
+        # Override device_data with Client Hints when more precise
+        if request.client_hints["platform"]:
+            ch_platform = request.client_hints["platform"].strip('"')
+            if ch_platform:
+                request.device_data["os_family"] = ch_platform
+        if request.client_hints["model"]:
+            ch_model = request.client_hints["model"].strip('"')
+            if ch_model:
+                request.device_data["device_model"] = ch_model
+
+        # DeviceProfile: get_or_create via hash (dimension table)
+        try:
+            request.device_profile = DeviceProfileService.get_or_create_from_request(
+                request
+            )
+        except Exception:
+            logger.debug("DeviceProfile creation failed")
+            request.device_profile = None
+
+    def _resolve_geo(self, request: HttpRequest) -> None:
+        """Resolve client IP to geographic location via MaxMind GeoLite2."""
+        from ipware import get_client_ip
+
+        client_ip, is_routable = get_client_ip(request)
+        request.client_ip = str(client_ip) if client_ip else ""
+        request.geo_data = {}
+
+        if not client_ip or not is_routable:
+            return
+
+        ip_str = str(client_ip)
+
+        # Try cache first
+        cached_geo = cache.get(f"geo:{ip_str}")
+        if cached_geo:
+            request.geo_data = cached_geo
+            return
+
+        # Check if GeoIP databases are configured and exist
+        city_db = getattr(settings, "GEOIP_CITY_DB", "")
+        asn_db = getattr(settings, "GEOIP_ASN_DB", "")
+
+        if not city_db or not Path(city_db).exists():
+            return
+
+        try:
+            import geoip2.database
+
+            city_reader = geoip2.database.Reader(city_db)
+            city = city_reader.city(ip_str)
+
+            geo_data: dict[str, Any] = {
+                "city": city.city.name or "",
+                "country": city.country.iso_code or "",
+                "country_name": city.country.name or "",
+                "region": (
+                    city.subdivisions.most_specific.name if city.subdivisions else ""
+                ),
+                "latitude": city.location.latitude,
+                "longitude": city.location.longitude,
+                "timezone": city.location.time_zone or "",
+            }
+
+            # ASN data (optional)
+            if asn_db and Path(asn_db).exists():
+                asn_reader = geoip2.database.Reader(asn_db)
+                asn = asn_reader.asn(ip_str)
+                geo_data["asn"] = asn.autonomous_system_number
+                geo_data["isp"] = asn.autonomous_system_organization or ""
+
+            request.geo_data = geo_data
+            cache.set(f"geo:{ip_str}", geo_data, timeout=_GEO_CACHE_TTL)
+
+        except Exception:
+            # GeoIP lookup failure is non-critical
+            logger.debug("GeoIP lookup failed for %s", ip_str)

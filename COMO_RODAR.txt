@@ -28,11 +28,11 @@
 
  TERMINAL 2 - Dashboard Vite dev server (porta 3344):
    Diretorio: launch-inertia/frontends/dashboard/
-   Comando:   npm run dev
+   Comando:   npm run dev --prefix frontends/dashboard/
 
  TERMINAL 3 - Landing Vite dev server (porta 3345):
    Diretorio: launch-inertia/frontends/landing/
-   Comando:   npm run dev
+   Comando:   npm run dev --prefix frontends/landing/
 
  TERMINAL 4 - Celery worker (opcional, para tarefas async):
    Diretorio: launch-inertia/

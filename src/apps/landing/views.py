@@ -4,11 +4,16 @@ Landing page views.
 Capture views handle both GET (render landing page) and POST (process form).
 All landing views use app="landing" for the landing.html Inertia template.
 
-Fallback: non-existent campaign slugs redirect to the default landing page.
+Config resolution order (DB first, JSON fallback):
+1. CapturePageService.get_page_config() — DB with Redis caching
+2. get_campaign() — static JSON files (migration-period fallback)
+3. get_campaign_or_default() — hardcoded defaults (safety net)
 """
 
 import logging
 import os
+import time
+import uuid
 from typing import Any
 
 from django.http import HttpRequest, HttpResponse
@@ -16,15 +21,45 @@ from django.shortcuts import redirect
 from django.views.decorators.http import require_GET
 
 from core.inertia.helpers import inertia_render
+from core.tracking.models import CaptureEvent
+from core.tracking.services import DeviceProfileService, TrackingService
 
+from apps.ads.models import CaptureSubmission
+from apps.ads.services.utm_parser import UTMParserService
 from apps.landing.campaigns import get_campaign, get_campaign_or_default
 from apps.landing.services.capture import CaptureService
 from apps.landing.tasks import send_to_n8n_task
+from apps.launches.services import CapturePageService
 
 logger = logging.getLogger(__name__)
 
 # Default campaign slug — used as fallback for non-existent slugs.
 DEFAULT_CAMPAIGN_SLUG = "wh-rc-v3"
+
+
+def _resolve_campaign_config(
+    slug: str,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Resolve campaign config: DB first, then JSON fallback.
+
+    Returns:
+        Tuple of (frontend_props, backend_config).
+        - frontend_props: For Inertia rendering (no n8n keys).
+        - backend_config: For POST handling (includes n8n, thank_you, etc.).
+        Both are None if slug not found anywhere.
+    """
+    # Try DB first (CapturePageService)
+    frontend_props = CapturePageService.get_page_config(slug)
+    if frontend_props is not None:
+        backend_config = CapturePageService.get_full_config(slug)
+        return frontend_props, backend_config
+
+    # Fallback to JSON files (migration period)
+    json_config = get_campaign(slug)
+    if json_config is not None:
+        return json_config, json_config
+
+    return None, None
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -42,23 +77,58 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     URL: /inscrever-<campaign_slug>/
 
     GET: Serves the landing page with campaign config as Inertia props.
-    POST: Validates form, resolves identity, forwards to N8N, redirects.
+         Generates capture_token, creates page_view event, starts session.
+    POST: Validates form, creates form_attempt/success/error events,
+          resolves identity, forwards to N8N, redirects.
 
+    Config resolution: DB (CapturePageService) → JSON fallback → defaults.
     Fallback: non-existent slugs redirect to /inscrever-wh-rc-v3/.
     """
-    campaign = get_campaign(campaign_slug)
+    frontend_props, backend_config = _resolve_campaign_config(campaign_slug)
 
     # Fallback: redirect to default campaign if slug doesn't exist
-    if campaign is None:
+    if frontend_props is None:
         if campaign_slug != DEFAULT_CAMPAIGN_SLUG:
             return redirect(f"/inscrever-{DEFAULT_CAMPAIGN_SLUG}/")
         # Safety: if even the default doesn't exist, use generated defaults
-        campaign = get_campaign_or_default(campaign_slug)
+        default_config = get_campaign_or_default(campaign_slug)
+        frontend_props = default_config
+        backend_config = default_config
+
+    # Resolve CapturePage model instance for FK on events (DB pages only)
+    capture_page_model = CapturePageService.get_page(campaign_slug)
 
     if request.method == "POST":
-        return _handle_capture_post(request, campaign, campaign_slug)
+        return _handle_capture_post(
+            request,
+            frontend_props,
+            backend_config or frontend_props,
+            campaign_slug,
+            capture_page_model=capture_page_model,
+        )
 
-    return _render_capture_page(request, campaign, campaign_slug)
+    # ── GET: generate capture_token, page_view event, start session ──
+    capture_token = TrackingService.generate_capture_token()
+    page_path = f"/inscrever-{campaign_slug}/"
+
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.PAGE_VIEW,
+        capture_token=capture_token,
+        page_path=page_path,
+        page_category=CaptureEvent.PageCategory.CAPTURE,
+        request=request,
+        capture_page=capture_page_model,
+    )
+
+    TrackingService.start_capture_session(
+        capture_token=capture_token,
+        slug=campaign_slug,
+        request=request,
+    )
+
+    return _render_capture_page(
+        request, frontend_props, campaign_slug, capture_token=capture_token
+    )
 
 
 def _build_campaign_props(
@@ -68,6 +138,10 @@ def _build_campaign_props(
 
     Includes all visual-parity fields (background_image, highlight_color,
     subheadline, button_gradient) used by the dark-theme landing frontend.
+
+    When config comes from CapturePageService.get_page_config(), the dict
+    already has the correct shape (to_props()). For JSON fallback, we
+    extract the same keys.
     """
     props: dict[str, Any] = {
         "slug": campaign.get("slug", campaign_slug),
@@ -80,7 +154,13 @@ def _build_campaign_props(
     }
 
     # Optional visual-parity fields — only include when present
-    for field in ("subheadline", "background_image", "highlight_color"):
+    for field in ("subheadline", "background_image", "highlight_color", "topBanner"):
+        value = campaign.get(field)
+        if value is not None:
+            props[field] = value
+
+    # DB-sourced pages include page_type and layout_type
+    for field in ("page_type", "layout_type"):
         value = campaign.get(field)
         if value is not None:
             props[field] = value
@@ -93,6 +173,7 @@ def _render_capture_page(
     campaign: dict[str, Any],
     campaign_slug: str,
     *,
+    capture_token: str = "",
     errors: dict[str, str] | None = None,
 ) -> HttpResponse:
     """Render the Capture/Index page with campaign props.
@@ -105,6 +186,7 @@ def _render_capture_page(
     props: dict[str, Any] = {
         "campaign": _build_campaign_props(campaign, campaign_slug),
         "fingerprint_api_key": fingerprint_api_key,
+        "capture_token": capture_token,
     }
 
     if errors:
@@ -114,20 +196,72 @@ def _render_capture_page(
 
 
 def _handle_capture_post(
-    request: HttpRequest, campaign: dict[str, Any], campaign_slug: str
+    request: HttpRequest,
+    frontend_props: dict[str, Any],
+    backend_config: dict[str, Any],
+    campaign_slug: str,
+    *,
+    capture_page_model: Any = None,
 ) -> HttpResponse:
     """Handle capture form POST submission.
 
     Uses request.data (parsed by InertiaJsonParserMiddleware).
+    Creates tracking events: form_attempt (always), then form_success
+    or form_error depending on validation result.
     Re-renders page with errors on validation failure,
     or redirects to thank-you URL on success.
+
+    After identity resolution, parses UTMs via UTMParserService and
+    creates a CaptureSubmission (star schema fact table) with all
+    resolved dimension FKs.
+
+    Args:
+        frontend_props: Config for re-rendering on validation error.
+        backend_config: Full config including n8n keys for POST processing.
+        campaign_slug: URL slug for redirect fallback.
+        capture_page_model: Optional CapturePage instance for FK on events.
     """
+    t_start = time.monotonic()
     data = getattr(request, "data", request.POST)
+    page_path = f"/inscrever-{campaign_slug}/"
+
+    # Recover capture_token from form data (generated on GET)
+    capture_token = (
+        data.get("capture_token", "") or TrackingService.generate_capture_token()
+    )
+
+    # Track form attempt (before validation)
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.FORM_ATTEMPT,
+        capture_token=capture_token,
+        page_path=page_path,
+        page_category=CaptureEvent.PageCategory.CAPTURE,
+        request=request,
+        capture_page=capture_page_model,
+    )
 
     # Server-side validation
     errors = CaptureService.validate_form_data(data)
     if errors:
-        return _render_capture_page(request, campaign, campaign_slug, errors=errors)
+        # Track form error
+        TrackingService.create_event(
+            event_type=CaptureEvent.EventType.FORM_ERROR,
+            capture_token=capture_token,
+            page_path=page_path,
+            page_category=CaptureEvent.PageCategory.CAPTURE,
+            request=request,
+            capture_page=capture_page_model,
+            extra_data={"validation_errors": errors},
+        )
+        # Re-render with the same capture_token so the next attempt
+        # stays linked to the same page load session
+        return _render_capture_page(
+            request,
+            frontend_props,
+            campaign_slug,
+            capture_token=capture_token,
+            errors=errors,
+        )
 
     # Extract form fields
     email = (data.get("email") or "").strip().lower()
@@ -136,7 +270,7 @@ def _handle_capture_post(
     request_id = data.get("request_id") or data.get("eventid") or ""
 
     # Extract UTM data
-    utm_data = {
+    utm_data: dict[str, str] = {
         "utm_source": data.get("utm_source", ""),
         "utm_medium": data.get("utm_medium", ""),
         "utm_campaign": data.get("utm_campaign", ""),
@@ -145,32 +279,194 @@ def _handle_capture_post(
         "utm_id": data.get("utm_id", ""),
     }
 
+    # Extract ad tracking params (Meta CAPI, Voluum)
+    extra_ad_params: dict[str, str] = {
+        "fbclid": data.get("fbclid", ""),
+        "vk_ad_id": data.get("vk_ad_id", ""),
+        "vk_source": data.get("vk_source", ""),
+    }
+
     page_url = request.build_absolute_uri()
     referrer = request.META.get("HTTP_REFERER", "")
 
     # Process the lead (identity resolution + attribution)
+    # Uses backend_config which includes n8n keys
     result = CaptureService.process_lead(
         email=email,
         phone=phone,
         visitor_id=visitor_id,
         request_id=request_id,
         utm_data=utm_data,
-        campaign_config=campaign,
+        campaign_config=backend_config,
         page_url=page_url,
         referrer=referrer,
     )
+
+    # Track form success
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.FORM_SUCCESS,
+        capture_token=capture_token,
+        page_path=page_path,
+        page_category=CaptureEvent.PageCategory.CAPTURE,
+        request=request,
+        capture_page=capture_page_model,
+        extra_data={"email_domain": email.split("@")[-1] if "@" in email else ""},
+    )
+
+    # Bind anonymous events to resolved identity (retroactive)
+    identity = result.get("identity")
+    if identity is not None:
+        TrackingService.bind_events_to_identity(
+            capture_token=capture_token,
+            identity=identity,
+            visitor_id=visitor_id,
+        )
+
+    # Update capture session status
+    TrackingService.update_capture_session(
+        capture_token=capture_token,
+        updates={
+            "status": "converted",
+            "email_domain": email.split("@")[-1] if "@" in email else "",
+        },
+    )
+
+    # ── Create CaptureSubmission (star schema fact table) ─────────
+    submission = None
+    if identity is not None and capture_page_model is not None:
+        submission = _create_capture_submission(
+            identity=identity,
+            email_raw=data.get("email", ""),
+            phone_raw=data.get("phone", ""),
+            capture_page=capture_page_model,
+            utm_data=utm_data,
+            extra_ad_params=extra_ad_params,
+            capture_token=capture_token,
+            visitor_id=visitor_id,
+            request=request,
+            t_start=t_start,
+        )
 
     # Fire N8N webhook asynchronously via Celery
     n8n_webhook_url = result.get("n8n_webhook_url", "")
     n8n_payload = result.get("n8n_payload", {})
     if n8n_webhook_url:
-        send_to_n8n_task.delay(n8n_webhook_url, n8n_payload)
+        submission_id = submission.public_id if submission else ""
+        send_to_n8n_task.delay(n8n_webhook_url, n8n_payload, submission_id)
 
     # Redirect to thank-you page
-    thank_you_url = campaign.get("form", {}).get(
-        "thank_you_url", f"/obrigado-{campaign.get('slug', '')}/"
+    thank_you_url = backend_config.get("form", {}).get(
+        "thank_you_url",
+        backend_config.get("thank_you", {}).get(
+            "url", f"/obrigado-{backend_config.get('slug', campaign_slug)}/"
+        ),
     )
     return redirect(thank_you_url)
+
+
+def _create_capture_submission(
+    *,
+    identity: Any,
+    email_raw: str,
+    phone_raw: str,
+    capture_page: Any,
+    utm_data: dict[str, str],
+    extra_ad_params: dict[str, str],
+    capture_token: str,
+    visitor_id: str,
+    request: HttpRequest,
+    t_start: float,
+) -> CaptureSubmission | None:
+    """Parse UTMs and create a CaptureSubmission fact record.
+
+    Resilient: if parsing or submission creation fails, logs error
+    and returns None (never blocks the redirect).
+
+    Args:
+        identity: Resolved Identity instance.
+        email_raw: Raw email from form (before normalization).
+        phone_raw: Raw phone from form.
+        capture_page: CapturePage model instance.
+        utm_data: Standard UTM parameters.
+        extra_ad_params: fbclid, vk_ad_id, vk_source.
+        capture_token: UUID linking to CaptureEvents.
+        visitor_id: FingerprintJS visitorId.
+        request: HttpRequest (for device_profile, ip, geo).
+        t_start: time.monotonic() from start of POST handler.
+    """
+    try:
+        # Parse UTMs and resolve all dimension FKs
+        launch = getattr(capture_page, "launch", None)
+        parsed = UTMParserService.parse(
+            utm_data,
+            extra_ad_params,
+            launch=launch,
+        )
+
+        # Calculate server render time
+        server_render_time_ms = (time.monotonic() - t_start) * 1000
+
+        # Resolve device profile from request (VisitorMiddleware)
+        device_profile = DeviceProfileService.get_or_create_from_request(request)
+
+        # Extract network data from request
+        ip_address = getattr(request, "client_ip", None) or None
+        geo_data = getattr(request, "geo_data", {})
+
+        # Detect duplicate (same email + same launch)
+        is_duplicate = False
+        if launch is not None:
+            is_duplicate = CaptureSubmission.objects.filter(
+                email_raw__iexact=email_raw.strip(),
+                capture_page__launch=launch,
+                is_deleted=False,
+            ).exists()
+
+        # Parse capture_token to UUID (may be string from form)
+        try:
+            capture_token_uuid = uuid.UUID(capture_token)
+        except (ValueError, AttributeError):
+            capture_token_uuid = uuid.uuid4()
+
+        # Click ID: from parsed result or direct from extra_params
+        click_id = parsed.click_id or extra_ad_params.get("fbclid", "")
+
+        submission = CaptureSubmission.objects.create(
+            identity=identity,
+            email_raw=email_raw,
+            phone_raw=phone_raw,
+            capture_page=capture_page,
+            traffic_source=parsed.traffic_source,
+            ad_group=parsed.ad_group,
+            ad_creative=parsed.creative,
+            click_id=click_id,
+            visitor_id=visitor_id,
+            capture_token=capture_token_uuid,
+            device_profile=device_profile,
+            ip_address=ip_address,
+            geo_data=geo_data or {},
+            n8n_status="pending",
+            server_render_time_ms=server_render_time_ms,
+            is_duplicate=is_duplicate,
+            raw_utm_data={**utm_data, **extra_ad_params},
+        )
+
+        logger.info(
+            "CaptureSubmission created: %s (email=%s, page=%s, duplicate=%s)",
+            submission.public_id,
+            email_raw[:20],
+            capture_page.slug,
+            is_duplicate,
+        )
+        return submission
+
+    except Exception:
+        logger.exception(
+            "Failed to create CaptureSubmission (email=%s, page=%s)",
+            email_raw[:20],
+            getattr(capture_page, "slug", "?"),
+        )
+        return None
 
 
 # ── Support page configuration ────────────────────────────────────────
@@ -281,7 +577,18 @@ def support_page(request: HttpRequest) -> HttpResponse:
 
     Renders the Central de Suporte page with Chatwoot widget and FAQ panel.
     Config is site-wide (not campaign-specific).
+    Tracks page_view event.
     """
+    # Track page_view
+    capture_token = TrackingService.generate_capture_token()
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.PAGE_VIEW,
+        capture_token=capture_token,
+        page_path="/suporte/",
+        page_category=CaptureEvent.PageCategory.SUPPORT,
+        request=request,
+    )
+
     return inertia_render(
         request,
         "Support/Index",
@@ -301,7 +608,16 @@ def terms_page(request: HttpRequest) -> HttpResponse:
     """Terms of Service page.
 
     URL: /terms-of-service/
+    Tracks page_view event.
     """
+    capture_token = TrackingService.generate_capture_token()
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.PAGE_VIEW,
+        capture_token=capture_token,
+        page_path="/terms-of-service/",
+        page_category=CaptureEvent.PageCategory.LEGAL,
+        request=request,
+    )
     return inertia_render(request, "Legal/Terms", {}, app="landing")
 
 
@@ -310,7 +626,16 @@ def privacy_page(request: HttpRequest) -> HttpResponse:
     """Privacy Policy page.
 
     URL: /privacy-policy/
+    Tracks page_view event.
     """
+    capture_token = TrackingService.generate_capture_token()
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.PAGE_VIEW,
+        capture_token=capture_token,
+        page_path="/privacy-policy/",
+        page_category=CaptureEvent.PageCategory.LEGAL,
+        request=request,
+    )
     return inertia_render(request, "Legal/Privacy", {}, app="landing")
 
 
@@ -321,13 +646,30 @@ def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
     URL: /obrigado-<campaign_slug>/
 
     Renders urgency-driven page with WhatsApp CTA, countdown timer,
-    and progress bar. Config comes from campaign JSON ``thank_you`` key.
+    and progress bar. Config resolution: DB first, JSON fallback.
+    Tracks page_view event.
 
     Fallback: non-existent slugs redirect to home.
     """
-    campaign = get_campaign(campaign_slug)
-    if campaign is None:
+    # DB first, then JSON fallback
+    _, backend_config = _resolve_campaign_config(campaign_slug)
+
+    if backend_config is None:
         return redirect("/")
+
+    # Track page_view
+    capture_token = TrackingService.generate_capture_token()
+    page_path = f"/obrigado-{campaign_slug}/"
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.PAGE_VIEW,
+        capture_token=capture_token,
+        page_path=page_path,
+        page_category=CaptureEvent.PageCategory.THANK_YOU,
+        request=request,
+        capture_page=CapturePageService.get_page(campaign_slug),
+    )
+
+    campaign = backend_config
     thank_you_config = campaign.get("thank_you", {})
 
     # Build thank_you props with sensible defaults
