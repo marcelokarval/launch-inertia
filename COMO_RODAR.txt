@@ -51,17 +51,18 @@
    http://localhost:8844/app/login/
    http://localhost:8844/app/register/
 
- Landing (publico):
-   http://localhost:8844/
-   http://localhost:8844/suporte/
-   http://localhost:8844/terms/
-   http://localhost:8844/privacy/
+  Landing (publico):
+    http://localhost:8844/
+    http://localhost:8844/suporte/
+    http://localhost:8844/terms/
+    http://localhost:8844/privacy/
+    http://localhost:8844/inscrever-wh-rc-v3/
 
- Admin (django-unfold):
-   http://localhost:8844/admin/
+  Admin (django-unfold):
+    http://localhost:8844/admin/
 
- Nota: As paginas de captura (ex: /c/meu-lancamento/) e checkout
- dependem de campanhas configuradas no banco de dados.
+  Nota: As paginas de captura (ex: /inscrever-wh-rc-v3/) e checkout
+  dependem de campanhas configuradas no banco de dados.
 
 ================================================================================
  PORTAS
@@ -117,3 +118,30 @@
  - Variveis de ambiente: copie .env.example para .env e configure
  - Banco de dados: PostgreSQL deve estar rodando
  - Redis: necessario para Celery e cache
+
+================================================================================
+ DJANGO DEBUG TOOLBAR (DjDT)
+================================================================================
+
+ O DjDT esta ativo apenas em development (settings.development).
+
+ ONDE APARECE POR PADRAO:
+   /app/*          (dashboard)
+   /admin/*        (admin)
+   /auth/*         (autenticacao)
+   /onboarding/*   (onboarding)
+
+ ONDE NAO APARECE (por performance):
+   Landing pages publicas (/inscrever-*, /obrigado-*, /suporte/, etc.)
+   Essas rotas sao de alta performance e o DjDT adiciona overhead.
+
+ FORCAR DjDT EM QUALQUER PAGINA:
+   Adicione ?djdt=1 na URL. Exemplos:
+     http://localhost:8844/inscrever-wh-rc-v3/?djdt=1
+     http://localhost:8844/suporte/?djdt=1
+     http://localhost:8844/obrigado-wh-rc-v3/?djdt=1
+
+ NOTA TECNICA:
+   O painel de Profiling esta desabilitado por conflito com Python 3.13
+   (sys.monitoring vs cProfile). Os demais paineis (SQL, Cache, Signals,
+   Templates, etc.) funcionam normalmente.
