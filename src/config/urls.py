@@ -44,11 +44,10 @@ urlpatterns = [
     path("", include("apps.landing.urls")),
 ]
 
-# Debug toolbar (development only) - disabled temporarily
+# Debug toolbar + static files (development only)
 if settings.DEBUG:
-    # urlpatterns += [
-    #     path("__debug__/", include("debug_toolbar.urls")),
-    # ]
-    # Serve static and media files in development
+    urlpatterns += [
+        path("__debug__/", include("debug_toolbar.urls")),
+    ]
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
