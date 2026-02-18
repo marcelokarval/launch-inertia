@@ -41,14 +41,77 @@ _GEO_CACHE_TTL = 86400  # 24 hours
 
 
 class VisitorMiddleware:
-    """Identify visitor, profile device, resolve GeoIP on each request."""
+    """Identify visitor, profile device, resolve GeoIP on each request.
+
+    Skip logic: Routes that are pure redirects, JSON API endpoints,
+    admin, static assets, or debug toolbar are skipped entirely.
+    These routes don't need device profiling or visitor identification.
+
+    Skipped routes still get empty defaults set on request so
+    downstream code (e.g., TrackingService) doesn't AttributeError.
+    """
+
+    # Prefixes where full visitor profiling is unnecessary.
+    # These are either non-content routes (redirects, APIs, admin)
+    # or routes served by other systems (static, DjDT).
+    _SKIP_PREFIXES: tuple[str, ...] = (
+        "/static/",
+        "/media/",
+        "/__debug__/",
+        "/admin/",
+        # Checkout JSON API endpoints (NOT the Inertia pages)
+        "/checkout/create-session/",
+        "/checkout/create-customer/",
+        "/checkout/create-subscription/",
+        "/checkout/create-payment-intent/",
+        "/checkout/session-status/",
+    )
+
+    # Exact paths that are redirect-only (no content page).
+    # Tracking for these happens in the view (lightweight, no device profile).
+    _SKIP_EXACT: frozenset[str] = frozenset(
+        {
+            "/",
+            "/lembrete-bf/",
+            "/recado-importante/",
+            "/onboarding/",
+            "/agrelliflix/",
+            "/agrelliflix-aula-1/",
+            "/agrelliflix-aula-2/",
+            "/agrelliflix-aula-3/",
+            "/agrelliflix-aula-4/",
+        }
+    )
 
     def __init__(self, get_response: Any) -> None:
         self.get_response = get_response
         self._city_reader = None
         self._asn_reader = None
 
+    def _should_skip(self, path: str) -> bool:
+        """Return True if this path should skip visitor profiling."""
+        if path in self._SKIP_EXACT:
+            return True
+        return any(path.startswith(prefix) for prefix in self._SKIP_PREFIXES)
+
+    def _set_empty_defaults(self, request: HttpRequest) -> None:
+        """Set empty defaults on request so downstream code doesn't break."""
+        request.visitor_id = ""  # type: ignore[attr-defined]
+        request.fingerprint_identity = None  # type: ignore[attr-defined]
+        request.identity = None  # type: ignore[attr-defined]
+        request.is_known_visitor = False  # type: ignore[attr-defined]
+        request.device_profile = None  # type: ignore[attr-defined]
+        request.device_data = {}  # type: ignore[attr-defined]
+        request.client_ip = ""  # type: ignore[attr-defined]
+        request.geo_data = {}  # type: ignore[attr-defined]
+        request.client_hints = {}  # type: ignore[attr-defined]
+
     def __call__(self, request: HttpRequest) -> HttpResponse:
+        # Skip profiling for non-content routes
+        if self._should_skip(request.path):
+            self._set_empty_defaults(request)
+            return self.get_response(request)
+
         # ─── 1. IDENTIFICATION (cookie fpjs_vid) ───
         self._identify_visitor(request)
 

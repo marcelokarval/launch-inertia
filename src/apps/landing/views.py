@@ -37,6 +37,27 @@ logger = logging.getLogger(__name__)
 DEFAULT_CAMPAIGN_SLUG = "wh-rc-v3"
 
 
+def _track_redirect(request: HttpRequest, page_path: str) -> None:
+    """Track a lightweight page_view event for redirect-only routes.
+
+    Used for home, placeholder redirects, and other non-content routes.
+    These events record that the visitor accessed the URL (journey attribution)
+    but may not have full device/geo data if VisitorMiddleware was skipped.
+    """
+    try:
+        capture_token = TrackingService.generate_capture_token()
+        TrackingService.create_event(
+            event_type=CaptureEvent.EventType.PAGE_VIEW,
+            capture_token=capture_token,
+            page_path=page_path,
+            page_category=CaptureEvent.PageCategory.OTHER,
+            request=request,
+        )
+    except Exception:
+        # Tracking failure must never block a redirect
+        logger.debug("Failed to track redirect for %s", page_path)
+
+
 def _resolve_campaign_config(
     slug: str,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None, Any]:
@@ -69,7 +90,9 @@ def home(request: HttpRequest) -> HttpResponse:
 
     URL: /
     Legacy parity: root page redirects to /inscrever-wh-rc-v3/.
+    Tracks page_view for visitor journey attribution.
     """
+    _track_redirect(request, "/")
     return redirect(f"/inscrever-{DEFAULT_CAMPAIGN_SLUG}/")
 
 
@@ -738,5 +761,8 @@ def placeholder_redirect(request: HttpRequest) -> HttpResponse:
 
     These are complex pages (sales funnels, video platforms,
     post-purchase flows) that will be implemented in later phases.
+
+    Tracks page_view event for visitor journey attribution before redirect.
     """
+    _track_redirect(request, request.path)
     return redirect("/")

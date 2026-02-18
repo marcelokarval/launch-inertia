@@ -85,24 +85,50 @@ class InertiaShareMiddleware:
     - auth: Current user information
     - flash: Flash messages from Django messages framework
     - app: Application configuration
+
+    Performance optimization: Landing pages (non /app/ routes) get
+    lightweight shared data that avoids DB queries for auth/flash.
     """
+
+    # Routes that use the dashboard frontend (need full auth/flash data).
+    _DASHBOARD_PREFIXES: tuple[str, ...] = (
+        "/app/",
+        "/auth/",
+        "/onboarding/",
+    )
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
         self.get_response = get_response
 
+    def _is_dashboard_route(self, path: str) -> bool:
+        """Return True if this path needs full auth/flash shared data."""
+        return any(path.startswith(prefix) for prefix in self._DASHBOARD_PREFIXES)
+
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        # Share data with Inertia (evaluated lazily at render time)
-        share(
-            request,
-            # Authentication data
-            auth=lambda: self._get_auth_data(request),
-            # Flash messages
-            flash=lambda: self._get_flash_messages(request),
-            # App configuration
-            app=lambda: self._get_app_config(request),
-            # Locale data for i18n
-            locale=lambda: self._get_locale_data(request),
-        )
+        if self._is_dashboard_route(request.path):
+            # Dashboard: full shared data with auth, flash, etc.
+            share(
+                request,
+                auth=lambda: self._get_auth_data(request),
+                flash=lambda: self._get_flash_messages(request),
+                app=lambda: self._get_app_config(request),
+                locale=lambda: self._get_locale_data(request),
+            )
+        else:
+            # Landing pages: lightweight shared data (no DB queries).
+            # Auth is always unauthenticated, no flash messages needed.
+            share(
+                request,
+                auth=lambda: {"user": None},
+                flash=lambda: {
+                    "success": None,
+                    "error": None,
+                    "warning": None,
+                    "info": None,
+                },
+                app=lambda: self._get_app_config(request),
+                locale=lambda: self._get_locale_data(request),
+            )
 
         return self.get_response(request)
 
