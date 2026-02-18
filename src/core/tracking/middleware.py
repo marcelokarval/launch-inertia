@@ -27,11 +27,13 @@ Attributes set on request:
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
+
+from core.types import TrackedHttpRequest
 
 logger = logging.getLogger(__name__)
 
@@ -99,15 +101,17 @@ class VisitorMiddleware:
 
     def _set_empty_defaults(self, request: HttpRequest) -> None:
         """Set empty defaults on request so downstream code doesn't break."""
-        request.visitor_id = ""  # type: ignore[attr-defined]
-        request.fingerprint_identity = None  # type: ignore[attr-defined]
-        request.identity = None  # type: ignore[attr-defined]
-        request.is_known_visitor = False  # type: ignore[attr-defined]
-        request.device_profile = None  # type: ignore[attr-defined]
-        request.device_data = {}  # type: ignore[attr-defined]
-        request.client_ip = ""  # type: ignore[attr-defined]
-        request.geo_data = {}  # type: ignore[attr-defined]
-        request.client_hints = {}  # type: ignore[attr-defined]
+        req = cast(TrackedHttpRequest, request)
+        req.visitor_id = ""
+        req.fingerprint_identity = None
+        req.identity = None
+        req.is_known_visitor = False
+        req._visitor_mw_identity = None
+        req.device_profile = None
+        req.device_data = {}
+        req.client_ip = ""
+        req.geo_data = {}
+        req.client_hints = {}
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         # Skip profiling for non-content routes
@@ -136,12 +140,21 @@ class VisitorMiddleware:
         return response
 
     def _identify_visitor(self, request: HttpRequest) -> None:
-        """Read fpjs_vid cookie and resolve to FingerprintIdentity + Identity."""
+        """Read fpjs_vid cookie and resolve to FingerprintIdentity + Identity.
+
+        Sets request.identity for fingerprint-resolved visitors.
+        Also stores identity as request._visitor_mw_identity so
+        IdentitySessionMiddleware (which runs after) can detect
+        divergence between session-based and fingerprint-based
+        identities and flag potential merges.
+        """
+        req = cast(TrackedHttpRequest, request)
         visitor_id = request.COOKIES.get("fpjs_vid", "")
-        request.visitor_id = visitor_id
-        request.fingerprint_identity = None
-        request.identity = None
-        request.is_known_visitor = False
+        req.visitor_id = visitor_id
+        req.fingerprint_identity = None
+        req.identity = None
+        req.is_known_visitor = False
+        req._visitor_mw_identity = None
 
         if not visitor_id:
             return
@@ -150,7 +163,8 @@ class VisitorMiddleware:
         cached = cache.get(f"visitor:{visitor_id}")
         if cached:
             try:
-                self._load_cached_visitor(request, cached)
+                self._load_cached_visitor(req, cached)
+                req._visitor_mw_identity = req.identity
                 return
             except Exception:
                 logger.debug("Cached visitor data stale for %s", visitor_id[:8])
@@ -161,20 +175,20 @@ class VisitorMiddleware:
 
             fp = FingerprintIdentity.objects.filter(fingerprint_hash=visitor_id).first()
             if fp:
-                request.fingerprint_identity = fp
+                req.fingerprint_identity = fp
                 # Resolve identity via the junction table
                 identity = None
                 try:
-                    contact = fp.contacts.first()
+                    contact = fp.contacts.first()  # type: ignore[attr-defined]
                     if contact and hasattr(contact, "identity"):
                         identity = contact.identity
                 except Exception:
                     pass
 
                 if identity:
-                    request.identity = identity
+                    req.identity = identity
 
-                request.is_known_visitor = True
+                req.is_known_visitor = True
 
                 # Cache for subsequent requests
                 cache.set(
@@ -185,10 +199,13 @@ class VisitorMiddleware:
                     },
                     timeout=_VISITOR_CACHE_TTL,
                 )
+
+            # Store fingerprint-resolved identity for IdentitySessionMiddleware
+            req._visitor_mw_identity = req.identity
         except Exception:
             logger.debug("Visitor identification failed for %s", visitor_id[:8])
 
-    def _load_cached_visitor(self, request: HttpRequest, cached: dict) -> None:
+    def _load_cached_visitor(self, request: TrackedHttpRequest, cached: dict) -> None:
         """Load visitor from cached data."""
         from apps.contacts.fingerprint.models import FingerprintIdentity
         from apps.contacts.identity.models import Identity
@@ -211,6 +228,7 @@ class VisitorMiddleware:
         """
         from core.tracking.services import DeviceProfileService
 
+        req = cast(TrackedHttpRequest, request)
         ua_string = request.META.get("HTTP_USER_AGENT", "")
 
         # device-detector 6.x has intermittent crashes on Python 3.13
@@ -228,7 +246,7 @@ class VisitorMiddleware:
             else:
                 engine = str(engine_raw) if engine_raw else ""
 
-            request.device_data = {
+            req.device_data = {
                 "browser_family": dd.client_name() or "unknown",
                 "browser_version": dd.client_version() or "",
                 "browser_engine": engine,
@@ -244,7 +262,7 @@ class VisitorMiddleware:
             }
         except Exception:
             logger.warning("DeviceDetector parse failed for UA: %.80s", ua_string)
-            request.device_data = {
+            req.device_data = {
                 "browser_family": "unknown",
                 "browser_version": "",
                 "browser_engine": "",
@@ -260,7 +278,7 @@ class VisitorMiddleware:
             }
 
         # Client Hints (Chromium only — more precise than User-Agent)
-        request.client_hints = {
+        req.client_hints = {
             "ua": request.META.get("HTTP_SEC_CH_UA", ""),
             "mobile": request.META.get("HTTP_SEC_CH_UA_MOBILE", ""),
             "platform": request.META.get("HTTP_SEC_CH_UA_PLATFORM", ""),
@@ -271,31 +289,32 @@ class VisitorMiddleware:
         }
 
         # Override device_data with Client Hints when more precise
-        if request.client_hints["platform"]:
-            ch_platform = request.client_hints["platform"].strip('"')
+        if req.client_hints["platform"]:
+            ch_platform = req.client_hints["platform"].strip('"')
             if ch_platform:
-                request.device_data["os_family"] = ch_platform
-        if request.client_hints["model"]:
-            ch_model = request.client_hints["model"].strip('"')
+                req.device_data["os_family"] = ch_platform
+        if req.client_hints["model"]:
+            ch_model = req.client_hints["model"].strip('"')
             if ch_model:
-                request.device_data["device_model"] = ch_model
+                req.device_data["device_model"] = ch_model
 
         # DeviceProfile: get_or_create via hash (dimension table)
         try:
-            request.device_profile = DeviceProfileService.get_or_create_from_request(
+            req.device_profile = DeviceProfileService.get_or_create_from_request(
                 request
             )
         except Exception:
             logger.debug("DeviceProfile creation failed")
-            request.device_profile = None
+            req.device_profile = None
 
     def _resolve_geo(self, request: HttpRequest) -> None:
         """Resolve client IP to geographic location via MaxMind GeoLite2."""
         from ipware import get_client_ip
 
+        req = cast(TrackedHttpRequest, request)
         client_ip, is_routable = get_client_ip(request)
-        request.client_ip = str(client_ip) if client_ip else ""
-        request.geo_data = {}
+        req.client_ip = str(client_ip) if client_ip else ""
+        req.geo_data = {}
 
         if not client_ip or not is_routable:
             return
@@ -305,7 +324,7 @@ class VisitorMiddleware:
         # Try cache first
         cached_geo = cache.get(f"geo:{ip_str}")
         if cached_geo:
-            request.geo_data = cached_geo
+            req.geo_data = cached_geo
             return
 
         # Check if GeoIP databases are configured and exist
@@ -340,7 +359,7 @@ class VisitorMiddleware:
                 geo_data["asn"] = asn.autonomous_system_number
                 geo_data["isp"] = asn.autonomous_system_organization or ""
 
-            request.geo_data = geo_data
+            req.geo_data = geo_data
             cache.set(f"geo:{ip_str}", geo_data, timeout=_GEO_CACHE_TTL)
 
         except Exception:

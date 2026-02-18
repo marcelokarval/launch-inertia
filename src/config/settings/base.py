@@ -131,6 +131,8 @@ MIDDLEWARE = [
     "core.security.middleware.RateLimitMiddleware",
     # Visitor tracking (identification, device profiling, GeoIP)
     "core.tracking.middleware.VisitorMiddleware",
+    # Session-based anonymous identity (creates/recovers Identity per visitor)
+    "core.tracking.identity_middleware.IdentitySessionMiddleware",
     # Inertia.js
     "inertia.middleware.InertiaMiddleware",
     # JSON body parser (request.data)
@@ -341,10 +343,16 @@ CSRF_TRUSTED_ORIGINS = flags.csrf_trusted_origins
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = flags.session_cookie_samesite
 SESSION_COOKIE_SECURE = flags.session_cookie_secure
+
+# Session TTL: 90 days base. Extended dynamically by IdentitySessionMiddleware
+# based on identity richness (visitor_id → 180d, email → 365d).
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 90  # 90 days
+
+# Renew session TTL on every request — keeps active visitors alive.
+SESSION_SAVE_EVERY_REQUEST = True
 
 # =============================================================================
 # SECURITY

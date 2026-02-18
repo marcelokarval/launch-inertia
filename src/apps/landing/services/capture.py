@@ -102,12 +102,14 @@ class CaptureService:
         campaign_config: dict[str, Any],
         page_url: str = "",
         referrer: str = "",
+        session_identity: Identity | None = None,
     ) -> dict[str, Any]:
         """Process a captured lead end-to-end.
 
         1. Resolve identity (create or find existing)
-        2. Save UTM attribution
-        3. Build N8N payload (sent async via Celery task)
+        2. Merge session-based anonymous identity if different
+        3. Save UTM attribution
+        4. Build N8N payload (sent async via Celery task)
 
         Args:
             email: Validated email address.
@@ -118,6 +120,10 @@ class CaptureService:
             campaign_config: Campaign JSON config.
             page_url: Full page URL for origin tracking.
             referrer: HTTP referrer.
+            session_identity: Pre-existing anonymous Identity from Django
+                session (created by IdentitySessionMiddleware). If present
+                and different from the resolved identity, will be merged
+                to preserve tracking history.
 
         Returns:
             Dict with resolution result and N8N payload.
@@ -156,6 +162,50 @@ class CaptureService:
                     identity = Identity.objects.filter(public_id=identity_id).first()
             except Exception:
                 logger.exception("Identity resolution (no FP) failed for %s", email)
+
+        # Step 1b: Merge session identity if it differs from resolved
+        # The session identity is an anonymous record created on first visit.
+        # If resolution found/created a different identity (by email/phone),
+        # merge the session identity INTO the resolved one so that all
+        # pre-form tracking events (page_views, etc.) transfer over.
+        if (
+            session_identity is not None
+            and identity is not None
+            and session_identity.pk != identity.pk
+            and session_identity.status == Identity.ACTIVE
+        ):
+            try:
+                from apps.contacts.identity.services.merge_service import MergeService
+
+                MergeService.execute_merge(
+                    source=session_identity,
+                    target=identity,
+                )
+                logger.info(
+                    "Merged session identity %s into resolved identity %s",
+                    session_identity.public_id,
+                    identity.public_id,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to merge session identity %s into %s",
+                    session_identity.public_id,
+                    identity.public_id if identity else "?",
+                )
+
+        # If resolution failed but we have a session identity, use it
+        if identity is None and session_identity is not None:
+            identity = session_identity
+            resolution_result = {
+                "identity_id": session_identity.public_id,
+                "is_new": False,
+                "is_anonymous": True,
+                "confidence_score": session_identity.confidence_score,
+            }
+            logger.info(
+                "Using session identity %s as fallback (resolution failed)",
+                session_identity.public_id,
+            )
 
         # Step 2: Save attribution
         if identity and utm_data:

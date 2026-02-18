@@ -186,7 +186,10 @@ class TrackingService:
         slug: str,
         request: Optional[HttpRequest] = None,
     ) -> None:
-        """Store capture session data in Redis for dedup and state tracking.
+        """Store capture session data in both Redis and Django session.
+
+        Redis: short-lived (30min), used for dedup and event correlation.
+        Django session: persistent (90-365d), used for identity tracking.
 
         Args:
             capture_token: The session's capture token.
@@ -195,11 +198,16 @@ class TrackingService:
         """
         from django.utils import timezone
 
+        now_iso = timezone.now().isoformat()
+        ip = getattr(request, "client_ip", "") if request else ""
+        visitor_id = getattr(request, "visitor_id", "") if request else ""
+
+        # Redis (short-lived, event correlation)
         session_data = {
             "slug": slug,
-            "started_at": timezone.now().isoformat(),
-            "ip": getattr(request, "client_ip", "") if request else "",
-            "visitor_id": getattr(request, "visitor_id", "") if request else "",
+            "started_at": now_iso,
+            "ip": ip,
+            "visitor_id": visitor_id,
             "status": "viewing",
         }
         cache.set(
@@ -207,6 +215,13 @@ class TrackingService:
             session_data,
             timeout=CAPTURE_SESSION_TTL,
         )
+
+        # Django session (persistent, identity tracking)
+        if request is not None and hasattr(request, "session"):
+            request.session["capture_token"] = capture_token
+            request.session["capture_slug"] = slug
+            request.session["capture_started_at"] = now_iso
+            request.session["last_page"] = f"/inscrever-{slug}/"
 
     @classmethod
     def get_capture_session(cls, capture_token: str) -> Optional[dict]:
@@ -267,6 +282,48 @@ class TrackingService:
             )
 
         return count
+
+    @classmethod
+    def mark_session_converted(
+        cls,
+        request: HttpRequest,
+        email: str = "",
+    ) -> None:
+        """Mark Django session as converted after form submission.
+
+        Updates visitor_status to 'converted' and extends session TTL
+        to 365 days. Called from the capture POST handler after
+        successful identity resolution.
+
+        Resilient: works with both real Django sessions and test
+        dict-based sessions (which lack set_expiry).
+
+        Args:
+            request: HttpRequest with active session.
+            email: Captured email (for session metadata).
+        """
+        if not hasattr(request, "session"):
+            return
+
+        try:
+            request.session["visitor_status"] = "converted"
+            request.session["converted_email"] = email
+
+            # Extend session to 365 days for converted visitors
+            # Real Django sessions have set_expiry; test dicts don't
+            if hasattr(request.session, "set_expiry"):
+                request.session.set_expiry(60 * 60 * 24 * 365)
+
+            # Update visitor_status on request for downstream middleware
+            request.visitor_status = "converted"  # type: ignore[attr-defined]
+
+            logger.debug(
+                "Session marked as converted for %s (email=%s)",
+                getattr(request.session, "session_key", "?"),
+                email[:20] if email else "?",
+            )
+        except Exception:
+            logger.debug("Failed to mark session as converted")
 
     @classmethod
     def extract_utm_from_request(cls, request: HttpRequest) -> dict[str, str]:

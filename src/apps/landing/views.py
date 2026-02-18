@@ -150,8 +150,15 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
         request=request,
     )
 
+    # Pass session identity public_id to frontend (for JS correlation)
+    identity_public_id = getattr(request, "identity_public_id", "")
+
     return _render_capture_page(
-        request, frontend_props, campaign_slug, capture_token=capture_token
+        request,
+        frontend_props,
+        campaign_slug,
+        capture_token=capture_token,
+        identity_public_id=identity_public_id,
     )
 
 
@@ -198,12 +205,14 @@ def _render_capture_page(
     campaign_slug: str,
     *,
     capture_token: str = "",
+    identity_public_id: str = "",
     errors: dict[str, str] | None = None,
 ) -> HttpResponse:
     """Render the Capture/Index page with campaign props.
 
     When errors are provided (POST validation failure), re-renders the
     page with errors as props so the frontend can display them inline.
+    The identity_public_id is the session-based Identity for JS correlation.
     """
     fingerprint_api_key = os.getenv("FINGERPRINT_API_KEY", "")
 
@@ -212,6 +221,10 @@ def _render_capture_page(
         "fingerprint_api_key": fingerprint_api_key,
         "capture_token": capture_token,
     }
+
+    # Session-based identity: always available from first page load
+    if identity_public_id:
+        props["identity_id"] = identity_public_id
 
     if errors:
         props["errors"] = errors
@@ -284,6 +297,7 @@ def _handle_capture_post(
             frontend_props,
             campaign_slug,
             capture_token=capture_token,
+            identity_public_id=getattr(request, "identity_public_id", ""),
             errors=errors,
         )
 
@@ -313,8 +327,12 @@ def _handle_capture_post(
     page_url = request.build_absolute_uri()
     referrer = request.META.get("HTTP_REFERER", "")
 
+    # Session-based identity: may already exist from IdentitySessionMiddleware
+    session_identity = getattr(request, "identity", None)
+
     # Process the lead (identity resolution + attribution)
     # Uses backend_config which includes n8n keys
+    # Passes session_identity so resolution can enrich it instead of creating new
     result = CaptureService.process_lead(
         email=email,
         phone=phone,
@@ -324,6 +342,7 @@ def _handle_capture_post(
         campaign_config=backend_config,
         page_url=page_url,
         referrer=referrer,
+        session_identity=session_identity,
     )
 
     # Track form success
@@ -346,7 +365,16 @@ def _handle_capture_post(
             visitor_id=visitor_id,
         )
 
-    # Update capture session status
+    # Mark Django session as converted (extends TTL to 365d)
+    TrackingService.mark_session_converted(request, email=email)
+
+    # Update session identity_pk if resolution returned a different identity
+    # (e.g., merged with existing email-based identity)
+    if identity is not None and hasattr(request, "session"):
+        request.session["identity_pk"] = identity.pk
+        request.session["identity_id"] = identity.public_id
+
+    # Update Redis capture session status (short-lived, event correlation)
     TrackingService.update_capture_session(
         capture_token=capture_token,
         updates={

@@ -360,6 +360,18 @@ redis = [
 ]
 
 [[package]]
+name = "celery-types"
+version = "0.24.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/72/25/2276a1f00f8ab9fc88128c939333933a24db7df1d75aa57ecc27b7dd3a22/celery_types-0.24.0.tar.gz", hash = "sha256:c93fbcd0b04a9e9c2f55d5540aca4aa1ea4cc06a870c0c8dee5062fdd59663fe", size = 33148, upload-time = "2025-12-23T17:16:30.847Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3a/7e/3252cba5f5c9a65a3f52a69734d8e51e023db8981022b503e8183cf0225e/celery_types-0.24.0-py3-none-any.whl", hash = "sha256:a21e04681e68719a208335e556a79909da4be9c5e0d6d2fd0dd4c5615954b3fd", size = 60473, upload-time = "2025-12-23T17:16:29.89Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -978,6 +990,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/05/4c9c419b7051eb4b350100b086be6df487f968ab672d3d370f8ccf7c3746/django_stubs-5.2.9-py3-none-any.whl", hash = "sha256:2317a7130afdaa76f6ff7f623650d7f3bf1b6c86a60f95840e14e6ec6de1a7cd", size = 508656, upload-time = "2026-01-20T23:59:25.12Z" },
 ]
 
+[package.optional-dependencies]
+compatible-mypy = [
+    { name = "mypy" },
+]
+
 [[package]]
 name = "django-stubs-ext"
 version = "5.2.9"
@@ -1407,12 +1424,12 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "black" },
+    { name = "celery-types" },
     { name = "django-debug-toolbar" },
     { name = "django-extensions" },
-    { name = "django-stubs" },
+    { name = "django-stubs", extra = ["compatible-mypy"] },
     { name = "factory-boy" },
     { name = "ipython" },
-    { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1423,12 +1440,12 @@ dev = [
 [package.dev-dependencies]
 dev = [
     { name = "black" },
+    { name = "celery-types" },
     { name = "django-debug-toolbar" },
     { name = "django-extensions" },
-    { name = "django-stubs" },
+    { name = "django-stubs", extra = ["compatible-mypy"] },
     { name = "factory-boy" },
     { name = "ipython" },
-    { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1441,6 +1458,7 @@ requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.0" },
     { name = "boto3", specifier = ">=1.35" },
     { name = "celery", extras = ["redis"], specifier = ">=5.4" },
+    { name = "celery-types", marker = "extra == 'dev'", specifier = ">=0.22.0" },
     { name = "channels", extras = ["daphne"], specifier = ">=4.0" },
     { name = "daphne", specifier = ">=4.1" },
     { name = "device-detector", specifier = ">=6.1.0" },
@@ -1461,7 +1479,7 @@ requires-dist = [
     { name = "django-ses", specifier = ">=4.0" },
     { name = "django-storages", extras = ["s3"], specifier = ">=1.14" },
     { name = "django-structlog", specifier = ">=8.0" },
-    { name = "django-stubs", marker = "extra == 'dev'", specifier = ">=5.1" },
+    { name = "django-stubs", extras = ["compatible-mypy"], marker = "extra == 'dev'", specifier = ">=5.1" },
     { name = "django-unfold", specifier = ">=0.40" },
     { name = "django-vite", specifier = ">=3.0" },
     { name = "factory-boy", marker = "extra == 'dev'", specifier = ">=3.3" },
@@ -1469,7 +1487,6 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "inertia-django", specifier = ">=1.0" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13" },
     { name = "orjson", specifier = ">=3.10" },
     { name = "phonenumbers", specifier = ">=8.13" },
     { name = "pillow", specifier = ">=11.0" },
@@ -1493,12 +1510,12 @@ provides-extras = ["dev"]
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=24.0" },
+    { name = "celery-types", specifier = ">=0.22.0" },
     { name = "django-debug-toolbar", specifier = ">=4.4" },
     { name = "django-extensions", specifier = ">=3.2" },
-    { name = "django-stubs", specifier = ">=5.1" },
+    { name = "django-stubs", extras = ["compatible-mypy"], specifier = ">=5.1" },
     { name = "factory-boy", specifier = ">=3.3" },
     { name = "ipython", specifier = ">=8.0" },
-    { name = "mypy", specifier = ">=1.13" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
     { name = "pytest-cov", specifier = ">=6.0" },

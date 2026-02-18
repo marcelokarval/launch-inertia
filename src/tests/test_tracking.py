@@ -419,8 +419,9 @@ class TestVisitorMiddleware:
 
         middleware = VisitorMiddleware(dummy_response)
         rf = RequestFactory()
+        # Use a content path (not "/") since "/" is in _SKIP_EXACT
         request = rf.get(
-            "/",
+            "/inscrever-test/",
             HTTP_USER_AGENT=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -449,8 +450,9 @@ class TestVisitorMiddleware:
 
         middleware = VisitorMiddleware(dummy_response)
         rf = RequestFactory()
+        # Use a content path (not "/") since "/" is in _SKIP_EXACT
         request = rf.get(
-            "/",
+            "/inscrever-test/",
             HTTP_USER_AGENT="Mozilla/5.0",
             HTTP_SEC_CH_UA='"Chromium";v="120"',
             HTTP_SEC_CH_UA_PLATFORM='"Windows"',
@@ -477,7 +479,8 @@ class TestVisitorMiddleware:
 
         middleware = VisitorMiddleware(dummy_response)
         rf = RequestFactory()
-        request = rf.get("/", HTTP_USER_AGENT="Mozilla/5.0")
+        # Use a content path (not "/") since "/" is in _SKIP_EXACT
+        request = rf.get("/inscrever-test/", HTTP_USER_AGENT="Mozilla/5.0")
         request.COOKIES = {}
 
         response = middleware(request)
@@ -496,8 +499,9 @@ class TestVisitorMiddleware:
 
         middleware = VisitorMiddleware(dummy_response)
         rf = RequestFactory()
+        # Use a content path (not "/") since "/" is in _SKIP_EXACT
         request = rf.get(
-            "/",
+            "/inscrever-test/",
             HTTP_USER_AGENT=(
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) "
                 "AppleWebKit/605.1.15 (KHTML, like Gecko) "

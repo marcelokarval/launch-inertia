@@ -1,12 +1,13 @@
 """
 Unit tests for middleware: SetupStatusMiddleware, DelinquentMiddleware,
-InertiaShareMiddleware, VisitorMiddleware.
+InertiaShareMiddleware, VisitorMiddleware, IdentitySessionMiddleware.
 """
 
 import pytest
 from unittest.mock import MagicMock, patch, PropertyMock
 from django.test import RequestFactory
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.sessions.backends.db import SessionStore
 
 from apps.identity.models import User
 from core.inertia.middleware import (
@@ -15,6 +16,7 @@ from core.inertia.middleware import (
     InertiaShareMiddleware,
 )
 from core.tracking.middleware import VisitorMiddleware
+from core.tracking.identity_middleware import IdentitySessionMiddleware
 from tests.factories import UserFactory, ProfileFactory
 
 
@@ -392,3 +394,189 @@ class TestVisitorMiddlewareSkipLogic:
         assert hasattr(request, "client_ip")
         assert hasattr(request, "geo_data")
         assert hasattr(request, "client_hints")
+
+    def test_visitor_mw_identity_set_on_skipped(self):
+        """Skipped routes also set _visitor_mw_identity to None."""
+        request = self.rf.get("/static/main.js")
+        self.middleware(request)
+        assert hasattr(request, "_visitor_mw_identity")
+        assert request._visitor_mw_identity is None
+
+
+class TestIdentitySessionMiddleware:
+    """Tests for IdentitySessionMiddleware — session-based anonymous identity."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.rf = RequestFactory()
+        self.get_response = MagicMock(return_value=MagicMock(status_code=200))
+        self.middleware = IdentitySessionMiddleware(self.get_response)
+
+    def _make_request(self, path: str) -> MagicMock:
+        """Create a request with a real Django session."""
+        request = self.rf.get(path)
+        request.session = SessionStore()
+        # IdentitySessionMiddleware expects these from VisitorMiddleware
+        request.identity = None
+        request.visitor_status = "new"
+        request.identity_public_id = ""
+        request._visitor_mw_identity = None
+        request.client_ip = "1.2.3.4"
+        return request
+
+    def test_skip_non_content_routes(self):
+        """Non-content routes (static, admin) are skipped entirely."""
+        skip_paths = [
+            "/static/main.js",
+            "/admin/login/",
+            "/media/photo.jpg",
+            "/__debug__/sql/",
+        ]
+        for path in skip_paths:
+            request = self._make_request(path)
+            self.middleware(request)
+            # Should pass through without creating identity
+            assert request.identity is None, f"Expected skip for {path}"
+            assert request.visitor_status == "new"
+
+    def test_first_visit_creates_anonymous_identity(self, db):
+        """First visit to capture page creates anonymous Identity."""
+        request = self._make_request("/inscrever-wh-rc-v3/")
+        self.middleware(request)
+
+        # Identity should be created and stored on request
+        assert request.identity is not None
+        assert request.identity.status == "active"
+        assert request.identity.first_seen_source == "session"
+        assert request.identity.confidence_score == 0.05
+
+        # Session should have identity data
+        assert request.session.get("identity_pk") == request.identity.pk
+        assert request.session.get("identity_id") == request.identity.public_id
+        assert request.session.get("visitor_status") == "new"
+        assert request.session.get("first_seen") is not None
+
+    def test_return_visit_recovers_identity(self, db):
+        """Return visit recovers Identity from session (no new creation)."""
+        from apps.contacts.identity.models import Identity
+
+        # Create identity (simulating first visit)
+        identity = Identity.objects.create(
+            status=Identity.ACTIVE,
+            first_seen_source="session",
+            confidence_score=0.05,
+        )
+
+        # Set up session as if first visit already happened
+        request = self._make_request("/inscrever-wh-rc-v3/")
+        request.session["identity_pk"] = identity.pk
+        request.session["identity_id"] = identity.public_id
+        request.session["visitor_status"] = "new"
+        request.session.save()
+
+        self.middleware(request)
+
+        # Should recover the same identity
+        assert request.identity is not None
+        assert request.identity.pk == identity.pk
+        # Visitor status should be upgraded to returning
+        assert request.visitor_status == "returning"
+        assert request.session.get("visitor_status") == "returning"
+
+    def test_stale_session_creates_new_identity(self, db):
+        """If session identity was deleted, creates a fresh one."""
+        request = self._make_request("/inscrever-wh-rc-v3/")
+        # Set stale identity PK that doesn't exist in DB
+        request.session["identity_pk"] = 99999
+        request.session["identity_id"] = "idt_stale123"
+        request.session["visitor_status"] = "returning"
+        request.session.save()
+
+        self.middleware(request)
+
+        # Should create a new identity since the old one doesn't exist
+        assert request.identity is not None
+        assert request.identity.public_id != "idt_stale123"
+        assert request.session.get("identity_pk") == request.identity.pk
+
+    def test_cookies_set_on_response(self, db):
+        """Response sets _lid and _vs cookies."""
+        request = self._make_request("/inscrever-wh-rc-v3/")
+        response = MagicMock(status_code=200)
+        self.get_response.return_value = response
+
+        self.middleware(request)
+
+        # Check that set_cookie was called for _lid and _vs
+        cookie_names = [call.args[0] for call in response.set_cookie.call_args_list]
+        assert "_lid" in cookie_names
+        assert "_vs" in cookie_names
+
+        # Verify _lid value is the identity public_id
+        lid_call = next(
+            c for c in response.set_cookie.call_args_list if c.args[0] == "_lid"
+        )
+        assert lid_call.args[1] == request.identity.public_id
+
+    def test_dashboard_routes_also_get_identity(self, db):
+        """Dashboard routes (/app/*) also get identity session."""
+        request = self._make_request("/app/dashboard/")
+        self.middleware(request)
+
+        assert request.identity is not None
+        assert request.session.get("identity_pk") is not None
+
+    def test_home_route_gets_identity(self, db):
+        """Home route (/) also gets identity session."""
+        request = self._make_request("/")
+        self.middleware(request)
+
+        assert request.identity is not None
+
+    def test_thank_you_route_gets_identity(self, db):
+        """Thank you pages get identity session."""
+        request = self._make_request("/obrigado-wh-rc-v3/")
+        self.middleware(request)
+
+        assert request.identity is not None
+
+    def test_last_page_tracked_in_session(self, db):
+        """Session stores last_page on each visit."""
+        request = self._make_request("/inscrever-wh-rc-v3/")
+        self.middleware(request)
+
+        assert request.session.get("last_page") == "/inscrever-wh-rc-v3/"
+
+    def test_identity_history_created(self, db):
+        """Anonymous identity creation is recorded in IdentityHistory."""
+        from apps.contacts.identity.models import IdentityHistory
+
+        request = self._make_request("/inscrever-wh-rc-v3/")
+        self.middleware(request)
+
+        history = IdentityHistory.objects.filter(
+            identity=request.identity,
+            operation_type=IdentityHistory.UPDATE,
+        ).first()
+        assert history is not None
+        assert (
+            history.details.get("action") == "anonymous_identity_created_from_session"
+        )
+
+    def test_request_attributes_always_set(self, db):
+        """All expected request attributes exist after middleware runs."""
+        # Even for skipped routes
+        request = self._make_request("/static/main.css")
+        self.middleware(request)
+
+        assert hasattr(request, "identity")
+        assert hasattr(request, "visitor_status")
+        assert hasattr(request, "identity_public_id")
+
+    def test_identity_public_id_on_request(self, db):
+        """request.identity_public_id is set correctly."""
+        request = self._make_request("/inscrever-wh-rc-v3/")
+        self.middleware(request)
+
+        assert request.identity_public_id != ""
+        assert request.identity_public_id == request.identity.public_id
