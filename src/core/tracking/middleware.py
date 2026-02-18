@@ -59,6 +59,7 @@ class VisitorMiddleware:
         "/media/",
         "/__debug__/",
         "/admin/",
+        "/.well-known/",
         # Checkout JSON API endpoints (NOT the Inertia pages)
         "/checkout/create-session/",
         "/checkout/create-customer/",
@@ -72,6 +73,8 @@ class VisitorMiddleware:
     _SKIP_EXACT: frozenset[str] = frozenset(
         {
             "/",
+            "/favicon.ico",
+            "/robots.txt",
             "/lembrete-bf/",
             "/recado-importante/",
             "/onboarding/",
@@ -199,35 +202,62 @@ class VisitorMiddleware:
             request.is_known_visitor = True
 
     def _profile_device(self, request: HttpRequest) -> None:
-        """Parse User-Agent and Client Hints to build device profile."""
-        from device_detector import DeviceDetector
+        """Parse User-Agent and Client Hints to build device profile.
 
+        Resilient: if device-detector crashes (known Python 3.13
+        incompatibility with lazy_regex), sets safe defaults and
+        continues. Device profiling is non-critical — a request
+        must never fail because of UA parsing.
+        """
         from core.tracking.services import DeviceProfileService
 
         ua_string = request.META.get("HTTP_USER_AGENT", "")
-        dd = DeviceDetector(ua_string).parse()
 
-        # Engine extraction (device-detector v6 returns dict or str)
-        engine_raw = dd.engine()
-        if isinstance(engine_raw, dict):
-            engine = engine_raw.get("default", "")
-        else:
-            engine = str(engine_raw) if engine_raw else ""
+        # device-detector 6.x has intermittent crashes on Python 3.13
+        # (TypeError in lazy_regex.py, AttributeError in normalize()).
+        # Wrap the entire parse in try/except to be resilient.
+        try:
+            from device_detector import DeviceDetector
 
-        request.device_data = {
-            "browser_family": dd.client_name() or "unknown",
-            "browser_version": dd.client_version() or "",
-            "browser_engine": engine,
-            "os_family": dd.os_name() or "unknown",
-            "os_version": dd.os_version() or "",
-            "device_type": dd.device_type() or "unknown",
-            "device_brand": dd.device_brand() or "",
-            "device_model": dd.device_model() or "",
-            "is_bot": dd.is_bot(),
-            "bot_name": "",
-            "bot_category": "",
-            "client_type": dd.client_type() or "",
-        }
+            dd = DeviceDetector(ua_string).parse()
+
+            # Engine extraction (device-detector v6 returns dict or str)
+            engine_raw = dd.engine()
+            if isinstance(engine_raw, dict):
+                engine = engine_raw.get("default", "")
+            else:
+                engine = str(engine_raw) if engine_raw else ""
+
+            request.device_data = {
+                "browser_family": dd.client_name() or "unknown",
+                "browser_version": dd.client_version() or "",
+                "browser_engine": engine,
+                "os_family": dd.os_name() or "unknown",
+                "os_version": dd.os_version() or "",
+                "device_type": dd.device_type() or "unknown",
+                "device_brand": dd.device_brand() or "",
+                "device_model": dd.device_model() or "",
+                "is_bot": dd.is_bot(),
+                "bot_name": "",
+                "bot_category": "",
+                "client_type": dd.client_type() or "",
+            }
+        except Exception:
+            logger.warning("DeviceDetector parse failed for UA: %.80s", ua_string)
+            request.device_data = {
+                "browser_family": "unknown",
+                "browser_version": "",
+                "browser_engine": "",
+                "os_family": "unknown",
+                "os_version": "",
+                "device_type": "unknown",
+                "device_brand": "",
+                "device_model": "",
+                "is_bot": False,
+                "bot_name": "",
+                "bot_category": "",
+                "client_type": "",
+            }
 
         # Client Hints (Chromium only — more precise than User-Agent)
         request.client_hints = {

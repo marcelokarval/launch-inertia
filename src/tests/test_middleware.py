@@ -294,6 +294,19 @@ class TestVisitorMiddlewareSkipLogic:
         self.middleware(request)
         assert request.device_profile is None
 
+    def test_skip_well_known_prefix(self):
+        """Chrome DevTools .well-known probes skip profiling."""
+        request = self.rf.get("/.well-known/appspecific/com.chrome.devtools.json")
+        self.middleware(request)
+        assert request.device_profile is None
+        assert request.visitor_id == ""
+
+    def test_skip_favicon(self):
+        """favicon.ico requests skip profiling."""
+        request = self.rf.get("/favicon.ico")
+        self.middleware(request)
+        assert request.device_profile is None
+
     def test_skip_checkout_json_api(self):
         """Checkout JSON API endpoints skip visitor profiling."""
         api_paths = [

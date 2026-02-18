@@ -34,11 +34,28 @@ def _show_toolbar(request) -> bool:  # type: ignore[no-untyped-def]
 
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": _show_toolbar,
-    # Disable profiling panel — conflicts with Python 3.13 sys.monitoring
-    # (ValueError: "Another profiling tool is already active")
-    "DISABLE_PANELS": {
-        "debug_toolbar.panels.profiling.ProfilingPanel",
-    },
     # Reduce overhead: don't intercept redirects
     "INTERCEPT_REDIRECTS": False,
 }
+
+# Explicitly list panels WITHOUT ProfilingPanel.
+# ProfilingPanel uses cProfile which conflicts with Python 3.13 sys.monitoring
+# (ValueError: "Another profiling tool is already active").
+# DISABLE_PANELS only sets default state — browser cookie can re-enable it.
+# Using DEBUG_TOOLBAR_PANELS removes the panel entirely from the chain.
+DEBUG_TOOLBAR_PANELS = [
+    "debug_toolbar.panels.history.HistoryPanel",
+    "debug_toolbar.panels.versions.VersionsPanel",
+    "debug_toolbar.panels.timer.TimerPanel",
+    "debug_toolbar.panels.settings.SettingsPanel",
+    "debug_toolbar.panels.headers.HeadersPanel",
+    "debug_toolbar.panels.request.RequestPanel",
+    "debug_toolbar.panels.sql.SQLPanel",
+    "debug_toolbar.panels.staticfiles.StaticFilesPanel",
+    "debug_toolbar.panels.templates.TemplatesPanel",
+    "debug_toolbar.panels.alerts.AlertsPanel",
+    "debug_toolbar.panels.cache.CachePanel",
+    "debug_toolbar.panels.signals.SignalsPanel",
+    "debug_toolbar.panels.redirects.RedirectsPanel",
+    # ProfilingPanel intentionally excluded — Python 3.13 cProfile conflict
+]
