@@ -95,6 +95,8 @@ export interface CampaignProps {
 export interface CapturePageProps extends SharedProps {
   campaign: CampaignProps;
   fingerprint_api_key: string;
+  /** Custom FingerprintJS endpoint (proxy subdomain). Empty = use default. */
+  fingerprint_endpoint: string;
   /** Server-generated UUID linking events of the same page load session */
   capture_token: string;
 }
@@ -208,4 +210,24 @@ export interface SessionStatusResponse {
 /** Error response from checkout API endpoints */
 export interface CheckoutErrorResponse {
   error: string;
+}
+
+// ── FingerprintJS Pro Types ──────────────────────────────────────────
+
+/** FingerprintJS Pro result stored on window for global access */
+export interface FingerprintResult {
+  visitorId: string;
+  requestId: string;
+  confidence: { score: number };
+  visitorFound: boolean;
+  /** Timestamp when the SDK loaded */
+  loadedAt: number;
+  /** Time in ms the SDK took to load and resolve */
+  loadTime: number;
+}
+
+/** FingerprintJS configuration passed from Django as Inertia props */
+export interface FingerprintConfig {
+  apiKey: string;
+  endpoint?: string;
 }

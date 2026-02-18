@@ -215,10 +215,12 @@ def _render_capture_page(
     The identity_public_id is the session-based Identity for JS correlation.
     """
     fingerprint_api_key = os.getenv("FINGERPRINT_API_KEY", "")
+    fingerprint_endpoint = os.getenv("FINGERPRINT_ENDPOINT", "")
 
     props: dict[str, Any] = {
         "campaign": _build_campaign_props(campaign, campaign_slug),
         "fingerprint_api_key": fingerprint_api_key,
+        "fingerprint_endpoint": fingerprint_endpoint,
         "capture_token": capture_token,
     }
 

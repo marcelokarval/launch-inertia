@@ -173,7 +173,7 @@ class VisitorMiddleware:
         try:
             from apps.contacts.fingerprint.models import FingerprintIdentity
 
-            fp = FingerprintIdentity.objects.filter(fingerprint_hash=visitor_id).first()
+            fp = FingerprintIdentity.objects.filter(hash=visitor_id).first()
             if fp:
                 req.fingerprint_identity = fp
                 # Resolve identity via the junction table

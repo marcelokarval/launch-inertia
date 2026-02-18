@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import PhoneInput from '@/components/PhoneInput';
 import FingerprintProvider from '@/components/FingerprintProvider';
+import { useFingerprint } from '@/hooks/use-fingerprint';
 import type { CampaignFormConfig } from '@/types';
 
 interface CaptureFormProps {
   campaignSlug: string;
   formConfig: CampaignFormConfig;
   fingerprintApiKey: string;
+  /** Custom FingerprintJS endpoint (proxy subdomain) */
+  fingerprintEndpoint?: string;
   /** Server-generated UUID linking events of the same page load session */
   captureToken: string;
   serverErrors?: Record<string, string>;
@@ -21,15 +24,21 @@ interface CaptureFormProps {
  *
  * Uses Inertia useForm().post() for submission.
  * Server-side validation — errors come back as page props.
+ *
+ * FingerprintJS Pro SDK resolves visitor_id + request_id in parallel.
+ * Cookie `fpjs_vid` is set by FingerprintProvider so Django middleware
+ * can identify the visitor on subsequent requests.
  */
 export default function CaptureForm({
   campaignSlug,
   formConfig,
   fingerprintApiKey,
+  fingerprintEndpoint,
   captureToken,
   serverErrors,
 }: CaptureFormProps) {
   const hasSetUtm = useRef(false);
+  const { visitorId, requestId, handleFingerprintResult } = useFingerprint();
 
   const { data, setData, post, processing, errors } = useForm({
     email: '',
@@ -48,6 +57,17 @@ export default function CaptureForm({
     vk_ad_id: '',
     vk_source: '',
   });
+
+  // Sync fingerprint data into form when it resolves
+  useEffect(() => {
+    if (visitorId && data.visitor_id !== visitorId) {
+      setData((prev) => ({
+        ...prev,
+        visitor_id: visitorId,
+        request_id: requestId,
+      }));
+    }
+  }, [visitorId, requestId, data.visitor_id, setData]);
 
   // Populate UTM + ad tracking parameters from URL on mount
   useEffect(() => {
@@ -93,17 +113,6 @@ export default function CaptureForm({
   // Merge server errors with Inertia client errors
   const allErrors = { ...serverErrors, ...errors };
 
-  const handleFingerprintResult = useCallback(
-    (visitorId: string, requestId: string) => {
-      setData((prev) => ({
-        ...prev,
-        visitor_id: visitorId,
-        request_id: requestId,
-      }));
-    },
-    [setData],
-  );
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     post(`/inscrever-${campaignSlug}/`, {
@@ -112,12 +121,11 @@ export default function CaptureForm({
   };
 
   return (
-    <>
-      <FingerprintProvider
-        apiKey={fingerprintApiKey}
-        onResult={handleFingerprintResult}
-      />
-
+    <FingerprintProvider
+      apiKey={fingerprintApiKey}
+      endpoint={fingerprintEndpoint}
+      onResult={handleFingerprintResult}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Seu melhor e-mail"
@@ -148,6 +156,6 @@ export default function CaptureForm({
           {formConfig.button_text}
         </Button>
       </form>
-    </>
+    </FingerprintProvider>
   );
 }

@@ -1,50 +1,162 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import {
+  FpjsProvider,
+  CacheLocation,
+} from '@fingerprintjs/fingerprintjs-pro-react';
 
-interface FingerprintProviderProps {
+import type { FingerprintResult } from '@/types';
+
+// ── Constants ──────────────────────────────────────────────────────────
+
+/** Cookie name that Django VisitorMiddleware reads on every request */
+const FPJS_VID_COOKIE = 'fpjs_vid';
+
+/** Cookie TTL: 365 days (matches converted session TTL) */
+const COOKIE_MAX_AGE_DAYS = 365;
+
+/** In-memory cache duration: 24 hours */
+const CACHE_TIME_SECONDS = 60 * 60 * 24;
+
+/** Custom subdomain proxy — avoids ad blockers */
+const DEFAULT_ENDPOINT = 'https://finger.arthuragrelli.com';
+
+/** CDN fallback when custom proxy is unreachable */
+const FALLBACK_ENDPOINT = 'https://fpjs.pro';
+
+// ── Cookie helpers ─────────────────────────────────────────────────────
+
+function setCookie(name: string, value: string, days: number): void {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
+}
+
+// ── Eager loader (runs ASAP on mount) ──────────────────────────────────
+
+interface EagerLoaderProps {
   apiKey: string;
-  onResult: (visitorId: string, requestId: string) => void;
+  endpoint: string;
+  /** Called once the SDK resolves. Sets cookie + window.fpResult. */
+  onResult: (result: FingerprintResult) => void;
 }
 
 /**
- * FingerprintJS Pro integration.
+ * Loads FingerprintJS Pro SDK eagerly (outside React render cycle).
  *
- * Loads the FingerprintJS Pro agent and resolves the visitor ID.
- * The result is passed to the parent via onResult callback,
- * which should populate the form's hidden fields.
+ * Does NOT use the React hook — uses the raw JS agent for maximum speed.
+ * The hook (useVisitorData) is still available via FpjsProvider for
+ * components that need fresh data.
  *
- * If the API key is empty, the component is a no-op.
+ * Sets:
+ *  - cookie `fpjs_vid` (Django reads on next request)
+ *  - window.fpResult (global sync for backward compat)
+ *  - dispatches CustomEvent 'fingerprint-ready'
  */
-export default function FingerprintProvider({
-  apiKey,
-  onResult,
-}: FingerprintProviderProps) {
-  const hasLoaded = useRef(false);
+function FingerprintEagerLoader({ apiKey, endpoint, onResult }: EagerLoaderProps) {
+  const hasStarted = useRef(false);
 
   useEffect(() => {
-    if (!apiKey || hasLoaded.current) return;
-    hasLoaded.current = true;
+    if (hasStarted.current || window.__fpLoaderStarted) return;
+    hasStarted.current = true;
+    window.__fpLoaderStarted = true;
 
-    async function loadFingerprint() {
+    const startTime = performance.now();
+
+    async function load() {
       try {
-        // Uses the open-source FingerprintJS library.
-        // The Pro version (with requestId) requires a paid API key
-        // and the @fingerprintjs/fingerprintjs-pro package.
-        const FingerprintJS = await import('@fingerprintjs/fingerprintjs');
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
+        const FingerprintJS = await import('@fingerprintjs/fingerprintjs-pro');
+        const fp = await FingerprintJS.load({
+          apiKey,
+          endpoint: [endpoint, FALLBACK_ENDPOINT],
+        });
+        const data = await fp.get();
 
-        // Open-source version only provides visitorId.
-        // requestId is generated client-side as a unique identifier.
-        const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-        onResult(result.visitorId, requestId);
+        const result: FingerprintResult = {
+          visitorId: data.visitorId,
+          requestId: data.requestId,
+          confidence: data.confidence,
+          visitorFound: data.visitorFound,
+          loadedAt: Date.now(),
+          loadTime: Math.round(performance.now() - startTime),
+        };
+
+        // 1. Set cookie for Django middleware (next request)
+        setCookie(FPJS_VID_COOKIE, result.visitorId, COOKIE_MAX_AGE_DAYS);
+
+        // 2. Global sync (window)
+        window.fpResult = result;
+
+        // 3. CustomEvent for any listener
+        window.dispatchEvent(
+          new CustomEvent('fingerprint-ready', { detail: result }),
+        );
+
+        // 4. Callback to parent
+        onResult(result);
       } catch (err) {
-        // Fingerprint failure is non-critical — form still works
-        console.warn('FingerprintJS failed to load:', err);
+        console.warn('[FingerprintJS] Failed to load:', err);
+        window.fpResult = undefined;
       }
     }
 
-    loadFingerprint();
-  }, [apiKey, onResult]);
+    load();
+  }, [apiKey, endpoint, onResult]);
 
   return null;
 }
+
+// ── Public API ─────────────────────────────────────────────────────────
+
+interface FingerprintProviderProps {
+  apiKey: string;
+  /** Custom endpoint (proxy subdomain). Falls back to DEFAULT_ENDPOINT. */
+  endpoint?: string;
+  /** Called when fingerprint resolves (visitorId, requestId) */
+  onResult: (result: FingerprintResult) => void;
+  children?: ReactNode;
+}
+
+/**
+ * FingerprintJS Pro provider for landing pages.
+ *
+ * Wraps children with FpjsProvider (for useVisitorData access) and
+ * immediately fires the eager loader to resolve the visitor ASAP.
+ *
+ * When apiKey is empty, renders children only (no-op).
+ *
+ * Sets cookie `fpjs_vid` so Django VisitorMiddleware can resolve
+ * FingerprintIdentity on the next request.
+ */
+export default function FingerprintProvider({
+  apiKey,
+  endpoint,
+  onResult,
+  children,
+}: FingerprintProviderProps) {
+  if (!apiKey) {
+    return <>{children}</>;
+  }
+
+  const resolvedEndpoint = endpoint || DEFAULT_ENDPOINT;
+
+  return (
+    <FpjsProvider
+      loadOptions={{
+        apiKey,
+        endpoint: [resolvedEndpoint, FALLBACK_ENDPOINT],
+      }}
+      cacheLocation={CacheLocation.Memory}
+      cacheTimeInSeconds={CACHE_TIME_SECONDS}
+      cachePrefix="fp_cache_"
+    >
+      <FingerprintEagerLoader
+        apiKey={apiKey}
+        endpoint={resolvedEndpoint}
+        onResult={onResult}
+      />
+      {children}
+    </FpjsProvider>
+  );
+}
+
+// Re-export hook for components that need fresh data
+export { useVisitorData } from '@fingerprintjs/fingerprintjs-pro-react';

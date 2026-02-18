@@ -137,17 +137,8 @@ class IdentitySessionMiddleware:
             req.identity = identity
             req.identity_public_id = identity.public_id
 
-            # Merge with VisitorMiddleware identity if available
-            visitor_identity = getattr(request, "_visitor_mw_identity", None)
-            if visitor_identity and visitor_identity.pk != identity.pk:
-                # VisitorMiddleware found a different identity via fingerprint
-                # The fingerprint-based identity should be merged later
-                # For now, session identity takes precedence
-                logger.debug(
-                    "Session identity %s differs from visitor identity %s",
-                    identity.public_id,
-                    visitor_identity.public_id,
-                )
+            # Link fingerprint to session identity (if VisitorMiddleware resolved one)
+            self._link_fingerprint_to_identity(request, identity)
 
         # ── Track last page ───────────────────────────────────────
         session["last_page"] = request.path
@@ -164,6 +155,62 @@ class IdentitySessionMiddleware:
             self._adjust_session_ttl(request, identity)
 
         return response
+
+    def _link_fingerprint_to_identity(
+        self, request: HttpRequest, session_identity: Any
+    ) -> None:
+        """Link FingerprintIdentity (from cookie) to the session Identity.
+
+        Three scenarios when VisitorMiddleware resolved a fingerprint:
+        1. FingerprintIdentity has NO identity → link to session identity
+        2. FingerprintIdentity has SAME identity → no-op
+        3. FingerprintIdentity has DIFFERENT identity → log divergence
+           (merge handled by CaptureService on form submission)
+
+        Also upgrades confidence_score when fingerprint is linked.
+        """
+        fp_identity = getattr(request, "fingerprint_identity", None)
+        if not fp_identity:
+            return
+
+        visitor_identity = getattr(request, "_visitor_mw_identity", None)
+
+        try:
+            if not fp_identity.identity_id:
+                # Scenario 1: orphan fingerprint → adopt into session identity
+                fp_identity.identity = session_identity
+                fp_identity.save(update_fields=["identity", "updated_at"])
+
+                # Upgrade session identity confidence (fingerprint adds ~0.15)
+                new_confidence = min(session_identity.confidence_score + 0.15, 1.0)
+                if new_confidence > session_identity.confidence_score:
+                    session_identity.confidence_score = new_confidence
+                    session_identity.save(
+                        update_fields=["confidence_score", "updated_at"]
+                    )
+
+                logger.info(
+                    "Linked fingerprint %s to session identity %s",
+                    fp_identity.hash[:8],
+                    session_identity.public_id,
+                )
+
+            elif visitor_identity and visitor_identity.pk != session_identity.pk:
+                # Scenario 3: fingerprint belongs to a different identity
+                logger.debug(
+                    "Session identity %s differs from fingerprint identity %s "
+                    "(fingerprint %s) — merge deferred to form submission",
+                    session_identity.public_id,
+                    visitor_identity.public_id,
+                    fp_identity.hash[:8],
+                )
+            # Scenario 2 (same identity): no action needed
+
+        except Exception:
+            logger.debug(
+                "Failed to link fingerprint to identity",
+                exc_info=True,
+            )
 
     def _recover_identity(self, session) -> Any:
         """Recover Identity from session data. Returns None if not found."""
