@@ -4,6 +4,7 @@
 
 import { Card, Chip } from '@heroui/react';
 import { Mail, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { RecentCapture } from '@/types';
 
 interface Props {
@@ -25,16 +26,22 @@ function timeAgo(isoDate: string): string {
 }
 
 export function RecentCaptures({ captures }: Props) {
+  const { t } = useTranslation();
+
   if (captures.length === 0) {
     return (
       <Card className="border border-default-200 animate-fade-in">
         <Card.Header className="pb-0 px-6 pt-6">
-          <h2 className="text-lg font-semibold text-foreground">Capturas Recentes</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            {t('dashboard.analytics.capturasRecentes', 'Capturas Recentes')}
+          </h2>
         </Card.Header>
         <Card.Content className="p-6">
           <div className="text-center py-6">
             <Mail className="h-8 w-8 text-default-300 mx-auto mb-2" />
-            <p className="text-sm text-default-400">Nenhuma captura ainda</p>
+            <p className="text-sm text-default-400">
+              {t('dashboard.analytics.nenhumaCapturaAinda', 'Nenhuma captura ainda')}
+            </p>
           </div>
         </Card.Content>
       </Card>
@@ -44,7 +51,9 @@ export function RecentCaptures({ captures }: Props) {
   return (
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
-        <h2 className="text-lg font-semibold text-foreground">Capturas Recentes</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('dashboard.analytics.capturasRecentes', 'Capturas Recentes')}
+        </h2>
       </Card.Header>
       <Card.Content className="p-6">
         <div className="space-y-3 max-h-[320px] overflow-y-auto">

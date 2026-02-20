@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import { Card } from '@heroui/react'
 import { Button } from '@/components/ui'
 import { CheckCircle, ArrowRight } from 'lucide-react'
@@ -26,12 +26,14 @@ export default function BillingSuccess() {
               {t('billing.success.description')}
             </p>
 
-            <Link href="/app/">
-              <Button variant="primary" fullWidth>
-                {t('billing.success.goToDashboard')}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+            <Button
+              variant="primary"
+              fullWidth
+              onPress={() => router.visit('/app/')}
+            >
+              {t('billing.success.goToDashboard')}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </Card.Content>
         </Card>
       </div>

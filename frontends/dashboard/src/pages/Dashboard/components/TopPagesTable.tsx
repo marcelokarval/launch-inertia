@@ -3,6 +3,7 @@
  */
 
 import { Card, Chip } from '@heroui/react';
+import { useTranslation } from 'react-i18next';
 import type { CapturePageStats } from '@/types';
 
 interface Props {
@@ -17,21 +18,35 @@ function rateColor(rate: number): 'success' | 'warning' | 'danger' | 'default' {
 }
 
 export function TopPagesTable({ pages }: Props) {
+  const { t } = useTranslation();
+
   return (
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
-        <h2 className="text-lg font-semibold text-foreground">Top Paginas de Captura</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('dashboard.analytics.topPaginasCaptura', 'Top Paginas de Captura')}
+        </h2>
       </Card.Header>
       <Card.Content className="p-6">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-default-200">
-                <th className="text-left py-3 px-2 font-medium text-default-500">Pagina</th>
-                <th className="text-left py-3 px-2 font-medium text-default-500">Lancamento</th>
-                <th className="text-right py-3 px-2 font-medium text-default-500">Views</th>
-                <th className="text-right py-3 px-2 font-medium text-default-500">Leads</th>
-                <th className="text-right py-3 px-2 font-medium text-default-500">Conversao</th>
+                <th className="text-left py-3 px-2 font-medium text-default-500">
+                  {t('dashboard.analytics.pagina', 'Pagina')}
+                </th>
+                <th className="text-left py-3 px-2 font-medium text-default-500">
+                  {t('dashboard.analytics.lancamento', 'Lancamento')}
+                </th>
+                <th className="text-right py-3 px-2 font-medium text-default-500">
+                  Views
+                </th>
+                <th className="text-right py-3 px-2 font-medium text-default-500">
+                  Leads
+                </th>
+                <th className="text-right py-3 px-2 font-medium text-default-500">
+                  {t('dashboard.analytics.conversao', 'Conversao')}
+                </th>
               </tr>
             </thead>
             <tbody>

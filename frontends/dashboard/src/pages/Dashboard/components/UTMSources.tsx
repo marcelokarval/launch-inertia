@@ -4,6 +4,7 @@
 
 import { Card } from '@heroui/react';
 import { Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { UTMSourceItem } from '@/types';
 
 interface Props {
@@ -11,14 +12,20 @@ interface Props {
 }
 
 export function UTMSources({ data }: Props) {
+  const { t } = useTranslation();
+
   if (data.length === 0) {
     return (
       <Card className="border border-default-200 animate-fade-in">
         <Card.Header className="pb-0 px-6 pt-6">
-          <h2 className="text-lg font-semibold text-foreground">Fontes de Trafego</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            {t('dashboard.analytics.fontesTrafego', 'Fontes de Trafego')}
+          </h2>
         </Card.Header>
         <Card.Content className="p-6">
-          <p className="text-sm text-default-400 text-center py-4">Sem dados</p>
+          <p className="text-sm text-default-400 text-center py-4">
+            {t('dashboard.analytics.semDados', 'Sem dados')}
+          </p>
         </Card.Content>
       </Card>
     );
@@ -29,7 +36,9 @@ export function UTMSources({ data }: Props) {
   return (
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
-        <h2 className="text-lg font-semibold text-foreground">Fontes de Trafego</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('dashboard.analytics.fontesTrafego', 'Fontes de Trafego')}
+        </h2>
       </Card.Header>
       <Card.Content className="p-6 space-y-3">
         {data.slice(0, 8).map((item) => {

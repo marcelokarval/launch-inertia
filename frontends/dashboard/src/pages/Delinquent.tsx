@@ -47,7 +47,7 @@ export default function Delinquent({ message }: Props) {
               variant="primary"
               size="lg"
               fullWidth
-              onPress={() => { window.location.href = '/app/billing/portal/' }}
+              onPress={() => router.visit('/app/billing/portal/')}
             >
               <CreditCard className="h-5 w-5" />
               {t('delinquent.goToBilling')}

@@ -142,6 +142,26 @@
       "importIdentity": "Importar Identidade",
       "manageBilling": "Gerenciar Faturamento",
       "viewSettings": "Ver Configuracoes"
+    },
+    "analytics": {
+      "leadsCapturados": "Leads Capturados",
+      "taxaConversao": "Taxa de Conversao",
+      "visualizacoes": "Visualizacoes",
+      "lancamentosAtivos": "Lancamentos Ativos",
+      "vsPreviousWeek": "vs semana anterior",
+      "capturasDiarias": "Capturas Diarias",
+      "nenhumDadoCaptura": "Nenhum dado de captura ainda",
+      "funilCaptura": "Funil de Captura",
+      "conversao": "Conversao",
+      "errosFormulario": "Erros de formulario",
+      "topPaginasCaptura": "Top Paginas de Captura",
+      "pagina": "Pagina",
+      "lancamento": "Lancamento",
+      "dispositivos": "Dispositivos",
+      "semDados": "Sem dados",
+      "fontesTrafego": "Fontes de Trafego",
+      "capturasRecentes": "Capturas Recentes",
+      "nenhumaCapturaAinda": "Nenhuma captura ainda"
     }
   },
   "identities": {

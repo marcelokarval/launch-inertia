@@ -35,6 +35,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { FlashMessages } from '@/components/shared/FlashMessages'
 import type { PageProps } from '@/types/inertia'
 
 // ============================================================================
@@ -141,13 +142,17 @@ export default function DashboardLayout({ children, title }: Props) {
             <ThemeToggle />
 
             {/* Notifications */}
-            <Link
-              href="/app/notifications/"
-              className="relative p-2 rounded-lg text-default-500 hover:text-foreground hover:bg-default-100 transition-colors"
+            <HeroButton
+              variant="ghost"
+              size="sm"
+              isIconOnly
+              onPress={() => router.visit('/app/notifications/')}
+              className="relative text-default-500"
+              aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-danger animate-pulse" />
-            </Link>
+              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-danger animate-pulse" />
+            </HeroButton>
 
             {/* User dropdown */}
             <UserDropdown user={auth.user} />
@@ -354,45 +359,43 @@ function SidebarFooter({ user, collapsed }: { user: PageProps['auth']['user']; c
 // ============================================================================
 
 function UserDropdown({ user }: { user: PageProps['auth']['user'] }) {
+  const { t } = useTranslation('common')
   return (
     <Dropdown>
       <Dropdown.Trigger>
-        <div
-          role="button"
-          tabIndex={0}
-          className="hidden lg:flex items-center gap-2 rounded-lg p-2 hover:bg-default-100 transition-colors cursor-pointer"
+        <HeroButton
+          variant="ghost"
+          className="hidden lg:flex items-center gap-2 rounded-lg p-2"
         >
           <Avatar size="sm">
             <Avatar.Fallback className="bg-gradient-primary text-white text-xs font-medium">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </Avatar.Fallback>
           </Avatar>
-          <div className="hidden xl:block text-left">
-            <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
-              {user?.name}
-            </p>
-          </div>
+          <span className="hidden xl:block text-sm font-medium text-foreground truncate max-w-[120px]">
+            {user?.name}
+          </span>
           <ChevronDown className="h-4 w-4 text-default-400" />
-        </div>
+        </HeroButton>
       </Dropdown.Trigger>
       <Dropdown.Popover placement="bottom end">
         <Dropdown.Menu>
           <Dropdown.Item id="profile" onAction={() => router.visit('/app/settings/profile/')}>
             <div className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
-              <span>Profile Settings</span>
+              <span>{t('nav.profileSettings', 'Profile Settings')}</span>
             </div>
           </Dropdown.Item>
           <Dropdown.Item id="help">
             <div className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4" />
-              <span>Help & Support</span>
+              <span>{t('nav.helpSupport', 'Help & Support')}</span>
             </div>
           </Dropdown.Item>
           <Dropdown.Item id="logout" onAction={() => router.post('/auth/logout/', {}, { forceFormData: true })}>
             <div className="flex items-center gap-2 text-danger">
               <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
+              <span>{t('nav.signOut', 'Sign Out')}</span>
             </div>
           </Dropdown.Item>
         </Dropdown.Menu>
@@ -401,35 +404,4 @@ function UserDropdown({ user }: { user: PageProps['auth']['user'] }) {
   )
 }
 
-// ============================================================================
-// Flash messages
-// ============================================================================
-
-function FlashMessages({ flash }: { flash: PageProps['flash'] }) {
-  if (!flash?.success && !flash?.error && !flash?.warning && !flash?.info) return null
-
-  return (
-    <div className="px-6 pt-4 space-y-2">
-      {flash.success && (
-        <div className="p-3 bg-success/10 text-success rounded-xl text-sm border border-success/20 animate-slide-up">
-          {flash.success}
-        </div>
-      )}
-      {flash.error && (
-        <div className="p-3 bg-danger/10 text-danger rounded-xl text-sm border border-danger/20 animate-slide-up">
-          {flash.error}
-        </div>
-      )}
-      {flash.warning && (
-        <div className="p-3 bg-warning/10 text-warning rounded-xl text-sm border border-warning/20 animate-slide-up">
-          {flash.warning}
-        </div>
-      )}
-      {flash.info && (
-        <div className="p-3 bg-primary/10 text-primary rounded-xl text-sm border border-primary/20 animate-slide-up">
-          {flash.info}
-        </div>
-      )}
-    </div>
-  )
-}
+// FlashMessages imported from shared component

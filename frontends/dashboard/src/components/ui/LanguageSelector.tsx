@@ -8,7 +8,7 @@
  */
 
 import { Globe } from 'lucide-react'
-import { Dropdown } from '@heroui/react'
+import { Dropdown, Button as HeroButton } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import {
   LANGUAGE_OPTIONS,
@@ -41,15 +41,14 @@ export function LanguageSelector({ visualOnly = false, className = '' }: Languag
     <div className={className}>
       <Dropdown>
         <Dropdown.Trigger>
-          <div
-            role="button"
-            tabIndex={0}
+          <HeroButton
+            variant="ghost"
+            size="sm"
             aria-label="Select language"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-default-500 hover:text-default-700 hover:bg-default-100 rounded-lg transition-colors cursor-pointer"
           >
             <Globe className="h-5 w-5" />
             <span className="text-xs font-medium uppercase">{currentLang}</span>
-          </div>
+          </HeroButton>
         </Dropdown.Trigger>
         <Dropdown.Popover placement="bottom end">
           <Dropdown.Menu

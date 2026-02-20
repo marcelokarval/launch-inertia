@@ -12,6 +12,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import type { DailyTrendPoint } from '@/types';
 
 interface Props {
@@ -24,12 +25,15 @@ function formatDate(value: unknown): string {
 }
 
 export function DailyTrendChart({ data }: Props) {
+  const { t } = useTranslation();
   const hasData = data.some((d) => d.leads > 0 || d.page_views > 0);
 
   return (
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
-        <h2 className="text-lg font-semibold text-foreground">Capturas Diarias</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('dashboard.analytics.capturasDiarias', 'Capturas Diarias')}
+        </h2>
       </Card.Header>
       <Card.Content className="p-6">
         {hasData ? (
@@ -69,7 +73,7 @@ export function DailyTrendChart({ data }: Props) {
               <Area
                 type="monotone"
                 dataKey="page_views"
-                name="Visualizacoes"
+                name={t('dashboard.analytics.visualizacoes', 'Visualizacoes')}
                 stroke="hsl(var(--heroui-default-400))"
                 fill="url(#gradientViews)"
                 strokeWidth={1.5}
@@ -86,7 +90,9 @@ export function DailyTrendChart({ data }: Props) {
           </ResponsiveContainer>
         ) : (
           <div className="h-[280px] flex items-center justify-center">
-            <p className="text-default-400 text-sm">Nenhum dado de captura ainda</p>
+            <p className="text-default-400 text-sm">
+              {t('dashboard.analytics.nenhumDadoCaptura', 'Nenhum dado de captura ainda')}
+            </p>
           </div>
         )}
       </Card.Content>

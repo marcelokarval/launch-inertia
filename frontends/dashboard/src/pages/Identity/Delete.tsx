@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, router } from '@inertiajs/react'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import { Card, Form } from '@heroui/react'
 import { Button } from '@/components/ui'
@@ -66,11 +66,13 @@ export default function IdentityDelete({ identity }: Props) {
             </p>
 
             <Form onSubmit={submit} className="flex items-center justify-center gap-4">
-              <Link href={`/app/identities/${identity.id}/`}>
-                <Button type="button" variant="secondary">
-                  {t('identities.delete.cancel', 'Cancel')}
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="secondary"
+                onPress={() => router.visit(`/app/identities/${identity.id}/`)}
+              >
+                {t('identities.delete.cancel', 'Cancel')}
+              </Button>
               <Button
                 type="submit"
                 variant="danger"

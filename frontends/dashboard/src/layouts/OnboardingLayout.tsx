@@ -1,7 +1,9 @@
 import { ReactNode } from 'react'
 import { usePage } from '@inertiajs/react'
 import { Card } from '@heroui/react'
+import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { FlashMessages } from '@/components/shared/FlashMessages'
 import { PageProps } from '@/types/inertia'
 
 const STEP_KEYS = ['email', 'terms', 'profile', 'plan'] as const
@@ -44,9 +46,7 @@ export default function OnboardingLayout({ children, currentStep, title }: Props
                     }`}
                   >
                     {step < currentStep ? (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check className="w-4 h-4" />
                     ) : (
                       step
                     )}
@@ -76,20 +76,7 @@ export default function OnboardingLayout({ children, currentStep, title }: Props
         </div>
 
         {/* Flash messages */}
-        {(flash.success || flash.error) && (
-          <div>
-            {flash.success && (
-              <div className="p-3 bg-success/10 text-success rounded-xl border border-success/20 text-sm">
-                {flash.success}
-              </div>
-            )}
-            {flash.error && (
-              <div className="p-3 bg-danger/10 text-danger rounded-xl border border-danger/20 text-sm">
-                {flash.error}
-              </div>
-            )}
-          </div>
-        )}
+        <FlashMessages flash={flash} className="" />
 
         {/* Main Card */}
         <Card className="shadow-xl border border-default-200">

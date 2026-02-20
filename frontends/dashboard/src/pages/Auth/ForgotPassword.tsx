@@ -1,11 +1,22 @@
+/**
+ * Forgot Password Page - Uses AuthLayout for consistent split-panel design.
+ *
+ * Sends password reset link to the provided email address.
+ */
+
 import { Head, Link } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
-import { Card, TextField, Input, Label, FieldError, Form } from '@heroui/react'
-import { Button } from '@/components/ui'
+import { Form } from '@heroui/react'
 import { Mail, ArrowLeft } from 'lucide-react'
+import AuthLayout from '@/layouts/AuthLayout'
+import { InputField, FormErrorBanner, Button } from '@/components/ui'
 import { useAppForm } from '@/hooks/useAppForm'
 
-export default function ForgotPassword() {
+interface Props {
+  errors?: Record<string, string>
+}
+
+export default function ForgotPassword({ errors = {} }: Props) {
   const { t } = useTranslation()
 
   const { data, setData, submit, isSubmitting } = useAppForm({
@@ -17,62 +28,56 @@ export default function ForgotPassword() {
   })
 
   return (
-    <>
+    <AuthLayout
+      title={t('auth.forgotPassword.title')}
+      subtitle={t('auth.forgotPassword.description')}
+    >
       <Head title={t('auth.forgotPassword.pageTitle')} />
 
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md shadow-xl">
-          <Card.Header className="p-8 pb-6">
-            <Card.Title className="text-2xl font-bold text-center">
-              {t('auth.forgotPassword.title')}
-            </Card.Title>
-            <Card.Description className="text-center text-default-500">
-              {t('auth.forgotPassword.description')}
-            </Card.Description>
-          </Card.Header>
+      <Form
+        onSubmit={submit}
+        validationErrors={errors}
+        validationBehavior="aria"
+        className="space-y-6"
+      >
+        <FormErrorBanner message={errors.__all__} />
 
-          <Card.Content className="p-8 pt-0">
-            <Form onSubmit={submit} className="space-y-6">
-              <TextField name="email" className="space-y-2 w-full">
-                <Label>{t('auth.forgotPassword.emailLabel')}</Label>
-                <div className="relative w-full">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-default-400 z-10" />
-                  <Input
-                    type="email"
-                    placeholder={t('auth.forgotPassword.emailPlaceholder')}
-                    required
-                    value={data.email}
-                    onChange={(e) => setData('email', e.target.value)}
-                    className="w-full pl-10"
-                  />
-                </div>
-                <FieldError />
-              </TextField>
+        <InputField
+          name="email"
+          label={t('auth.forgotPassword.emailLabel')}
+          type="email"
+          placeholder={t('auth.forgotPassword.emailPlaceholder')}
+          value={data.email}
+          onChange={(e) => setData('email', e.target.value)}
+          error={errors.email}
+          required
+          autoComplete="email"
+          startContent={<Mail className="h-4 w-4" />}
+        />
 
-              <Button
-                type="submit"
-                variant="primary"
-                fullWidth
-                isLoading={isSubmitting}
-                loadingText={t('auth.forgotPassword.submitting')}
-                isDisabled={!data.email}
-              >
-                {t('auth.forgotPassword.submit')}
-              </Button>
-            </Form>
-          </Card.Content>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          isLoading={isSubmitting}
+          loadingText={t('auth.forgotPassword.submitting')}
+          isDisabled={!data.email}
+        >
+          {t('auth.forgotPassword.submit')}
+        </Button>
 
-          <Card.Footer className="flex justify-center p-6 pt-0">
-            <Link
-              href="/auth/login/"
-              className="flex items-center gap-2 text-sm text-primary hover:opacity-80"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t('auth.forgotPassword.backToLogin')}
-            </Link>
-          </Card.Footer>
-        </Card>
-      </div>
-    </>
+        {/* Back to login */}
+        <div className="flex justify-center">
+          <Link
+            href="/auth/login/"
+            className="inline-flex items-center gap-2 text-sm text-primary hover:opacity-80"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t('auth.forgotPassword.backToLogin')}
+          </Link>
+        </div>
+      </Form>
+    </AuthLayout>
   )
 }

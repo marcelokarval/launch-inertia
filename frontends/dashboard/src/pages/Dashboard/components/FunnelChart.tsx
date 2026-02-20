@@ -1,8 +1,9 @@
 /**
- * FunnelChart — Horizontal bar funnel: page_view → intent → attempt → success.
+ * FunnelChart — Horizontal bar funnel: page_view -> intent -> attempt -> success.
  */
 
 import { Card } from '@heroui/react';
+import { useTranslation } from 'react-i18next';
 import type { FunnelMetrics } from '@/types';
 
 interface Props {
@@ -17,15 +18,19 @@ const STAGE_COLORS = [
 ];
 
 export function FunnelChart({ funnel }: Props) {
+  const { t } = useTranslation();
   const maxCount = Math.max(...funnel.stages.map((s) => s.count), 1);
 
   return (
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
         <div className="flex items-center justify-between w-full">
-          <h2 className="text-lg font-semibold text-foreground">Funil de Captura</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            {t('dashboard.analytics.funilCaptura', 'Funil de Captura')}
+          </h2>
           <span className="text-sm text-default-500">
-            Conversao: <span className="font-semibold text-primary">{funnel.overall_conversion}%</span>
+            {t('dashboard.analytics.conversao', 'Conversao')}:{' '}
+            <span className="font-semibold text-primary">{funnel.overall_conversion}%</span>
           </span>
         </div>
       </Card.Header>
@@ -59,7 +64,9 @@ export function FunnelChart({ funnel }: Props) {
         {funnel.form_errors > 0 && (
           <div className="pt-2 border-t border-default-200">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-danger-500">Erros de formulario</span>
+              <span className="text-danger-500">
+                {t('dashboard.analytics.errosFormulario', 'Erros de formulario')}
+              </span>
               <span className="font-medium text-danger-600">
                 {funnel.form_errors.toLocaleString('pt-BR')} ({funnel.error_rate}%)
               </span>

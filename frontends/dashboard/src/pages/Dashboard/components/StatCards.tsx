@@ -11,6 +11,7 @@ import {
   Eye,
   Rocket,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ComponentType } from 'react';
 import type { AnalyticsOverview } from '@/types';
 
@@ -23,6 +24,7 @@ interface StatCardProps {
 }
 
 function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: StatCardProps) {
+  const { t } = useTranslation();
   const isGradient = variant === 'gradient';
 
   return (
@@ -58,7 +60,7 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: Stat
               {trend.value}
             </span>
             <span className={`text-xs ${isGradient ? 'text-background/60' : 'text-default-400'}`}>
-              vs semana anterior
+              {t('dashboard.analytics.vsPreviousWeek', 'vs semana anterior')}
             </span>
           </div>
         )}
@@ -72,9 +74,11 @@ interface Props {
 }
 
 export function StatCards({ overview }: Props) {
+  const { t } = useTranslation();
+
   const cards: StatCardProps[] = [
     {
-      title: 'Leads Capturados',
+      title: t('dashboard.analytics.leadsCapturados', 'Leads Capturados'),
       value: overview.total_leads.toLocaleString('pt-BR'),
       icon: Users,
       variant: 'gradient',
@@ -87,17 +91,17 @@ export function StatCards({ overview }: Props) {
           : undefined,
     },
     {
-      title: 'Taxa de Conversao',
+      title: t('dashboard.analytics.taxaConversao', 'Taxa de Conversao'),
       value: `${overview.conversion_rate}%`,
       icon: TrendingUp,
     },
     {
-      title: 'Visualizacoes',
+      title: t('dashboard.analytics.visualizacoes', 'Visualizacoes'),
       value: overview.total_page_views.toLocaleString('pt-BR'),
       icon: Eye,
     },
     {
-      title: 'Lancamentos Ativos',
+      title: t('dashboard.analytics.lancamentosAtivos', 'Lancamentos Ativos'),
       value: overview.active_launches.toLocaleString('pt-BR'),
       icon: Rocket,
     },

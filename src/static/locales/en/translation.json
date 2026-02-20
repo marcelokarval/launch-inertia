@@ -142,6 +142,26 @@
       "importIdentity": "Import Identity",
       "manageBilling": "Manage Billing",
       "viewSettings": "View Settings"
+    },
+    "analytics": {
+      "leadsCapturados": "Leads Captured",
+      "taxaConversao": "Conversion Rate",
+      "visualizacoes": "Page Views",
+      "lancamentosAtivos": "Active Launches",
+      "vsPreviousWeek": "vs previous week",
+      "capturasDiarias": "Daily Captures",
+      "nenhumDadoCaptura": "No capture data yet",
+      "funilCaptura": "Capture Funnel",
+      "conversao": "Conversion",
+      "errosFormulario": "Form errors",
+      "topPaginasCaptura": "Top Capture Pages",
+      "pagina": "Page",
+      "lancamento": "Launch",
+      "dispositivos": "Devices",
+      "semDados": "No data",
+      "fontesTrafego": "Traffic Sources",
+      "capturasRecentes": "Recent Captures",
+      "nenhumaCapturaAinda": "No captures yet"
     }
   },
   "identities": {

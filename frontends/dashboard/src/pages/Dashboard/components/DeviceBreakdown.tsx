@@ -4,6 +4,7 @@
 
 import { Card } from '@heroui/react';
 import { Monitor, Smartphone, Tablet, HelpCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { DeviceBreakdownItem } from '@/types';
 
 interface Props {
@@ -23,14 +24,20 @@ const DEVICE_COLORS: Record<string, string> = {
 };
 
 export function DeviceBreakdown({ data }: Props) {
+  const { t } = useTranslation();
+
   if (data.length === 0) {
     return (
       <Card className="border border-default-200 animate-fade-in">
         <Card.Header className="pb-0 px-6 pt-6">
-          <h2 className="text-lg font-semibold text-foreground">Dispositivos</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            {t('dashboard.analytics.dispositivos', 'Dispositivos')}
+          </h2>
         </Card.Header>
         <Card.Content className="p-6">
-          <p className="text-sm text-default-400 text-center py-4">Sem dados</p>
+          <p className="text-sm text-default-400 text-center py-4">
+            {t('dashboard.analytics.semDados', 'Sem dados')}
+          </p>
         </Card.Content>
       </Card>
     );
@@ -39,7 +46,9 @@ export function DeviceBreakdown({ data }: Props) {
   return (
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
-        <h2 className="text-lg font-semibold text-foreground">Dispositivos</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t('dashboard.analytics.dispositivos', 'Dispositivos')}
+        </h2>
       </Card.Header>
       <Card.Content className="p-6 space-y-4">
         {/* Stacked bar */}

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, router } from '@inertiajs/react'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import { Card, TextField, Input, Label, FieldError, Form, TextArea } from '@heroui/react'
 import { Button } from '@/components/ui'
@@ -103,11 +103,13 @@ export default function IdentityEdit({ identity, errors = {} }: Props) {
                 >
                   {t('identities.edit.submit', 'Save Changes')}
                 </Button>
-                <Link href={`/app/identities/${identity.id}/`}>
-                  <Button type="button" variant="secondary">
-                    {t('identities.edit.cancel', 'Cancel')}
-                  </Button>
-                </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onPress={() => router.visit(`/app/identities/${identity.id}/`)}
+                >
+                  {t('identities.edit.cancel', 'Cancel')}
+                </Button>
               </div>
             </Form>
           </Card.Content>

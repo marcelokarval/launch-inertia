@@ -11,7 +11,7 @@
 import { Head } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
 import DashboardLayout from '@/layouts/DashboardLayout'
-import { TextField, Input, Label, FieldError, Form, TextArea } from '@heroui/react'
+import { TextField, Input, Label, FieldError, Form, TextArea, Card, Avatar } from '@heroui/react'
 import { User as UserIcon, Phone } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useAppForm } from '@/hooks/useAppForm'
@@ -55,25 +55,22 @@ export default function Profile({ user, profile, errors = {} }: ProfileProps) {
           </p>
         </div>
 
-        <div className="bg-content1 rounded-lg shadow-sm border border-default-200">
-          <div className="p-6">
+        <Card className="border border-default-200">
+          <Card.Content className="p-6">
             <Form
               onSubmit={submit}
               validationErrors={errors}
               className="space-y-6"
             >
               <div className="flex items-center gap-6 pb-6 border-b border-divider">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Avatar className="w-20 h-20">
                   {profile?.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={user.name}
-                      className="w-20 h-20 rounded-full object-cover"
-                    />
-                  ) : (
+                    <Avatar.Image src={profile.avatar_url} alt={user.name} />
+                  ) : null}
+                  <Avatar.Fallback>
                     <UserIcon className="w-10 h-10 text-primary" />
-                  )}
-                </div>
+                  </Avatar.Fallback>
+                </Avatar>
                 <div>
                   <h3 className="font-semibold text-foreground">
                     {user.name}
@@ -167,8 +164,8 @@ export default function Profile({ user, profile, errors = {} }: ProfileProps) {
                 </Button>
               </div>
             </Form>
-          </div>
-        </div>
+          </Card.Content>
+        </Card>
       </div>
     </DashboardLayout>
   )

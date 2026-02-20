@@ -13,6 +13,7 @@ import { Rocket, Target, BarChart3, Users, Zap, CheckCircle2 } from 'lucide-reac
 import { useTranslation } from 'react-i18next'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { FlashMessages } from '@/components/shared/FlashMessages'
 import type { PageProps } from '@/types/inertia'
 
 const featureIcons = [Target, BarChart3, Users, Zap]
@@ -148,16 +149,7 @@ export default function AuthLayout({ children, title, subtitle }: Props) {
           </div>
 
           {/* Flash messages */}
-          {flash?.success && (
-            <div className="p-3 bg-success/10 text-success rounded-xl border border-success/20 text-sm">
-              {flash.success}
-            </div>
-          )}
-          {flash?.error && (
-            <div className="p-3 bg-danger/10 text-danger rounded-xl border border-danger/20 text-sm">
-              {flash.error}
-            </div>
-          )}
+          <FlashMessages flash={flash} className="" />
 
           {/* Form card */}
           <Card className="w-full shadow-xl border border-default-200">
