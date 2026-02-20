@@ -19,12 +19,12 @@ export function UTMSources({ data }: Props) {
       <Card className="border border-default-200 animate-fade-in">
         <Card.Header className="pb-0 px-6 pt-6">
           <h2 className="text-lg font-semibold text-foreground">
-            {t('dashboard.analytics.fontesTrafego', 'Fontes de Trafego')}
+            {t('dashboard.analytics.fontesTrafego', 'Traffic Sources')}
           </h2>
         </Card.Header>
         <Card.Content className="p-6">
           <p className="text-sm text-default-400 text-center py-4">
-            {t('dashboard.analytics.semDados', 'Sem dados')}
+            {t('dashboard.analytics.semDados', 'No data')}
           </p>
         </Card.Content>
       </Card>
@@ -55,7 +55,7 @@ export function UTMSources({ data }: Props) {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-medium text-foreground">
-                    {item.count.toLocaleString('pt-BR')}
+                    {item.count.toLocaleString()}
                   </span>
                   <span className="text-xs text-default-400">({item.percentage}%)</span>
                 </div>

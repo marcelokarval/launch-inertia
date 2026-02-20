@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react'
 import DashboardLayout from '@/layouts/DashboardLayout'
-import { Card, TextField, Input, Label, FieldError, Form } from '@heroui/react'
+import { Card, TextField, Input, Label, FieldError, Form, Alert } from '@heroui/react'
 import { Button } from '@/components/ui'
 import { User, Mail, Phone, ArrowLeft, Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -55,12 +55,16 @@ export default function IdentityCreate({ errors = {} }: Props) {
               className="space-y-6"
             >
               {/* Requirement notice */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-default-600">
-                  {t('identities.create.requirementNote', 'At least an email or phone number is required to create an identity.')}
-                </p>
-              </div>
+              <Alert status="default">
+                <Alert.Indicator>
+                  <Info className="w-4 h-4" />
+                </Alert.Indicator>
+                <Alert.Content>
+                  <Alert.Description>
+                    {t('identities.create.requirementNote', 'At least an email or phone number is required to create an identity.')}
+                  </Alert.Description>
+                </Alert.Content>
+              </Alert>
 
               <TextField name="email" className="space-y-2">
                 <Label>{t('identities.create.emailLabel', 'Email')}</Label>

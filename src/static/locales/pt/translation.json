@@ -161,7 +161,16 @@
       "semDados": "Sem dados",
       "fontesTrafego": "Fontes de Trafego",
       "capturasRecentes": "Capturas Recentes",
-      "nenhumaCapturaAinda": "Nenhuma captura ainda"
+      "nenhumaCapturaAinda": "Nenhuma captura ainda",
+      "views": "Views",
+      "leads": "Leads",
+      "duplicate": "dup",
+      "timeAgo": {
+        "now": "agora",
+        "minutes": "{{count}}min",
+        "hours": "{{count}}h",
+        "days": "{{count}}d"
+      }
     }
   },
   "identities": {
@@ -177,8 +186,12 @@
         "status": "Status",
         "tags": "Tags",
         "actions": "Acoes",
-        "edit": "Editar"
+        "edit": "Editar",
+        "identity": "Identidade"
       },
+      "noIdentity": "Sem identidade",
+      "emptyTitle": "Nenhuma identidade ainda",
+      "emptyDesc": "Comece a construir sua audiencia importando sua primeira identidade.",
       "empty": "Nenhuma identidade encontrada.",
       "addFirst": "Importe sua primeira identidade",
       "pagination": {
@@ -220,7 +233,38 @@
       "operatorNotesLabel": "Notas do Operador",
       "operatorNotesPlaceholder": "Notas internas sobre esta identidade...",
       "createdAt": "Criado em",
-      "notesTitle": "Notas"
+      "notesTitle": "Notas",
+      "identity": {
+        "noIdentity": "Sem identidade resolvida",
+        "noIdentityDesc": "Esta identidade ainda nao foi vinculada a uma identidade resolvida.",
+        "title": "Resolucao de Identidade",
+        "emails": "Emails",
+        "phones": "Telefones",
+        "devices": "Dispositivos",
+        "firstSource": "Primeira origem"
+      },
+      "channels": {
+        "noEmails": "Sem canais de email",
+        "noPhones": "Sem canais de telefone"
+      },
+      "devices": {
+        "noDevices": "Nenhum dispositivo rastreado",
+        "primary": "Principal",
+        "fpConfidence": "Confianca FP"
+      },
+      "attributions": {
+        "noData": "Sem dados de atribuicao"
+      },
+      "timeline": {
+        "noEvents": "Nenhum evento registrado"
+      },
+      "tabs": {
+        "emails": "Emails",
+        "phones": "Telefones",
+        "devices": "Dispositivos",
+        "attributions": "Atribuicao",
+        "timeline": "Timeline"
+      }
     },
     "delete": {
       "pageTitle": "Excluir {{name}}",

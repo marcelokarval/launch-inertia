@@ -31,12 +31,12 @@ export function DeviceBreakdown({ data }: Props) {
       <Card className="border border-default-200 animate-fade-in">
         <Card.Header className="pb-0 px-6 pt-6">
           <h2 className="text-lg font-semibold text-foreground">
-            {t('dashboard.analytics.dispositivos', 'Dispositivos')}
+            {t('dashboard.analytics.dispositivos', 'Devices')}
           </h2>
         </Card.Header>
         <Card.Content className="p-6">
           <p className="text-sm text-default-400 text-center py-4">
-            {t('dashboard.analytics.semDados', 'Sem dados')}
+            {t('dashboard.analytics.semDados', 'No data')}
           </p>
         </Card.Content>
       </Card>
@@ -75,7 +75,7 @@ export function DeviceBreakdown({ data }: Props) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">
-                    {item.count.toLocaleString('pt-BR')}
+                    {item.count.toLocaleString()}
                   </span>
                   <span className="text-xs text-default-400">({item.percentage}%)</span>
                 </div>

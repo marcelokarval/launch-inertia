@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import { Card, Chip, Button as HeroButton } from '@heroui/react'
 import { Button } from '@/components/ui'
@@ -28,7 +28,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
     if (minutes < 60) return t('notifications.timeAgo.minutes', { count: minutes })
     if (hours < 24) return t('notifications.timeAgo.hours', { count: hours })
     if (days < 7) return t('notifications.timeAgo.days', { count: days })
-    return date.toLocaleDateString('pt-BR')
+    return date.toLocaleDateString()
   }
 
   const markAsRead = (id: string) => {
@@ -76,33 +76,19 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
 
         {/* Filters */}
         <div className="flex gap-2 mb-6">
-          <Link href="/app/notifications/">
+          {(['all', 'unread', 'read'] as const).map((status) => (
             <Chip
-              color={filter === 'all' ? 'accent' : 'default'}
-              variant={filter === 'all' ? 'soft' : 'soft'}
-              className={filter !== 'all' ? 'hover:bg-default-200 cursor-pointer' : 'cursor-pointer'}
-            >
-              {t('notifications.filters.all')}
-            </Chip>
-          </Link>
-          <Link href="/app/notifications/?status=unread">
-            <Chip
-              color={filter === 'unread' ? 'accent' : 'default'}
+              key={status}
+              color={filter === status ? 'accent' : 'default'}
               variant="soft"
-              className={filter !== 'unread' ? 'hover:bg-default-200 cursor-pointer' : 'cursor-pointer'}
+              className={`cursor-pointer ${filter !== status ? 'hover:bg-default-200' : ''}`}
+              onClick={() =>
+                router.get('/app/notifications/', status !== 'all' ? { status } : {}, { preserveState: true })
+              }
             >
-              {t('notifications.filters.unread')}
+              {t(`notifications.filters.${status}`)}
             </Chip>
-          </Link>
-          <Link href="/app/notifications/?status=read">
-            <Chip
-              color={filter === 'read' ? 'accent' : 'default'}
-              variant="soft"
-              className={filter !== 'read' ? 'hover:bg-default-200 cursor-pointer' : 'cursor-pointer'}
-            >
-              {t('notifications.filters.read')}
-            </Chip>
-          </Link>
+          ))}
         </div>
 
         {/* Notifications List */}
@@ -200,7 +186,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
                 page: pagination.page - 1,
                 ...(filter !== 'all' ? { status: filter } : {}),
               }, { preserveState: true })}
-              aria-label="Previous page"
+              aria-label={t('notifications.pagination.previous', 'Previous page')}
             >
               <ChevronLeft className="w-4 h-4" />
             </HeroButton>
@@ -227,7 +213,7 @@ export default function NotificationsIndex({ notifications, filter, pagination, 
                 page: pagination.page + 1,
                 ...(filter !== 'all' ? { status: filter } : {}),
               }, { preserveState: true })}
-              aria-label="Next page"
+              aria-label={t('notifications.pagination.next', 'Next page')}
             >
               <ChevronRight className="w-4 h-4" />
             </HeroButton>

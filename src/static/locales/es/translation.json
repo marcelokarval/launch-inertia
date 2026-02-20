@@ -161,7 +161,16 @@
       "semDados": "Sin datos",
       "fontesTrafego": "Fuentes de Trafico",
       "capturasRecentes": "Capturas Recientes",
-      "nenhumaCapturaAinda": "Sin capturas aun"
+      "nenhumaCapturaAinda": "Sin capturas aun",
+      "views": "Views",
+      "leads": "Leads",
+      "duplicate": "dup",
+      "timeAgo": {
+        "now": "ahora",
+        "minutes": "{{count}}min",
+        "hours": "{{count}}h",
+        "days": "{{count}}d"
+      }
     }
   },
   "identities": {
@@ -177,8 +186,12 @@
         "status": "Estado",
         "tags": "Etiquetas",
         "actions": "Acciones",
-        "edit": "Editar"
+        "edit": "Editar",
+        "identity": "Identidad"
       },
+      "noIdentity": "Sin identidad",
+      "emptyTitle": "Sin identidades aun",
+      "emptyDesc": "Comience a construir su audiencia importando su primera identidad.",
       "empty": "No se encontraron identidades.",
       "addFirst": "Importe su primera identidad",
       "pagination": {
@@ -220,7 +233,38 @@
       "operatorNotesLabel": "Notas del Operador",
       "operatorNotesPlaceholder": "Notas internas sobre esta identidad...",
       "createdAt": "Creado el",
-      "notesTitle": "Notas"
+      "notesTitle": "Notas",
+      "identity": {
+        "noIdentity": "Sin identidad resuelta",
+        "noIdentityDesc": "Esta identidad aun no ha sido vinculada a una identidad resuelta.",
+        "title": "Resolucion de Identidad",
+        "emails": "Correos",
+        "phones": "Telefonos",
+        "devices": "Dispositivos",
+        "firstSource": "Primera fuente"
+      },
+      "channels": {
+        "noEmails": "Sin canales de correo",
+        "noPhones": "Sin canales de telefono"
+      },
+      "devices": {
+        "noDevices": "Ningun dispositivo rastreado",
+        "primary": "Principal",
+        "fpConfidence": "Confianza FP"
+      },
+      "attributions": {
+        "noData": "Sin datos de atribucion"
+      },
+      "timeline": {
+        "noEvents": "Ningun evento registrado"
+      },
+      "tabs": {
+        "emails": "Correos",
+        "phones": "Telefonos",
+        "devices": "Dispositivos",
+        "attributions": "Atribucion",
+        "timeline": "Timeline"
+      }
     },
     "delete": {
       "pageTitle": "Eliminar {{name}}",

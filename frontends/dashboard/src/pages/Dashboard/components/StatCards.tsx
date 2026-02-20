@@ -60,7 +60,7 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: Stat
               {trend.value}
             </span>
             <span className={`text-xs ${isGradient ? 'text-background/60' : 'text-default-400'}`}>
-              {t('dashboard.analytics.vsPreviousWeek', 'vs semana anterior')}
+              {t('dashboard.analytics.vsPreviousWeek', 'vs previous week')}
             </span>
           </div>
         )}
@@ -78,8 +78,8 @@ export function StatCards({ overview }: Props) {
 
   const cards: StatCardProps[] = [
     {
-      title: t('dashboard.analytics.leadsCapturados', 'Leads Capturados'),
-      value: overview.total_leads.toLocaleString('pt-BR'),
+      title: t('dashboard.analytics.leadsCapturados', 'Leads Captured'),
+      value: overview.total_leads.toLocaleString(),
       icon: Users,
       variant: 'gradient',
       trend:
@@ -91,18 +91,18 @@ export function StatCards({ overview }: Props) {
           : undefined,
     },
     {
-      title: t('dashboard.analytics.taxaConversao', 'Taxa de Conversao'),
+      title: t('dashboard.analytics.taxaConversao', 'Conversion Rate'),
       value: `${overview.conversion_rate}%`,
       icon: TrendingUp,
     },
     {
-      title: t('dashboard.analytics.visualizacoes', 'Visualizacoes'),
-      value: overview.total_page_views.toLocaleString('pt-BR'),
+      title: t('dashboard.analytics.visualizacoes', 'Page Views'),
+      value: overview.total_page_views.toLocaleString(),
       icon: Eye,
     },
     {
-      title: t('dashboard.analytics.lancamentosAtivos', 'Lancamentos Ativos'),
-      value: overview.active_launches.toLocaleString('pt-BR'),
+      title: t('dashboard.analytics.lancamentosAtivos', 'Active Launches'),
+      value: overview.active_launches.toLocaleString(),
       icon: Rocket,
     },
   ];

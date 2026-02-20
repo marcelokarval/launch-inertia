@@ -7,7 +7,7 @@
 
 import { Head, Link } from '@inertiajs/react'
 import { useTranslation } from 'react-i18next'
-import { Form, Checkbox } from '@heroui/react'
+import { Form, Checkbox, Alert } from '@heroui/react'
 import { User, ArrowRight, AlertCircle } from 'lucide-react'
 import AuthLayout from '@/layouts/AuthLayout'
 import { InputField, PasswordInput, FormErrorBanner, Button } from '@/components/ui'
@@ -54,18 +54,22 @@ export default function Login({
 
         {/* Verification notice */}
         {errors.__all__ && needs_verification && (
-          <div className="p-3 rounded-lg text-sm border bg-warning/10 border-warning/20 text-warning">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <Link
-                href={`/auth/verify-email/${verification_email ? `?email=${encodeURIComponent(verification_email)}` : ''}`}
-                className="inline-flex items-center gap-1 font-medium text-primary hover:opacity-80"
-              >
-                {t('auth.login.verifyEmailLink', 'Verify your email now')}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </div>
+          <Alert status="warning">
+            <Alert.Indicator>
+              <AlertCircle className="h-4 w-4" />
+            </Alert.Indicator>
+            <Alert.Content>
+              <Alert.Description>
+                <Link
+                  href={`/auth/verify-email/${verification_email ? `?email=${encodeURIComponent(verification_email)}` : ''}`}
+                  className="inline-flex items-center gap-1 font-medium text-primary hover:opacity-80"
+                >
+                  {t('auth.login.verifyEmailLink', 'Verify your email now')}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Alert.Description>
+            </Alert.Content>
+          </Alert>
         )}
 
         {/* Email (sent as 'username' to Django) */}

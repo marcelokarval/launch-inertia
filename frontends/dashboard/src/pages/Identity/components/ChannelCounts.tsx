@@ -1,5 +1,6 @@
 import { Tooltip } from '@heroui/react';
 import { Mail, Phone, Fingerprint } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ChannelCountsProps {
   emailCount: number;
@@ -8,6 +9,8 @@ interface ChannelCountsProps {
 }
 
 export function ChannelCounts({ emailCount, phoneCount, fpCount }: ChannelCountsProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center gap-3">
       <Tooltip>
@@ -17,7 +20,7 @@ export function ChannelCounts({ emailCount, phoneCount, fpCount }: ChannelCounts
             <span>{emailCount}</span>
           </span>
         </Tooltip.Trigger>
-        <Tooltip.Content>Emails</Tooltip.Content>
+        <Tooltip.Content>{t('identities.show.tabs.emails', 'Emails')}</Tooltip.Content>
       </Tooltip>
       <Tooltip>
         <Tooltip.Trigger>
@@ -26,7 +29,7 @@ export function ChannelCounts({ emailCount, phoneCount, fpCount }: ChannelCounts
             <span>{phoneCount}</span>
           </span>
         </Tooltip.Trigger>
-        <Tooltip.Content>Phones</Tooltip.Content>
+        <Tooltip.Content>{t('identities.show.tabs.phones', 'Phones')}</Tooltip.Content>
       </Tooltip>
       <Tooltip>
         <Tooltip.Trigger>
@@ -35,7 +38,7 @@ export function ChannelCounts({ emailCount, phoneCount, fpCount }: ChannelCounts
             <span>{fpCount}</span>
           </span>
         </Tooltip.Trigger>
-        <Tooltip.Content>Devices</Tooltip.Content>
+        <Tooltip.Content>{t('identities.show.tabs.devices', 'Devices')}</Tooltip.Content>
       </Tooltip>
     </div>
   );

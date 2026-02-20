@@ -25,7 +25,7 @@ export interface LanguageSelectorProps {
 
 export function LanguageSelector({ visualOnly = false, className = '' }: LanguageSelectorProps) {
   // Subscribe to language changes so the component re-renders
-  useTranslation()
+  const { t } = useTranslation()
 
   const currentLang = getCurrentLanguage()
 
@@ -44,7 +44,7 @@ export function LanguageSelector({ visualOnly = false, className = '' }: Languag
           <HeroButton
             variant="ghost"
             size="sm"
-            aria-label="Select language"
+            aria-label={t('nav.aria.selectLanguage', 'Select language')}
           >
             <Globe className="h-5 w-5" />
             <span className="text-xs font-medium uppercase">{currentLang}</span>

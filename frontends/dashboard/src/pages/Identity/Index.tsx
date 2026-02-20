@@ -93,7 +93,9 @@ export default function IdentitiesIndex({ identities, filters, pagination }: Pro
       {/* Identity Table */}
       {identities.length === 0 ? (
         <Card className="border border-default-200">
-          <EmptyState />
+          <Card.Content>
+            <EmptyState />
+          </Card.Content>
         </Card>
       ) : (
         <Card className="border border-default-200 overflow-hidden">

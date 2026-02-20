@@ -57,8 +57,8 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { key: 'dashboard', href: '/app/', icon: Home },
   { key: 'identities', href: '/app/identities/', icon: Users },
-  { key: 'campaigns', href: '#', icon: Target, badge: { label: 'Soon', color: 'warning' } },
-  { key: 'automations', href: '#', icon: Zap, badge: { label: 'Pro', color: 'accent' } },
+  { key: 'campaigns', href: '#', icon: Target, badge: { label: 'nav.badges.soon', color: 'warning' } },
+  { key: 'automations', href: '#', icon: Zap, badge: { label: 'nav.badges.pro', color: 'accent' } },
   { key: 'schedule', href: '#', icon: Calendar },
   { key: 'reports', href: '#', icon: BarChart3 },
 ]
@@ -82,6 +82,7 @@ function isActive(href: string, currentUrl: string): boolean {
 export default function DashboardLayout({ children, title }: Props) {
   const { auth, flash } = usePage<PageProps>().props
   const { url } = usePage()
+  const { t } = useTranslation('common')
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -126,7 +127,7 @@ export default function DashboardLayout({ children, title }: Props) {
             isIconOnly
             onPress={() => setMobileOpen(true)}
             className="lg:hidden -ml-2 text-default-500 hover:text-foreground"
-            aria-label="Open menu"
+            aria-label={t('nav.aria.openMenu', 'Open menu')}
           >
             <Menu className="h-5 w-5" />
           </HeroButton>
@@ -174,6 +175,7 @@ export default function DashboardLayout({ children, title }: Props) {
 // ============================================================================
 
 function SidebarHeader({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const { t } = useTranslation('common')
   return (
     <div className="h-16 flex items-center justify-between px-4 border-b border-divider flex-shrink-0">
       <Link href="/app/" className="flex items-center gap-2.5 overflow-hidden">
@@ -193,7 +195,7 @@ function SidebarHeader({ collapsed, onToggle }: { collapsed: boolean; onToggle: 
         isIconOnly
         onPress={onToggle}
         className="hidden lg:flex text-default-400 hover:text-foreground"
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-label={collapsed ? t('nav.aria.expandSidebar', 'Expand sidebar') : t('nav.aria.collapseSidebar', 'Collapse sidebar')}
       >
         <ChevronLeft className={`h-4 w-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
       </HeroButton>
@@ -297,7 +299,7 @@ function NavLink({
               variant="soft"
               className="text-[10px] h-5 min-w-0"
             >
-              {item.badge.label}
+              {t(item.badge.label, item.badge.label)}
             </Chip>
           )}
         </>
@@ -317,6 +319,7 @@ function NavLink({
 }
 
 function SidebarFooter({ user, collapsed }: { user: PageProps['auth']['user']; collapsed: boolean }) {
+  const { t } = useTranslation('common')
   return (
     <div className="p-3 border-t border-divider flex-shrink-0">
       {!collapsed ? (
@@ -344,7 +347,7 @@ function SidebarFooter({ user, collapsed }: { user: PageProps['auth']['user']; c
           href="/auth/logout/"
           method="post"
           as="button"
-          title="Logout"
+          title={t('nav.signOut', 'Sign Out')}
           className="flex items-center justify-center p-2.5 rounded-lg text-default-400 hover:text-danger hover:bg-danger/10 transition-colors w-full"
         >
           <LogOut className="w-4 h-4" />

@@ -161,7 +161,16 @@
       "semDados": "No data",
       "fontesTrafego": "Traffic Sources",
       "capturasRecentes": "Recent Captures",
-      "nenhumaCapturaAinda": "No captures yet"
+      "nenhumaCapturaAinda": "No captures yet",
+      "views": "Views",
+      "leads": "Leads",
+      "duplicate": "dup",
+      "timeAgo": {
+        "now": "now",
+        "minutes": "{{count}}min",
+        "hours": "{{count}}h",
+        "days": "{{count}}d"
+      }
     }
   },
   "identities": {
@@ -177,8 +186,12 @@
         "status": "Status",
         "tags": "Tags",
         "actions": "Actions",
-        "edit": "Edit"
+        "edit": "Edit",
+        "identity": "Identity"
       },
+      "noIdentity": "No identity",
+      "emptyTitle": "No identities yet",
+      "emptyDesc": "Start building your audience by importing your first identity.",
       "empty": "No identities found.",
       "addFirst": "Import your first identity",
       "pagination": {
@@ -220,7 +233,38 @@
       "operatorNotesLabel": "Operator Notes",
       "operatorNotesPlaceholder": "Internal notes about this identity...",
       "createdAt": "Created at",
-      "notesTitle": "Notes"
+      "notesTitle": "Notes",
+      "identity": {
+        "noIdentity": "No resolved identity",
+        "noIdentityDesc": "This identity has not been linked to a resolved identity yet.",
+        "title": "Identity Resolution",
+        "emails": "Emails",
+        "phones": "Phones",
+        "devices": "Devices",
+        "firstSource": "First seen via"
+      },
+      "channels": {
+        "noEmails": "No email channels",
+        "noPhones": "No phone channels"
+      },
+      "devices": {
+        "noDevices": "No devices tracked",
+        "primary": "Primary",
+        "fpConfidence": "FP confidence"
+      },
+      "attributions": {
+        "noData": "No attribution data"
+      },
+      "timeline": {
+        "noEvents": "No events recorded"
+      },
+      "tabs": {
+        "emails": "Emails",
+        "phones": "Phones",
+        "devices": "Devices",
+        "attributions": "Attribution",
+        "timeline": "Timeline"
+      }
     },
     "delete": {
       "pageTitle": "Delete {{name}}",

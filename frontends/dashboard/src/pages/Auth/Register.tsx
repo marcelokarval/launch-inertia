@@ -152,9 +152,7 @@ export default function Register({ errors = {} }: Props) {
               </HeroLink>
             </span>
           </Checkbox>
-          {errors.terms_accepted && (
-            <p className="text-sm text-danger">{errors.terms_accepted}</p>
-          )}
+          <FormErrorBanner message={errors.terms_accepted} />
         </div>
 
         {/* Submit */}

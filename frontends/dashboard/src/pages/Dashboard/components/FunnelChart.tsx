@@ -26,10 +26,10 @@ export function FunnelChart({ funnel }: Props) {
       <Card.Header className="pb-0 px-6 pt-6">
         <div className="flex items-center justify-between w-full">
           <h2 className="text-lg font-semibold text-foreground">
-            {t('dashboard.analytics.funilCaptura', 'Funil de Captura')}
+            {t('dashboard.analytics.funilCaptura', 'Capture Funnel')}
           </h2>
           <span className="text-sm text-default-500">
-            {t('dashboard.analytics.conversao', 'Conversao')}:{' '}
+            {t('dashboard.analytics.conversao', 'Conversion')}:{' '}
             <span className="font-semibold text-primary">{funnel.overall_conversion}%</span>
           </span>
         </div>
@@ -44,7 +44,7 @@ export function FunnelChart({ funnel }: Props) {
                 <span className="text-sm font-medium text-default-700">{stage.label}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground">
-                    {stage.count.toLocaleString('pt-BR')}
+                    {stage.count.toLocaleString()}
                   </span>
                   {i > 0 && (
                     <span className="text-xs text-default-400">({stage.rate}%)</span>
@@ -65,10 +65,10 @@ export function FunnelChart({ funnel }: Props) {
           <div className="pt-2 border-t border-default-200">
             <div className="flex items-center justify-between text-sm">
               <span className="text-danger-500">
-                {t('dashboard.analytics.errosFormulario', 'Erros de formulario')}
+                {t('dashboard.analytics.errosFormulario', 'Form errors')}
               </span>
               <span className="font-medium text-danger-600">
-                {funnel.form_errors.toLocaleString('pt-BR')} ({funnel.error_rate}%)
+                {funnel.form_errors.toLocaleString()} ({funnel.error_rate}%)
               </span>
             </div>
           </div>

@@ -21,7 +21,7 @@ interface Props {
 
 function formatDate(value: unknown): string {
   const d = new Date(String(value) + 'T00:00:00');
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
 }
 
 export function DailyTrendChart({ data }: Props) {
@@ -32,7 +32,7 @@ export function DailyTrendChart({ data }: Props) {
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
         <h2 className="text-lg font-semibold text-foreground">
-          {t('dashboard.analytics.capturasDiarias', 'Capturas Diarias')}
+          {t('dashboard.analytics.capturasDiarias', 'Daily Captures')}
         </h2>
       </Card.Header>
       <Card.Content className="p-6">
@@ -73,7 +73,7 @@ export function DailyTrendChart({ data }: Props) {
               <Area
                 type="monotone"
                 dataKey="page_views"
-                name={t('dashboard.analytics.visualizacoes', 'Visualizacoes')}
+                name={t('dashboard.analytics.visualizacoes', 'Page Views')}
                 stroke="hsl(var(--heroui-default-400))"
                 fill="url(#gradientViews)"
                 strokeWidth={1.5}
@@ -81,7 +81,7 @@ export function DailyTrendChart({ data }: Props) {
               <Area
                 type="monotone"
                 dataKey="leads"
-                name="Leads"
+                name={t('dashboard.analytics.leads', 'Leads')}
                 stroke="hsl(var(--heroui-primary))"
                 fill="url(#gradientLeads)"
                 strokeWidth={2}
@@ -91,7 +91,7 @@ export function DailyTrendChart({ data }: Props) {
         ) : (
           <div className="h-[280px] flex items-center justify-center">
             <p className="text-default-400 text-sm">
-              {t('dashboard.analytics.nenhumDadoCaptura', 'Nenhum dado de captura ainda')}
+              {t('dashboard.analytics.nenhumDadoCaptura', 'No capture data yet')}
             </p>
           </div>
         )}

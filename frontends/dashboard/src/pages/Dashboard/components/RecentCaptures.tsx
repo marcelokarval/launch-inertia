@@ -11,18 +11,18 @@ interface Props {
   captures: RecentCapture[];
 }
 
-function timeAgo(isoDate: string): string {
+function timeAgo(isoDate: string, t: (key: string, fallback: string, opts?: Record<string, number>) => string): string {
   const now = new Date();
   const date = new Date(isoDate);
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
 
-  if (diffMin < 1) return 'agora';
-  if (diffMin < 60) return `${diffMin}min`;
+  if (diffMin < 1) return t('dashboard.analytics.timeAgo.now', 'now');
+  if (diffMin < 60) return t('dashboard.analytics.timeAgo.minutes', '{{count}}min', { count: diffMin });
   const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h`;
+  if (diffHours < 24) return t('dashboard.analytics.timeAgo.hours', '{{count}}h', { count: diffHours });
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d`;
+  return t('dashboard.analytics.timeAgo.days', '{{count}}d', { count: diffDays });
 }
 
 export function RecentCaptures({ captures }: Props) {
@@ -33,14 +33,14 @@ export function RecentCaptures({ captures }: Props) {
       <Card className="border border-default-200 animate-fade-in">
         <Card.Header className="pb-0 px-6 pt-6">
           <h2 className="text-lg font-semibold text-foreground">
-            {t('dashboard.analytics.capturasRecentes', 'Capturas Recentes')}
+            {t('dashboard.analytics.capturasRecentes', 'Recent Captures')}
           </h2>
         </Card.Header>
         <Card.Content className="p-6">
           <div className="text-center py-6">
             <Mail className="h-8 w-8 text-default-300 mx-auto mb-2" />
             <p className="text-sm text-default-400">
-              {t('dashboard.analytics.nenhumaCapturaAinda', 'Nenhuma captura ainda')}
+              {t('dashboard.analytics.nenhumaCapturaAinda', 'No captures yet')}
             </p>
           </div>
         </Card.Content>
@@ -52,11 +52,11 @@ export function RecentCaptures({ captures }: Props) {
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
         <h2 className="text-lg font-semibold text-foreground">
-          {t('dashboard.analytics.capturasRecentes', 'Capturas Recentes')}
-        </h2>
-      </Card.Header>
-      <Card.Content className="p-6">
-        <div className="space-y-3 max-h-[320px] overflow-y-auto">
+            {t('dashboard.analytics.capturasRecentes', 'Recent Captures')}
+          </h2>
+        </Card.Header>
+        <Card.Content className="p-6">
+          <div className="space-y-3 max-h-[320px] overflow-y-auto">
           {captures.map((c) => (
             <div
               key={c.id}
@@ -69,7 +69,7 @@ export function RecentCaptures({ captures }: Props) {
                   </span>
                   {c.is_duplicate && (
                     <Chip variant="soft" color="warning" size="sm">
-                      dup
+                      {t('dashboard.analytics.duplicate', 'dup')}
                     </Chip>
                   )}
                 </div>
@@ -81,7 +81,7 @@ export function RecentCaptures({ captures }: Props) {
               </div>
               <div className="flex items-center gap-1 text-xs text-default-400 flex-shrink-0 ml-2">
                 <Clock className="h-3 w-3" />
-                {timeAgo(c.created_at)}
+                {timeAgo(c.created_at, t)}
               </div>
             </div>
           ))}

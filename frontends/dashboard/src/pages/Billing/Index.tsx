@@ -15,14 +15,14 @@ export default function BillingIndex({ subscription, invoices }: Props) {
   const { t } = useTranslation()
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: 'BRL',
     }).format(amount / 100)
   }
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR')
+    return new Date(dateStr).toLocaleDateString()
   }
 
   const openPortal = () => {

@@ -161,7 +161,16 @@
       "semDados": "No data",
       "fontesTrafego": "Traffic Sources",
       "capturasRecentes": "Recent Captures",
-      "nenhumaCapturaAinda": "No captures yet"
+      "nenhumaCapturaAinda": "No captures yet",
+      "views": "Views",
+      "leads": "Leads",
+      "duplicate": "dup",
+      "timeAgo": {
+        "now": "now",
+        "minutes": "{{count}}min",
+        "hours": "{{count}}h",
+        "days": "{{count}}d"
+      }
     }
   },
   "identities": {

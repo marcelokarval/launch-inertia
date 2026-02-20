@@ -3,7 +3,7 @@
  */
 
 import { Head } from '@inertiajs/react'
-import { Checkbox, Form, Link as HeroLink } from '@heroui/react'
+import { Card, Checkbox, Form, Link as HeroLink } from '@heroui/react'
 import { Button, FormErrorBanner } from '@/components/ui'
 import { FileText, Shield, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -41,88 +41,94 @@ export default function Legal({ errors = {} }: Props) {
 
         <Form onSubmit={submit} className="space-y-6">
           {/* Terms of Use */}
-          <div className="p-4 rounded-lg border border-default-200 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
-                <FileText className="w-4 h-4 text-primary" />
+          <Card className="border border-default-200">
+            <Card.Content className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                  <FileText className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t('onboarding.legal.termsTitle')}
+                  </h3>
+                  <p className="text-xs text-default-500">
+                    {t('onboarding.legal.termsDescription')}
+                  </p>
+                  <HeroLink
+                    href="#"
+                    className="text-xs text-primary hover:opacity-80"
+                  >
+                    {t('onboarding.legal.readTerms')}
+                  </HeroLink>
+                </div>
               </div>
-              <div className="flex-1 space-y-1">
-                <h3 className="text-sm font-semibold text-foreground">
-                  {t('onboarding.legal.termsTitle')}
-                </h3>
-                <p className="text-xs text-default-500">
-                  {t('onboarding.legal.termsDescription')}
-                </p>
-                <HeroLink
-                  href="#"
-                  className="text-xs text-primary hover:opacity-80"
-                >
-                  {t('onboarding.legal.readTerms')}
-                </HeroLink>
-              </div>
-            </div>
-            <Checkbox
-              isSelected={data.agreed_to_terms}
-              onChange={(isSelected) => setData('agreed_to_terms', isSelected)}
-            >
-              <span className="text-sm text-default-700">
-                {t('onboarding.legal.agreeTerms')} <span className="text-danger">*</span>
-              </span>
-            </Checkbox>
-          </div>
+              <Checkbox
+                isSelected={data.agreed_to_terms}
+                onChange={(isSelected) => setData('agreed_to_terms', isSelected)}
+              >
+                <span className="text-sm text-default-700">
+                  {t('onboarding.legal.agreeTerms')} <span className="text-danger">*</span>
+                </span>
+              </Checkbox>
+            </Card.Content>
+          </Card>
 
           {/* Privacy Policy */}
-          <div className="p-4 rounded-lg border border-default-200 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-success/10 flex-shrink-0">
-                <Shield className="w-4 h-4 text-success" />
+          <Card className="border border-default-200">
+            <Card.Content className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-success/10 flex-shrink-0">
+                  <Shield className="w-4 h-4 text-success" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t('onboarding.legal.privacyTitle')}
+                  </h3>
+                  <p className="text-xs text-default-500">
+                    {t('onboarding.legal.privacyDescription')}
+                  </p>
+                  <HeroLink
+                    href="#"
+                    className="text-xs text-primary hover:opacity-80"
+                  >
+                    {t('onboarding.legal.readPrivacy')}
+                  </HeroLink>
+                </div>
               </div>
-              <div className="flex-1 space-y-1">
-                <h3 className="text-sm font-semibold text-foreground">
-                  {t('onboarding.legal.privacyTitle')}
-                </h3>
-                <p className="text-xs text-default-500">
-                  {t('onboarding.legal.privacyDescription')}
-                </p>
-                <HeroLink
-                  href="#"
-                  className="text-xs text-primary hover:opacity-80"
-                >
-                  {t('onboarding.legal.readPrivacy')}
-                </HeroLink>
-              </div>
-            </div>
-            <Checkbox
-              isSelected={data.agreed_to_privacy}
-              onChange={(isSelected) => setData('agreed_to_privacy', isSelected)}
-            >
-              <span className="text-sm text-default-700">
-                {t('onboarding.legal.agreePrivacy')} <span className="text-danger">*</span>
-              </span>
-            </Checkbox>
-          </div>
+              <Checkbox
+                isSelected={data.agreed_to_privacy}
+                onChange={(isSelected) => setData('agreed_to_privacy', isSelected)}
+              >
+                <span className="text-sm text-default-700">
+                  {t('onboarding.legal.agreePrivacy')} <span className="text-danger">*</span>
+                </span>
+              </Checkbox>
+            </Card.Content>
+          </Card>
 
           {/* Marketing (Optional) */}
-          <div className="p-4 rounded-lg border border-default-100 bg-default-50">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-secondary/10 flex-shrink-0">
-                <Mail className="w-4 h-4 text-secondary" />
+          <Card className="border border-default-100 bg-default-50">
+            <Card.Content className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-secondary/10 flex-shrink-0">
+                  <Mail className="w-4 h-4 text-secondary" />
+                </div>
+                <div className="flex-1">
+                  <Checkbox
+                    isSelected={data.agreed_to_marketing}
+                    onChange={(isSelected) => setData('agreed_to_marketing', isSelected)}
+                  >
+                    <span className="text-sm text-default-700">
+                      {t('onboarding.legal.marketingLabel')}
+                    </span>
+                  </Checkbox>
+                  <p className="text-xs text-default-400 mt-1 ml-6">
+                    {t('onboarding.legal.marketingHelp')}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <Checkbox
-                  isSelected={data.agreed_to_marketing}
-                  onChange={(isSelected) => setData('agreed_to_marketing', isSelected)}
-                >
-                  <span className="text-sm text-default-700">
-                    {t('onboarding.legal.marketingLabel')}
-                  </span>
-                </Checkbox>
-                <p className="text-xs text-default-400 mt-1 ml-6">
-                  {t('onboarding.legal.marketingHelp')}
-                </p>
-              </div>
-            </div>
-          </div>
+            </Card.Content>
+          </Card>
 
           {/* Error */}
           <FormErrorBanner message={termsError} />

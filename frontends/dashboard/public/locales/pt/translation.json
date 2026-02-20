@@ -161,7 +161,16 @@
       "semDados": "Sem dados",
       "fontesTrafego": "Fontes de Trafego",
       "capturasRecentes": "Capturas Recentes",
-      "nenhumaCapturaAinda": "Nenhuma captura ainda"
+      "nenhumaCapturaAinda": "Nenhuma captura ainda",
+      "views": "Views",
+      "leads": "Leads",
+      "duplicate": "dup",
+      "timeAgo": {
+        "now": "agora",
+        "minutes": "{{count}}min",
+        "hours": "{{count}}h",
+        "days": "{{count}}d"
+      }
     }
   },
   "identities": {

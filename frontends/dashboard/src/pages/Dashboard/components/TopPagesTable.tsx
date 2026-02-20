@@ -24,7 +24,7 @@ export function TopPagesTable({ pages }: Props) {
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
         <h2 className="text-lg font-semibold text-foreground">
-          {t('dashboard.analytics.topPaginasCaptura', 'Top Paginas de Captura')}
+          {t('dashboard.analytics.topPaginasCaptura', 'Top Capture Pages')}
         </h2>
       </Card.Header>
       <Card.Content className="p-6">
@@ -33,19 +33,19 @@ export function TopPagesTable({ pages }: Props) {
             <thead>
               <tr className="border-b border-default-200">
                 <th className="text-left py-3 px-2 font-medium text-default-500">
-                  {t('dashboard.analytics.pagina', 'Pagina')}
+                  {t('dashboard.analytics.pagina', 'Page')}
                 </th>
                 <th className="text-left py-3 px-2 font-medium text-default-500">
-                  {t('dashboard.analytics.lancamento', 'Lancamento')}
+                  {t('dashboard.analytics.lancamento', 'Launch')}
                 </th>
                 <th className="text-right py-3 px-2 font-medium text-default-500">
-                  Views
+                  {t('dashboard.analytics.views', 'Views')}
                 </th>
                 <th className="text-right py-3 px-2 font-medium text-default-500">
-                  Leads
+                  {t('dashboard.analytics.leads', 'Leads')}
                 </th>
                 <th className="text-right py-3 px-2 font-medium text-default-500">
-                  {t('dashboard.analytics.conversao', 'Conversao')}
+                  {t('dashboard.analytics.conversao', 'Conversion')}
                 </th>
               </tr>
             </thead>
@@ -60,10 +60,10 @@ export function TopPagesTable({ pages }: Props) {
                   </td>
                   <td className="py-3 px-2 text-default-600">{page.launch_name || '--'}</td>
                   <td className="py-3 px-2 text-right text-default-600">
-                    {page.page_views.toLocaleString('pt-BR')}
+                    {page.page_views.toLocaleString()}
                   </td>
                   <td className="py-3 px-2 text-right font-medium text-foreground">
-                    {page.submissions.toLocaleString('pt-BR')}
+                    {page.submissions.toLocaleString()}
                   </td>
                   <td className="py-3 px-2 text-right">
                     <Chip variant="soft" color={rateColor(page.conversion_rate)} size="sm">
