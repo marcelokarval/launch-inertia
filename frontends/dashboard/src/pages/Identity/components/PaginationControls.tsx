@@ -42,7 +42,7 @@ export function PaginationControls({ pagination, onPageChange }: PaginationContr
           isIconOnly
           isDisabled={pagination.page <= 1}
           onPress={() => onPageChange(pagination.page - 1)}
-          aria-label="Previous page"
+          aria-label={t('identities.index.pagination.previousPage', 'Previous page')}
         >
           <ChevronLeft className="w-4 h-4" />
         </HeroButton>
@@ -67,7 +67,7 @@ export function PaginationControls({ pagination, onPageChange }: PaginationContr
           isIconOnly
           isDisabled={pagination.page >= pagination.pages}
           onPress={() => onPageChange(pagination.page + 1)}
-          aria-label="Next page"
+          aria-label={t('identities.index.pagination.nextPage', 'Next page')}
         >
           <ChevronRight className="w-4 h-4" />
         </HeroButton>

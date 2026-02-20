@@ -7,10 +7,29 @@
   "nav": {
     "dashboard": "Dashboard",
     "identities": "Identidades",
+    "campaigns": "Campanas",
+    "automations": "Automatizaciones",
+    "schedule": "Agenda",
+    "reports": "Reportes",
     "billing": "Facturacion",
     "notifications": "Notificaciones",
     "settings": "Configuracion",
-    "logout": "Cerrar sesion"
+    "logout": "Cerrar sesion",
+    "principal": "Principal",
+    "tools": "Herramientas",
+    "signOut": "Cerrar sesion",
+    "profileSettings": "Configuracion del Perfil",
+    "helpSupport": "Ayuda y Soporte",
+    "badges": {
+      "soon": "Pronto",
+      "pro": "Pro"
+    },
+    "aria": {
+      "openMenu": "Abrir menu",
+      "expandSidebar": "Expandir barra lateral",
+      "collapseSidebar": "Colapsar barra lateral",
+      "notifications": "Notificaciones"
+    }
   },
   "actions": {
     "save": "Guardar",

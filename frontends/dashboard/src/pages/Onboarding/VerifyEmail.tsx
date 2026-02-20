@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { Head, router } from '@inertiajs/react'
-import { Form, Button as HeroButton } from '@heroui/react'
+import { Form } from '@heroui/react'
 import { Button } from '@/components/ui'
 import { OtpInput } from '@/components/shared/OtpInput'
 import { Mail, RefreshCw } from 'lucide-react'
@@ -88,7 +88,7 @@ export default function VerifyEmail({ email, errors = {} }: Props) {
 
         {/* Resend */}
         <div className="text-center">
-          <HeroButton
+          <Button
             variant="ghost"
             size="sm"
             onPress={handleResend}
@@ -99,7 +99,7 @@ export default function VerifyEmail({ email, errors = {} }: Props) {
             {resendCountdown > 0
               ? t('onboarding.verifyEmail.resendCountdown', { seconds: resendCountdown })
               : t('onboarding.verifyEmail.resendPrompt')}
-          </HeroButton>
+          </Button>
         </div>
       </div>
     </OnboardingLayout>

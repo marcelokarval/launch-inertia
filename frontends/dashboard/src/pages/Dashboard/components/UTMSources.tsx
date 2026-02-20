@@ -37,7 +37,7 @@ export function UTMSources({ data }: Props) {
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
         <h2 className="text-lg font-semibold text-foreground">
-          {t('dashboard.analytics.fontesTrafego', 'Fontes de Trafego')}
+          {t('dashboard.analytics.fontesTrafego', 'Traffic Sources')}
         </h2>
       </Card.Header>
       <Card.Content className="p-6 space-y-3">

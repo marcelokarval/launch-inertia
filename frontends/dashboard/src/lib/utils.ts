@@ -11,7 +11,7 @@
 export function formatCurrency(
   amount: number,
   currency = 'BRL',
-  locale = 'pt-BR'
+  locale?: string
 ): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -25,7 +25,7 @@ export function formatCurrency(
 export function formatDate(
   date: Date | string,
   options?: Intl.DateTimeFormatOptions,
-  locale = 'pt-BR'
+  locale?: string
 ): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat(locale, options).format(d)
@@ -34,7 +34,7 @@ export function formatDate(
 /**
  * Format relative time (e.g., "2 hours ago").
  */
-export function formatRelativeTime(date: Date | string, locale = 'pt-BR'): string {
+export function formatRelativeTime(date: Date | string, locale?: string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   const now = new Date()
   const diff = now.getTime() - d.getTime()

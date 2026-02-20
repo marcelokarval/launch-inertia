@@ -80,7 +80,7 @@ export function IdentityRow({ identity }: IdentityRowProps) {
       <td className="py-3 px-4 hidden lg:table-cell text-right">
         {identity.last_seen ? (
           <span className="text-xs text-default-400">
-            {new Date(identity.last_seen).toLocaleDateString('pt-BR')}
+            {new Date(identity.last_seen).toLocaleDateString()}
           </span>
         ) : (
           <span className="text-xs text-default-300">-</span>

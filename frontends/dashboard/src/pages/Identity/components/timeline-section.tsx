@@ -46,7 +46,7 @@ export function TimelineSection({ events }: Props) {
                   {event.event_type.replace('_', ' ')}
                 </p>
                 <span className="text-xs text-default-400 whitespace-nowrap">
-                  {new Date(event.timestamp).toLocaleString('pt-BR', {
+                  {new Date(event.timestamp).toLocaleString(undefined, {
                     day: '2-digit',
                     month: '2-digit',
                     hour: '2-digit',

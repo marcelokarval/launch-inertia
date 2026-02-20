@@ -65,7 +65,7 @@ export function AttributionsSection({ attributions }: Props) {
             <div className="text-right text-xs text-default-400 whitespace-nowrap">
               <Chip variant="soft" size="sm" color="default">{attr.touchpoint_type}</Chip>
               <p className="mt-1">
-                {new Date(attr.created_at).toLocaleDateString('pt-BR')}
+                {new Date(attr.created_at).toLocaleDateString()}
               </p>
             </div>
           </div>

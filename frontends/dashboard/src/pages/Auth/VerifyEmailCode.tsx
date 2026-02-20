@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { Head } from '@inertiajs/react'
-import { Form, Button as HeroButton } from '@heroui/react'
+import { Form } from '@heroui/react'
 import { ShieldCheck, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import AuthLayout from '@/layouts/AuthLayout'
@@ -99,7 +99,7 @@ export function VerifyEmailCode({ email, errors }: Props) {
 
       {/* Resend */}
       <div className="text-center mt-6">
-        <HeroButton
+        <Button
           variant="ghost"
           size="sm"
           onPress={handleResend}
@@ -112,7 +112,7 @@ export function VerifyEmailCode({ email, errors }: Props) {
                 seconds: resendCountdown,
               })
             : t('auth.verifyEmail.resend', 'Resend code')}
-        </HeroButton>
+        </Button>
       </div>
     </AuthLayout>
   )

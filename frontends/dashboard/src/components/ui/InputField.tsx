@@ -73,7 +73,7 @@ export function InputField({
         )}
       </div>
       {error ? (
-        <p className="text-sm text-danger">{error}</p>
+        <p className="text-sm text-danger" role="alert">{error}</p>
       ) : (
         <FieldError />
       )}

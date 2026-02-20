@@ -197,7 +197,9 @@
       "pagination": {
         "showing": "Mostrando {{from}} a {{to}} de {{total}} resultados",
         "previous": "Anterior",
-        "next": "Siguiente"
+        "next": "Siguiente",
+        "previousPage": "Pagina anterior",
+        "nextPage": "Pagina siguiente"
       }
     },
     "create": {

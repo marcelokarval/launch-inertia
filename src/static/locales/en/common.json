@@ -7,10 +7,29 @@
   "nav": {
     "dashboard": "Dashboard",
     "identities": "Identities",
+    "campaigns": "Campaigns",
+    "automations": "Automations",
+    "schedule": "Schedule",
+    "reports": "Reports",
     "billing": "Billing",
     "notifications": "Notifications",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "principal": "Main",
+    "tools": "Tools",
+    "signOut": "Sign Out",
+    "profileSettings": "Profile Settings",
+    "helpSupport": "Help & Support",
+    "badges": {
+      "soon": "Soon",
+      "pro": "Pro"
+    },
+    "aria": {
+      "openMenu": "Open menu",
+      "expandSidebar": "Expand sidebar",
+      "collapseSidebar": "Collapse sidebar",
+      "notifications": "Notifications"
+    }
   },
   "actions": {
     "save": "Save",

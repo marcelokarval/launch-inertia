@@ -47,7 +47,7 @@ export function DeviceBreakdown({ data }: Props) {
     <Card className="border border-default-200 animate-fade-in">
       <Card.Header className="pb-0 px-6 pt-6">
         <h2 className="text-lg font-semibold text-foreground">
-          {t('dashboard.analytics.dispositivos', 'Dispositivos')}
+          {t('dashboard.analytics.dispositivos', 'Devices')}
         </h2>
       </Card.Header>
       <Card.Content className="p-6 space-y-4">

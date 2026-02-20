@@ -7,10 +7,29 @@
   "nav": {
     "dashboard": "Dashboard",
     "identities": "Identidades",
+    "campaigns": "Campanhas",
+    "automations": "Automacoes",
+    "schedule": "Agenda",
+    "reports": "Relatorios",
     "billing": "Faturamento",
     "notifications": "Notificacoes",
     "settings": "Configuracoes",
-    "logout": "Sair"
+    "logout": "Sair",
+    "principal": "Principal",
+    "tools": "Ferramentas",
+    "signOut": "Sair",
+    "profileSettings": "Configuracoes do Perfil",
+    "helpSupport": "Ajuda & Suporte",
+    "badges": {
+      "soon": "Em breve",
+      "pro": "Pro"
+    },
+    "aria": {
+      "openMenu": "Abrir menu",
+      "expandSidebar": "Expandir barra lateral",
+      "collapseSidebar": "Recolher barra lateral",
+      "notifications": "Notificacoes"
+    }
   },
   "actions": {
     "save": "Salvar",

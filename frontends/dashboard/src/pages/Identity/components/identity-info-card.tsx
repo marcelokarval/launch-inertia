@@ -82,7 +82,7 @@ export function IdentityInfoCard({ identity }: Props) {
                 </p>
                 <p className="text-sm text-foreground">
                   {identity.created_at
-                    ? new Date(identity.created_at).toLocaleDateString('pt-BR', {
+                    ? new Date(identity.created_at).toLocaleDateString(undefined, {
                         day: '2-digit', month: 'long', year: 'numeric',
                       })
                     : '-'}
@@ -97,7 +97,7 @@ export function IdentityInfoCard({ identity }: Props) {
                     {t('identities.show.lastSeen', 'Last Seen')}
                   </p>
                   <p className="text-sm text-foreground">
-                    {new Date(identity.last_seen).toLocaleDateString('pt-BR', {
+                    {new Date(identity.last_seen).toLocaleDateString(undefined, {
                       day: '2-digit', month: 'long', year: 'numeric',
                     })}
                   </p>
