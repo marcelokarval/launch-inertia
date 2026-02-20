@@ -67,7 +67,10 @@ export function DailyTrendChart({ data }: Props) {
                   border: '1px solid hsl(var(--heroui-default-200))',
                   borderRadius: '8px',
                   fontSize: '12px',
+                  color: 'hsl(var(--heroui-foreground))',
                 }}
+                labelStyle={{ color: 'hsl(var(--heroui-foreground))' }}
+                itemStyle={{ color: 'hsl(var(--heroui-default-700))' }}
                 labelFormatter={(label) => formatDate(label)}
               />
               <Area

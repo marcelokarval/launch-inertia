@@ -1166,7 +1166,10 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
 
     Actions:
         1. Store hints in Django session (for pre-fill on return)
-        2. Record FORM_INTENT CaptureEvent for funnel analytics
+        2. Create ContactEmail/ContactPhone with lifecycle_status=pending
+        3. Upgrade Identity confidence score
+        4. Bind anonymous CaptureEvents to the identity retroactively
+        5. Record FORM_INTENT CaptureEvent for funnel analytics
 
     Rate limited. @csrf_exempt — sendBeacon can't set headers.
     """
@@ -1186,7 +1189,37 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
             if phone_hint:
                 request.session["phone_hint"] = phone_hint
 
-        # 2. Record FORM_INTENT event
+        # 2. Persist hints as ContactEmail/ContactPhone (pending)
+        identity = getattr(request, "identity", None)
+        if identity is None and hasattr(request, "session"):
+            # Fallback: recover identity from session PK
+            identity_pk = request.session.get("identity_pk")
+            if identity_pk:
+                try:
+                    from apps.contacts.identity.models import Identity
+
+                    identity = Identity.objects.get(
+                        pk=identity_pk, status=Identity.ACTIVE, is_deleted=False
+                    )
+                except Exception:
+                    logger.debug(
+                        "capture-intent: identity PK=%s not found", identity_pk
+                    )
+
+        contacts_created = _persist_intent_contacts(identity, email_hint, phone_hint)
+
+        # 3. Bind anonymous events to identity retroactively
+        events_bound = 0
+        if identity and capture_token:
+            try:
+                events_bound = TrackingService.bind_events_to_identity(
+                    capture_token=capture_token,
+                    identity=identity,
+                )
+            except Exception:
+                logger.debug("capture-intent: failed to bind events", exc_info=True)
+
+        # 4. Record FORM_INTENT event
         if capture_token:
             try:
                 extra_data: dict[str, Any] = {}
@@ -1201,10 +1234,19 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
                     # Store country code only (first 3 chars)
                     extra_data["phone_prefix"] = phone_hint[:3]
 
+                # Use Referer as page_path (beacon comes from JS, not the landing page URL)
+                referer = request.META.get("HTTP_REFERER", "")
+                if referer:
+                    from urllib.parse import urlparse
+
+                    page_path = urlparse(referer).path
+                else:
+                    page_path = request.session.get("last_page", "/")
+
                 TrackingService.create_event(
                     event_type=CaptureEvent.EventType.FORM_INTENT,
                     capture_token=capture_token,
-                    page_path=request.session.get("last_page", "/"),
+                    page_path=page_path,
                     page_category=CaptureEvent.PageCategory.CAPTURE,
                     request=request,
                     extra_data=extra_data,
@@ -1212,11 +1254,135 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
             except Exception:
                 logger.debug("capture-intent: failed to record event", exc_info=True)
 
-        return JsonResponse({"status": "ok"})
+        return JsonResponse(
+            {
+                "status": "ok",
+                "contacts_created": contacts_created,
+                "events_bound": events_bound,
+            }
+        )
 
     except Exception:
         logger.exception("capture-intent: unexpected error")
         return JsonResponse({"status": "error"}, status=500)
+
+
+def _persist_intent_contacts(
+    identity: Any,
+    email_hint: str,
+    phone_hint: str,
+) -> int:
+    """Create ContactEmail/ContactPhone from intent hints.
+
+    Creates records with lifecycle_status=pending linked to the identity.
+    Updates identity confidence score based on available PII:
+    - email only: +0.25 (0.05 → 0.30)
+    - phone only: +0.20 (0.05 → 0.25)
+    - both: +0.45 (0.05 → 0.50)
+
+    Uses get_or_create to avoid duplicates. If the email/phone already
+    exists (e.g., re-blurred), links it to the identity if unlinked.
+
+    Returns:
+        Number of new contacts created.
+    """
+    if identity is None:
+        return 0
+
+    created_count = 0
+    confidence_boost = 0.0
+
+    # Email hint → ContactEmail
+    if email_hint:
+        try:
+            from apps.contacts.email.models import ContactEmail
+
+            if ContactEmail.is_valid_email(email_hint):
+                contact_email, email_created = ContactEmail.objects.get_or_create(
+                    value=email_hint.lower().strip(),
+                    defaults={
+                        "identity": identity,
+                        "lifecycle_status": ContactEmail.PENDING,
+                        "original_value": email_hint,
+                    },
+                )
+                if email_created:
+                    created_count += 1
+                    confidence_boost += 0.25
+                    logger.info(
+                        "capture-intent: created ContactEmail %s for identity %s",
+                        contact_email.public_id,
+                        identity.public_id,
+                    )
+                elif not contact_email.identity_id:
+                    # Existing email without identity → link it
+                    contact_email.identity = identity
+                    contact_email.save(update_fields=["identity", "updated_at"])
+                    confidence_boost += 0.15
+                    logger.info(
+                        "capture-intent: linked existing ContactEmail %s to identity %s",
+                        contact_email.public_id,
+                        identity.public_id,
+                    )
+        except Exception:
+            logger.debug("capture-intent: failed to persist email hint", exc_info=True)
+
+    # Phone hint → ContactPhone
+    if phone_hint:
+        try:
+            from apps.contacts.phone.models import ContactPhone
+
+            digits = (
+                phone_hint.replace(" ", "")
+                .replace("-", "")
+                .replace("(", "")
+                .replace(")", "")
+            )
+            if len(digits.replace("+", "")) >= 8:
+                contact_phone, phone_created = ContactPhone.objects.get_or_create(
+                    value=phone_hint,
+                    defaults={
+                        "identity": identity,
+                        "original_value": phone_hint,
+                    },
+                )
+                if phone_created:
+                    created_count += 1
+                    confidence_boost += 0.20
+                    logger.info(
+                        "capture-intent: created ContactPhone %s for identity %s",
+                        contact_phone.public_id,
+                        identity.public_id,
+                    )
+                elif not contact_phone.identity_id:
+                    contact_phone.identity = identity
+                    contact_phone.save(update_fields=["identity", "updated_at"])
+                    confidence_boost += 0.10
+                    logger.info(
+                        "capture-intent: linked existing ContactPhone %s to identity %s",
+                        contact_phone.public_id,
+                        identity.public_id,
+                    )
+        except Exception:
+            logger.debug("capture-intent: failed to persist phone hint", exc_info=True)
+
+    # Update identity confidence score
+    if confidence_boost > 0:
+        try:
+            new_confidence = min(identity.confidence_score + confidence_boost, 1.0)
+            if new_confidence > identity.confidence_score:
+                identity.confidence_score = new_confidence
+                identity.save(update_fields=["confidence_score", "updated_at"])
+                logger.info(
+                    "capture-intent: identity %s confidence updated to %.2f (+%.2f)",
+                    identity.public_id,
+                    new_confidence,
+                    confidence_boost,
+                )
+        except Exception:
+            logger.debug("capture-intent: failed to update confidence", exc_info=True)
+
+    return created_count
 
 
 # ── Placeholder routes (legacy parity) ────────────────────────────────

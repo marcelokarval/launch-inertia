@@ -53,7 +53,7 @@ export default function IdentitiesIndex({ identities, filters, pagination }: Pro
             {t('identities.index.title', 'Identities')}
           </h2>
           <p className="text-sm text-default-500">
-            {t('identities.index.totalCount', { count: pagination.total, defaultValue: '{{count}} identities' })}
+            {t('identities.index.totalCount', { total: pagination.total, defaultValue: '{{total}} identities' })}
           </p>
         </div>
         <Button

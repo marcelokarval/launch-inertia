@@ -341,7 +341,7 @@ CSRF_TRUSTED_ORIGINS = flags.csrf_trusted_origins
 # SESSION CONFIGURATION
 # =============================================================================
 
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 SESSION_CACHE_ALIAS = "default"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = flags.session_cookie_samesite
