@@ -9,9 +9,16 @@ All domain models should inherit from BaseModel to get:
 - Metadata (flexible JSON field)
 - Version tracking (optimistic concurrency control)
 """
+
 from typing import Any, Optional
 
 from django.db import models
+
+# ---------------------------------------------------------------------------
+# Pyright: Django auto-generates `id: int` on models that don't declare a
+# primary key. django-stubs doesn't always expose it. We annotate it here
+# so that all BaseModel subclasses see `self.id` without warnings.
+# ---------------------------------------------------------------------------
 
 from ..managers import (
     BaseManager,
@@ -64,6 +71,9 @@ class BaseModel(
                 verbose_name = "My Model"
     """
 
+    # Django auto PK — declared for pyright visibility
+    id: int
+
     # Multiple managers for different use cases
     objects = BaseManager()
     all_objects = AllObjectsManager()
@@ -75,18 +85,19 @@ class BaseModel(
         ordering = ["-created_at"]
 
     def __str__(self):
-        if hasattr(self, "name") and self.name:
-            return str(self.name)
-        if hasattr(self, "title") and self.title:
-            return str(self.title)
-        if hasattr(self, "email") and self.email:
-            return str(self.email)
+        name = getattr(self, "name", None)
+        if name:
+            return str(name)
+        title = getattr(self, "title", None)
+        if title:
+            return str(title)
+        email = getattr(self, "email", None)
+        if email:
+            return str(email)
         return f"{self.__class__.__name__}({self.public_id})"
 
     def to_dict(
-        self,
-        include_metadata: bool = True,
-        exclude_fields: Optional[list[str]] = None
+        self, include_metadata: bool = True, exclude_fields: Optional[list[str]] = None
     ) -> dict:
         """
         Convert model to dictionary.
@@ -150,7 +161,14 @@ class BaseModel(
         # Get all field values except pk, public_id, and auto fields
         clone_data = {}
         for field in self._meta.fields:
-            if field.name in ("id", "pk", "public_id", "created_at", "updated_at", "version"):
+            if field.name in (
+                "id",
+                "pk",
+                "public_id",
+                "created_at",
+                "updated_at",
+                "version",
+            ):
                 continue
             if field.primary_key:
                 continue
@@ -234,6 +252,7 @@ class BaseTagModel(BaseModel):
         """Auto-generate slug from name if not provided."""
         if not self.slug:
             from django.utils.text import slugify
+
             base_slug = slugify(self.name)
             slug = base_slug
             counter = 1
@@ -251,20 +270,24 @@ class BaseTagModel(BaseModel):
     def to_dict(self, **kwargs) -> dict:
         """Include tag-specific fields in dict representation."""
         data = super().to_dict(**kwargs)
-        data.update({
-            "name": self.name,
-            "slug": self.slug,
-            "description": self.description,
-            "color": self.color,
-        })
+        data.update(
+            {
+                "name": self.name,
+                "slug": self.slug,
+                "description": self.description,
+                "color": self.color,
+            }
+        )
         return data
 
     def to_public_dict(self) -> dict:
         """Public representation of tag."""
         data = super().to_public_dict()
-        data.update({
-            "name": self.name,
-            "slug": self.slug,
-            "color": self.color,
-        })
+        data.update(
+            {
+                "name": self.name,
+                "slug": self.slug,
+                "color": self.color,
+            }
+        )
         return data

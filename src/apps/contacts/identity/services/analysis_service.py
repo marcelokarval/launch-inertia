@@ -142,6 +142,9 @@ class AnalysisService:
             )
 
             for match in shared:
+                assert (
+                    match.identity_id is not None
+                )  # filtered by identity__isnull=False
                 pk = match.identity_id
                 if pk not in scores:
                     scores[pk] = {
@@ -166,6 +169,9 @@ class AnalysisService:
             )
 
             for match in shared:
+                assert (
+                    match.identity_id is not None
+                )  # filtered by identity__isnull=False
                 pk = match.identity_id
                 if pk not in scores:
                     scores[pk] = {
@@ -190,6 +196,9 @@ class AnalysisService:
             )
 
             for match in shared:
+                assert (
+                    match.identity_id is not None
+                )  # filtered by identity__isnull=False
                 pk = match.identity_id
                 if pk not in scores:
                     scores[pk] = {

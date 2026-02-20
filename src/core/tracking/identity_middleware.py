@@ -197,13 +197,35 @@ class IdentitySessionMiddleware:
 
             elif visitor_identity and visitor_identity.pk != session_identity.pk:
                 # Scenario 3: fingerprint belongs to a different identity
-                logger.debug(
-                    "Session identity %s differs from fingerprint identity %s "
-                    "(fingerprint %s) — merge deferred to form submission",
-                    session_identity.public_id,
-                    visitor_identity.public_id,
-                    fp_identity.hash[:8],
-                )
+                # Dispatch async merge — oldest identity survives
+                try:
+                    from apps.contacts.fingerprint.tasks import (
+                        merge_identities_from_fingerprint,
+                    )
+
+                    merge_identities_from_fingerprint.delay(
+                        session_identity.pk, visitor_identity.pk
+                    )
+                    logger.info(
+                        "Merge dispatched: session identity %s vs fingerprint identity %s "
+                        "(fingerprint %s)",
+                        session_identity.public_id,
+                        visitor_identity.public_id,
+                        fp_identity.hash[:8],
+                    )
+
+                    # Update session to point to the older (surviving) identity
+                    # so subsequent requests use the correct one
+                    if visitor_identity.created_at < session_identity.created_at:
+                        request.session["identity_pk"] = visitor_identity.pk
+                        request.session["identity_id"] = visitor_identity.public_id
+                except Exception:
+                    logger.debug(
+                        "Failed to dispatch merge for identities %s / %s",
+                        session_identity.public_id,
+                        visitor_identity.public_id,
+                        exc_info=True,
+                    )
             # Scenario 2 (same identity): no action needed
 
         except Exception:

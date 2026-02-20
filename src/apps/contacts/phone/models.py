@@ -6,6 +6,8 @@ Each phone is linked to an Identity for cross-channel resolution.
 Supports Brazilian phone patterns, WhatsApp detection, and E.164 normalization.
 """
 
+from __future__ import annotations
+
 import re
 
 from django.db import models
@@ -34,6 +36,9 @@ class ContactPhone(BaseModel):
     """
 
     PUBLIC_ID_PREFIX = "cph"
+
+    # -- Pyright: FK auto-generated _id attribute --
+    identity_id: int | None
 
     # Phone type constants
     MOBILE = "mobile"

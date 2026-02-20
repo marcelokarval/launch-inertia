@@ -486,7 +486,7 @@ class UTMParserService:
         if len(parts) >= len(expected_segments):
             result = dict(zip(expected_segments, parts[: len(expected_segments)]))
             if len(parts) > len(expected_segments):
-                result["_extra_segments"] = parts[len(expected_segments) :]
+                result["_extra_segments"] = parts[len(expected_segments) :]  # type: ignore[assignment]
             return result
 
         # Fallback: could not parse, store raw

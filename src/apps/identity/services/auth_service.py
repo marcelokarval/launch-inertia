@@ -7,9 +7,12 @@ session management, and password reset flows.
 Integrates with SecurityEventDetector for security monitoring.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from datetime import timedelta
+from typing import cast
 
 from django.contrib.auth import authenticate, login, logout
 from django.db import transaction
@@ -141,9 +144,9 @@ class AuthService:
             )
 
         # Authenticate
-        authenticated_user = authenticate(request, username=email, password=password)
+        _authenticated_user = authenticate(request, username=email, password=password)
 
-        if authenticated_user is None:
+        if _authenticated_user is None:
             # Record failed attempt
             AuthService._record_failed_login(user)
             logger.info("Failed login attempt for: %s", email)
@@ -161,6 +164,9 @@ class AuthService:
                 message="Invalid email or password.",
                 errors={"__all__": ["Invalid email or password."]},
             )
+
+        # authenticate() succeeded — we know it's our concrete User model
+        authenticated_user = cast(User, _authenticated_user)
 
         # Check email verification
         if not authenticated_user.email_verified:
@@ -219,7 +225,8 @@ class AuthService:
             True if logout was successful.
         """
         if request.user.is_authenticated:
-            logger.info("User logged out: %s", request.user.email)
+            user = cast(User, request.user)
+            logger.info("User logged out: %s", user.email)
         logout(request)
         return True
 

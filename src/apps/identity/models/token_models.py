@@ -6,16 +6,22 @@ and other authentication operations. Uses SHA-256 hashing for token storage
 and HMAC compare_digest for timing-safe verification.
 """
 
+from __future__ import annotations
+
 import hashlib
 import hmac
 import random
 import string
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
 from core.shared.models import BaseModel
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
 
 
 class UserToken(BaseModel):
@@ -28,6 +34,10 @@ class UserToken(BaseModel):
     """
 
     PUBLIC_ID_PREFIX = "tkn"
+
+    # -- Pyright: reverse relation managers --
+    if TYPE_CHECKING:
+        email_verifications: Manager[EmailVerificationToken]
 
     class TokenType(models.TextChoices):
         EMAIL_VERIFICATION = "email_verification", "Email Verification"
@@ -131,7 +141,7 @@ class UserToken(BaseModel):
         """Check if the token has expired."""
         return timezone.now() >= self.expires_at
 
-    def mark_used(self, ip: str = None) -> None:
+    def mark_used(self, ip: str | None = None) -> None:
         """
         Mark the token as used.
 
@@ -155,11 +165,7 @@ class UserToken(BaseModel):
         expired = cls.objects.filter(
             models.Q(expires_at__lt=timezone.now()) | models.Q(is_used=True),
         )
-        count, _ = (
-            expired.delete(hard=True)
-            if hasattr(expired, "delete")
-            else expired.delete()
-        )
+        count, _ = expired.delete()
         return count
 
 

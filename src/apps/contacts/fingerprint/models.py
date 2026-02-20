@@ -8,7 +8,10 @@ Three models:
 - FingerprintContact: polymorphic M2M linking fingerprints to ContactEmail/ContactPhone
 """
 
+from __future__ import annotations
+
 import uuid
+from typing import TYPE_CHECKING
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -16,6 +19,9 @@ from django.db import models
 from django.utils import timezone
 
 from core.shared.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
 
 
 class FingerprintIdentity(BaseModel):
@@ -31,6 +37,12 @@ class FingerprintIdentity(BaseModel):
 
     PUBLIC_ID_PREFIX = "fpi"
     HASH_LENGTH = 64
+
+    # -- Pyright: FK _id + reverse relation managers --
+    identity_id: int | None
+    if TYPE_CHECKING:
+        events: Manager[FingerprintEvent]
+        contacts: Manager[FingerprintContact]
 
     identity = models.ForeignKey(
         "contact_identity.Identity",
@@ -350,9 +362,9 @@ class FingerprintEvent(BaseModel):
         cls,
         fingerprint: FingerprintIdentity,
         url: str,
-        session_id: str = None,
-        extra_data: dict = None,
-    ) -> "FingerprintEvent":
+        session_id: str | None = None,
+        extra_data: dict | None = None,
+    ) -> FingerprintEvent:
         """Record a page view event."""
         return cls.objects.create(
             fingerprint=fingerprint,
@@ -368,9 +380,9 @@ class FingerprintEvent(BaseModel):
         cls,
         fingerprint: FingerprintIdentity,
         url: str,
-        form_data: dict = None,
-        session_id: str = None,
-    ) -> "FingerprintEvent":
+        form_data: dict | None = None,
+        session_id: str | None = None,
+    ) -> FingerprintEvent:
         """Record a form submission event."""
         return cls.objects.create(
             fingerprint=fingerprint,

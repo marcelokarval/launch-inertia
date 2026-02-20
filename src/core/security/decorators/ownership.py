@@ -8,13 +8,17 @@ Provides:
 - get_owned_object_or_404: Utility for mid-function ownership checks
 """
 
+from __future__ import annotations
+
 import functools
 import logging
-from typing import Callable, Optional, Type
+from typing import Callable, Optional, Type, cast
 
 from django.http import HttpRequest, HttpResponse, Http404
 from django.core.exceptions import PermissionDenied
 from django.db import models
+
+from apps.identity.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +44,15 @@ def _log_idor_attempt(
     owner_id: Optional[int] = None,
 ) -> None:
     """Log an IDOR attempt and record it in the security event detector."""
+    if request.user.is_authenticated:
+        user = cast(User, request.user)
+        user_display = str(user.id)
+    else:
+        user_display = "anonymous"
+
     logger.warning(
         "IDOR attempt: User %s (IP: %s) tried to access %s.%s owned by user %s",
-        request.user.id if request.user.is_authenticated else "anonymous",
+        user_display,
         request.META.get("REMOTE_ADDR", "unknown"),
         model.__name__,
         lookup_value,
@@ -54,7 +64,7 @@ def _log_idor_attempt(
         from core.security.monitoring import security_detector
 
         security_detector.record_idor_attempt(
-            user_id=str(request.user.id) if request.user.is_authenticated else None,
+            user_id=user_display if user_display != "anonymous" else "",
             ip_address=request.META.get("REMOTE_ADDR", "unknown"),
             path=request.path,
             target_id=f"{model.__name__}:{lookup_value}",
@@ -101,6 +111,8 @@ def require_ownership(
     def decorator(view_func: Callable) -> Callable:
         @functools.wraps(view_func)
         def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+            # This decorator is used after @login_required, so user is authenticated
+            user = cast(User, request.user)
             url_kwarg = lookup_url_kwarg or lookup_field
             lookup_value = kwargs.get(url_kwarg)
 
@@ -125,19 +137,19 @@ def require_ownership(
                 raise PermissionDenied("Access denied")
 
             # Attach to request for use in the view
-            request.verified_object = obj
+            request.verified_object = obj  # type: ignore[attr-defined]
 
             # Superuser bypass
-            if allow_superuser and request.user.is_superuser:
+            if allow_superuser and user.is_superuser:
                 return view_func(request, *args, **kwargs)
 
             # Staff bypass
-            if allow_staff and request.user.is_staff:
+            if allow_staff and user.is_staff:
                 return view_func(request, *args, **kwargs)
 
             # Verify ownership
             owner = getattr(obj, owner_field, None)
-            if owner != request.user:
+            if owner != user:
                 _log_idor_attempt(
                     request,
                     model,
@@ -159,7 +171,7 @@ def require_ownership(
 
 def get_owned_object_or_404(
     model: Type[models.Model],
-    user,
+    user: User,
     lookup_field: str = "public_id",
     owner_field: str = "owner",
     allow_staff: bool = True,
@@ -214,18 +226,19 @@ class OwnershipMixin:
     ownership_allow_superuser: bool = True
 
     def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
+        obj = super().get_object(queryset)  # type: ignore[attr-defined]
+        user = cast(User, self.request.user)  # type: ignore[attr-defined]
 
-        if self.ownership_allow_superuser and self.request.user.is_superuser:
+        if self.ownership_allow_superuser and user.is_superuser:
             return obj
 
-        if self.ownership_allow_staff and self.request.user.is_staff:
+        if self.ownership_allow_staff and user.is_staff:
             return obj
 
         owner = getattr(obj, self.ownership_field, None)
-        if owner != self.request.user:
+        if owner != user:
             _log_idor_attempt(
-                self.request,
+                self.request,  # type: ignore[attr-defined]
                 type(obj),
                 str(getattr(obj, "public_id", obj.pk)),
                 owner_id=owner.id if owner else None,
@@ -255,12 +268,13 @@ class OwnerFilterMixin:
     allow_superuser_all: bool = True
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset()  # type: ignore[attr-defined]
+        user = cast(User, self.request.user)  # type: ignore[attr-defined]
 
-        if self.allow_superuser_all and self.request.user.is_superuser:
+        if self.allow_superuser_all and user.is_superuser:
             return qs
 
-        if self.allow_staff_all and self.request.user.is_staff:
+        if self.allow_staff_all and user.is_staff:
             return qs
 
-        return qs.filter(**{self.owner_field: self.request.user})
+        return qs.filter(**{self.owner_field: user})

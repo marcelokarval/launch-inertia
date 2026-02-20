@@ -3,6 +3,7 @@ WebSocket consumers for real-time notifications.
 
 Uses Django Channels for WebSocket support.
 """
+
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -26,10 +27,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f"notifications_{user.id}"
 
         # Join the user's notification group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
         await self.accept()
 
@@ -37,8 +35,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         """Handle WebSocket disconnection."""
         if hasattr(self, "room_group_name"):
             await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name
+                self.room_group_name, self.channel_name
             )
 
     async def receive(self, text_data):
@@ -63,19 +60,27 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
         Called when a notification is sent to this user's group.
         """
-        await self.send(text_data=json.dumps({
-            "type": "notification",
-            "notification": event["notification"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "notification",
+                    "notification": event["notification"],
+                }
+            )
+        )
 
     async def notification_count(self, event):
         """
         Handle unread count updates.
         """
-        await self.send(text_data=json.dumps({
-            "type": "count",
-            "unread_count": event["count"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "count",
+                    "unread_count": event["count"],
+                }
+            )
+        )
 
 
 def send_notification_to_user(user_id: int, notification_data: dict):
@@ -96,6 +101,8 @@ def send_notification_to_user(user_id: int, notification_data: dict):
     from channels.layers import get_channel_layer
 
     channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
     group_name = f"notifications_{user_id}"
 
     async_to_sync(channel_layer.group_send)(
@@ -103,5 +110,5 @@ def send_notification_to_user(user_id: int, notification_data: dict):
         {
             "type": "notification_message",
             "notification": notification_data,
-        }
+        },
     )

@@ -30,6 +30,51 @@ function setCookie(name: string, value: string, days: number): void {
   document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
 }
 
+/**
+ * Send fingerprint result to Django via sendBeacon (fire-and-forget).
+ *
+ * This ensures that even if the visitor bounces after a single page view,
+ * Django links the FingerprintIdentity to the session Identity and
+ * retroactively updates the PAGE_VIEW CaptureEvent with visitor_id.
+ *
+ * Falls back to fetch() with keepalive if sendBeacon is unavailable.
+ */
+function sendFpBeacon(result: FingerprintResult, captureToken?: string): void {
+  const payload = JSON.stringify({
+    visitor_id: result.visitorId,
+    request_id: result.requestId,
+    confidence: result.confidence,
+    capture_token: captureToken || '',
+  });
+
+  try {
+    if (navigator.sendBeacon) {
+      // sendBeacon sends as text/plain — Django view handles this
+      const sent = navigator.sendBeacon('/api/fp-resolve/', payload);
+      if (!sent) {
+        // Queue full — fallback to fetch
+        fetchFallback(payload);
+      }
+    } else {
+      fetchFallback(payload);
+    }
+  } catch {
+    // Beacon/fetch failure is non-critical — Django middleware
+    // will link FP on the next request via cookie anyway
+  }
+}
+
+function fetchFallback(payload: string): void {
+  fetch('/api/fp-resolve/', {
+    method: 'POST',
+    body: payload,
+    headers: { 'Content-Type': 'application/json' },
+    keepalive: true,
+  }).catch(() => {
+    // Silent failure — non-critical
+  });
+}
+
 // ── Eager loader (runs ASAP on mount) ──────────────────────────────────
 
 interface EagerLoaderProps {
@@ -37,6 +82,8 @@ interface EagerLoaderProps {
   endpoint: string;
   /** Called once the SDK resolves. Sets cookie + window.fpResult. */
   onResult: (result: FingerprintResult) => void;
+  /** Capture token from the page load (for retroactive event update) */
+  captureToken?: string;
 }
 
 /**
@@ -51,7 +98,7 @@ interface EagerLoaderProps {
  *  - window.fpResult (global sync for backward compat)
  *  - dispatches CustomEvent 'fingerprint-ready'
  */
-function FingerprintEagerLoader({ apiKey, endpoint, onResult }: EagerLoaderProps) {
+function FingerprintEagerLoader({ apiKey, endpoint, onResult, captureToken }: EagerLoaderProps) {
   const hasStarted = useRef(false);
 
   useEffect(() => {
@@ -92,6 +139,9 @@ function FingerprintEagerLoader({ apiKey, endpoint, onResult }: EagerLoaderProps
 
         // 4. Callback to parent
         onResult(result);
+
+        // 5. Beacon to Django — links FP to session identity + updates PAGE_VIEW
+        sendFpBeacon(result, captureToken);
       } catch (err) {
         console.warn('[FingerprintJS] Failed to load:', err);
         window.fpResult = undefined;
@@ -99,7 +149,7 @@ function FingerprintEagerLoader({ apiKey, endpoint, onResult }: EagerLoaderProps
     }
 
     load();
-  }, [apiKey, endpoint, onResult]);
+  }, [apiKey, endpoint, onResult, captureToken]);
 
   return null;
 }
@@ -112,6 +162,8 @@ interface FingerprintProviderProps {
   endpoint?: string;
   /** Called when fingerprint resolves (visitorId, requestId) */
   onResult: (result: FingerprintResult) => void;
+  /** Capture token from Django (for retroactive PAGE_VIEW update via beacon) */
+  captureToken?: string;
   children?: ReactNode;
 }
 
@@ -130,6 +182,7 @@ export default function FingerprintProvider({
   apiKey,
   endpoint,
   onResult,
+  captureToken,
   children,
 }: FingerprintProviderProps) {
   if (!apiKey) {
@@ -152,6 +205,7 @@ export default function FingerprintProvider({
         apiKey={apiKey}
         endpoint={resolvedEndpoint}
         onResult={onResult}
+        captureToken={captureToken}
       />
       {children}
     </FpjsProvider>

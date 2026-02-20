@@ -8,15 +8,19 @@ Includes:
 - DelinquentMiddleware: Restricts access for delinquent billing users
 """
 
+from __future__ import annotations
+
 import json
 import logging
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from django.conf import settings
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import redirect
 from inertia import share
+
+from apps.identity.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -137,10 +141,10 @@ class InertiaShareMiddleware:
         if not request.user.is_authenticated:
             return {"user": None}
 
-        user = request.user
+        user = cast(User, request.user)
         return {
             "user": {
-                "id": user.public_id if hasattr(user, "public_id") else user.id,
+                "id": user.public_id,
                 "email": user.email,
                 "name": self._get_user_name(user),
                 "avatar": self._get_user_avatar(user),
@@ -149,17 +153,16 @@ class InertiaShareMiddleware:
             }
         }
 
-    def _get_user_name(self, user) -> str:
+    def _get_user_name(self, user: User) -> str:
         """Get user's display name."""
-        if hasattr(user, "get_full_name"):
-            full_name = user.get_full_name()
-            if full_name:
-                return full_name
-        if hasattr(user, "first_name") and user.first_name:
+        full_name = user.get_full_name()
+        if full_name:
+            return full_name
+        if user.first_name:
             return user.first_name
         return user.email.split("@")[0]
 
-    def _get_user_avatar(self, user) -> str | None:
+    def _get_user_avatar(self, user: User) -> str | None:
         """Get user's avatar URL."""
         if hasattr(user, "profile") and hasattr(user.profile, "avatar"):
             avatar = user.profile.avatar
@@ -170,7 +173,7 @@ class InertiaShareMiddleware:
     def _get_flash_messages(self, request: HttpRequest) -> dict:
         """Get flash messages from Django messages framework."""
         storage = messages.get_messages(request)
-        flash_messages = {
+        flash_messages: dict[str, str | None] = {
             "success": None,
             "error": None,
             "warning": None,
@@ -262,7 +265,9 @@ class SetupStatusMiddleware(_DashboardOnlyMiddleware):
         if not request.user.is_authenticated:
             return self.get_response(request)
 
-        if request.user.is_staff:
+        user = cast(User, request.user)
+
+        if user.is_staff:
             return self.get_response(request)
 
         path = request.path
@@ -283,7 +288,7 @@ class SetupStatusMiddleware(_DashboardOnlyMiddleware):
         try:
             from apps.identity.services import SetupStatusService
 
-            status = SetupStatusService.get_setup_status(request.user)
+            status = SetupStatusService.get_setup_status(user)
 
             if not status.is_complete:
                 # Redirect to the appropriate onboarding step
@@ -293,7 +298,7 @@ class SetupStatusMiddleware(_DashboardOnlyMiddleware):
         except Exception:
             logger.exception(
                 "SetupStatusMiddleware error for user %s - failing open",
-                request.user.email if hasattr(request.user, "email") else "unknown",
+                user.email,
             )
 
         return self.get_response(request)
@@ -331,6 +336,7 @@ class DelinquentMiddleware(_DashboardOnlyMiddleware):
         if not request.user.is_authenticated:
             return self.get_response(request)
 
+        user = cast(User, request.user)
         path = request.path
 
         # Skip non-dashboard routes (landing pages are always accessible)
@@ -339,7 +345,7 @@ class DelinquentMiddleware(_DashboardOnlyMiddleware):
 
         # Check delinquent status
         try:
-            is_delinquent = getattr(request.user, "is_delinquent", False)
+            is_delinquent = getattr(user, "is_delinquent", False)
 
             if is_delinquent:
                 # Allow access to permitted paths
@@ -351,7 +357,7 @@ class DelinquentMiddleware(_DashboardOnlyMiddleware):
         except Exception:
             logger.exception(
                 "DelinquentMiddleware error for user %s - failing open",
-                request.user.email if hasattr(request.user, "email") else "unknown",
+                user.email,
             )
 
         return self.get_response(request)

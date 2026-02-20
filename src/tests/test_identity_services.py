@@ -1,6 +1,7 @@
 """
 Unit tests for identity services: AuthService, RegistrationService, TokenService.
 """
+# pyright: reportOptionalMemberAccess=false, reportAssignmentType=false, reportAttributeAccessIssue=false
 
 import pytest
 from unittest.mock import patch

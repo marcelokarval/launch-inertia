@@ -7,6 +7,7 @@ Tests the 4 sub-apps:
 - contacts.fingerprint: FingerprintIdentity/Event/Contact models + services
 - contacts.identity: Identity/IdentityHistory models + resolution/merge/analysis services
 """
+# pyright: reportOptionalMemberAccess=false, reportAttributeAccessIssue=false
 
 import pytest
 from django.utils import timezone

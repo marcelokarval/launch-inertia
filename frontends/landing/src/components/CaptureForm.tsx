@@ -6,7 +6,8 @@ import Input from '@/components/ui/Input';
 import PhoneInput from '@/components/PhoneInput';
 import FingerprintProvider from '@/components/FingerprintProvider';
 import { useFingerprint } from '@/hooks/use-fingerprint';
-import type { CampaignFormConfig } from '@/types';
+import { useCaptureIntent } from '@/hooks/use-capture-intent';
+import type { CampaignFormConfig, PrefillData } from '@/types';
 
 interface CaptureFormProps {
   campaignSlug: string;
@@ -16,6 +17,8 @@ interface CaptureFormProps {
   fingerprintEndpoint?: string;
   /** Server-generated UUID linking events of the same page load session */
   captureToken: string;
+  /** Pre-fill data from session identity or capture-intent hints */
+  prefill?: PrefillData;
   serverErrors?: Record<string, string>;
 }
 
@@ -28,6 +31,9 @@ interface CaptureFormProps {
  * FingerprintJS Pro SDK resolves visitor_id + request_id in parallel.
  * Cookie `fpjs_vid` is set by FingerprintProvider so Django middleware
  * can identify the visitor on subsequent requests.
+ *
+ * Pre-fill: returning visitors get email/phone from session identity
+ * or from capture-intent hints (partial form data saved on blur).
  */
 export default function CaptureForm({
   campaignSlug,
@@ -35,14 +41,16 @@ export default function CaptureForm({
   fingerprintApiKey,
   fingerprintEndpoint,
   captureToken,
+  prefill,
   serverErrors,
 }: CaptureFormProps) {
   const hasSetUtm = useRef(false);
   const { visitorId, requestId, handleFingerprintResult } = useFingerprint();
+  const { handleEmailBlur, handlePhoneBlur } = useCaptureIntent({ captureToken });
 
   const { data, setData, post, processing, errors } = useForm({
-    email: '',
-    phone: '',
+    email: prefill?.email ?? '',
+    phone: prefill?.phone ?? '',
     visitor_id: '',
     request_id: '',
     capture_token: captureToken,
@@ -125,6 +133,7 @@ export default function CaptureForm({
       apiKey={fingerprintApiKey}
       endpoint={fingerprintEndpoint}
       onResult={handleFingerprintResult}
+      captureToken={captureToken}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
@@ -133,6 +142,7 @@ export default function CaptureForm({
           placeholder="nome@email.com"
           value={data.email}
           onChange={(e) => setData('email', e.target.value)}
+          onBlur={(e) => handleEmailBlur(e.target.value)}
           error={allErrors.email}
           required
           autoComplete="email"
@@ -142,6 +152,7 @@ export default function CaptureForm({
           label="Seu WhatsApp"
           value={data.phone}
           onChange={(phone) => setData('phone', phone)}
+          onBlur={() => handlePhoneBlur(data.phone)}
           error={allErrors.phone}
           disabled={processing}
         />

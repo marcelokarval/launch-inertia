@@ -6,6 +6,8 @@ Ported from legacy contact/services/phone_service.py,
 adapted to use BaseService[ContactPhone] pattern.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 from typing import Optional
@@ -30,8 +32,8 @@ class PhoneService(BaseService[ContactPhone]):
     def get_or_create_phone(
         self,
         phone_value: str,
-        original_value: str = None,
-        country_code: str = None,
+        original_value: str | None = None,
+        country_code: str | None = None,
     ) -> tuple[ContactPhone, bool]:
         """
         Get or create a ContactPhone by normalized value.
@@ -87,7 +89,7 @@ class PhoneService(BaseService[ContactPhone]):
     def get_phone_by_value(
         self,
         phone_value: str,
-        country_code: str = None,
+        country_code: str | None = None,
     ) -> Optional[ContactPhone]:
         """Find a ContactPhone by its normalized value."""
         temp = ContactPhone(value=phone_value, country_code=country_code or "55")
@@ -101,7 +103,7 @@ class PhoneService(BaseService[ContactPhone]):
     # ── Normalization ────────────────────────────────────────────────
 
     @staticmethod
-    def normalize_phone(phone_value: str, country_code: str = None) -> str:
+    def normalize_phone(phone_value: str, country_code: str | None = None) -> str:
         """
         Normalize a phone number to a consistent format.
 

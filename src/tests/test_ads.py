@@ -8,6 +8,7 @@ Covers:
 - UTMParserService with real production URL patterns
 - Seed management command
 """
+# pyright: reportAttributeAccessIssue=false, reportOptionalMemberAccess=false
 
 import uuid
 

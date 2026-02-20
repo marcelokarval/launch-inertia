@@ -181,7 +181,7 @@ class VisitorMiddleware:
                 try:
                     contact = fp.contacts.first()  # type: ignore[attr-defined]
                     if contact and hasattr(contact, "identity"):
-                        identity = contact.identity
+                        identity = contact.identity  # type: ignore[attr-defined]
                 except Exception:
                     pass
 

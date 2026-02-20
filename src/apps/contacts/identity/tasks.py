@@ -12,6 +12,9 @@ Ported from legacy identity/tasks.py.
 """
 
 import logging
+from datetime import timedelta
+from typing import Any
+
 from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
@@ -292,7 +295,7 @@ def cleanup_merged_identities(days: int = 30) -> dict:
         from apps.contacts.phone.models import ContactPhone
         from apps.contacts.fingerprint.models import FingerprintIdentity
 
-        cutoff = timezone.now() - timezone.timedelta(days=days)
+        cutoff = timezone.now() - timedelta(days=days)
 
         old_merged = Identity.objects.filter(
             status=Identity.MERGED,
@@ -436,3 +439,163 @@ def bulk_recalculate_lifecycle(batch_size: int = 100) -> dict:
     except Exception as e:
         logger.exception("Error in bulk lifecycle recalculation: %s", str(e))
         raise
+
+
+@shared_task(
+    name="identity.batch_merge_recent",
+    queue="identity_analysis",
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 2, "countdown": 300},
+    acks_late=True,
+    time_limit=600,  # 10 min hard limit
+    soft_time_limit=540,  # 9 min soft limit
+)
+def batch_merge_recent(lookback_days: int = 7) -> dict:
+    """Batch merge task for recently active identities.
+
+    Runs periodically (every 6h via celery beat). Scans identities
+    that had activity in the last `lookback_days` and:
+    1. Auto-merges candidates with confidence >= 0.9
+    2. Stores household hints (0.3) in identity metadata
+
+    Only processes ACTIVE identities with recent CaptureEvents.
+    Limits to 500 identities per run to avoid timeouts.
+
+    Args:
+        lookback_days: How far back to look for active identities.
+
+    Returns:
+        Stats dict with counts of processed, merged, and household flags.
+    """
+    try:
+        from apps.contacts.identity.models import Identity
+        from apps.contacts.identity.services.merge_service import (
+            MergeService,
+            MergeValidationError,
+        )
+        from core.tracking.models import CaptureEvent
+
+        now = timezone.now()
+        cutoff = now - timedelta(days=lookback_days)
+        max_identities = 500
+
+        # Find identities with recent events
+        recent_identity_pks = (
+            CaptureEvent.objects.filter(
+                identity__isnull=False,
+                identity__status=Identity.ACTIVE,
+                created_at__gte=cutoff,
+            )
+            .values_list("identity_id", flat=True)
+            .distinct()[:max_identities]
+        )
+
+        recent_identities = Identity.objects.filter(
+            pk__in=recent_identity_pks,
+            status=Identity.ACTIVE,
+            is_deleted=False,
+        )
+
+        stats = {
+            "identities_scanned": 0,
+            "merges_executed": 0,
+            "merge_errors": 0,
+            "household_flags": 0,
+        }
+
+        for identity in recent_identities.iterator(chunk_size=50):
+            stats["identities_scanned"] += 1
+
+            try:
+                candidates = MergeService.find_merge_candidates(identity)
+
+                for candidate in candidates:
+                    confidence = candidate["confidence"]
+
+                    if confidence >= 0.9:
+                        # Auto-merge: dispatch individual merge task
+                        candidate_identity = candidate["identity"]
+                        try:
+                            # Oldest survives
+                            if candidate_identity.created_at < identity.created_at:
+                                MergeService.execute_merge(identity, candidate_identity)
+                            else:
+                                MergeService.execute_merge(candidate_identity, identity)
+                            stats["merges_executed"] += 1
+                        except MergeValidationError as e:
+                            logger.debug("Batch merge skipped: %s", str(e))
+                            stats["merge_errors"] += 1
+                        except Exception:
+                            logger.debug(
+                                "Batch merge error for %s",
+                                identity.public_id,
+                                exc_info=True,
+                            )
+                            stats["merge_errors"] += 1
+
+                        # If our identity was merged away, stop processing it
+                        identity.refresh_from_db(fields=["status"])
+                        if identity.status != Identity.ACTIVE:
+                            break
+
+                    elif candidate["match_type"] == "ip_household":
+                        # Household hint: store in metadata (no merge)
+                        candidate_identity = candidate["identity"]
+                        _store_household_hint(identity, candidate_identity)
+                        stats["household_flags"] += 1
+
+            except Exception:
+                logger.debug(
+                    "Error scanning identity %s for merge candidates",
+                    identity.public_id,
+                    exc_info=True,
+                )
+
+        logger.info(
+            "Batch merge complete: scanned=%d, merged=%d, errors=%d, household=%d",
+            stats["identities_scanned"],
+            stats["merges_executed"],
+            stats["merge_errors"],
+            stats["household_flags"],
+        )
+        return {"status": "success", **stats}
+
+    except Exception as e:
+        logger.exception("Error in batch_merge_recent: %s", str(e))
+        raise
+
+
+def _store_household_hint(identity: Any, candidate: Any) -> None:
+    """Store a household hint in both identities' metadata.
+
+    Household hints are low-confidence (0.3) signals that two identities
+    may belong to people in the same household (same IP, different OS).
+    They are NEVER auto-merged — only stored for manual review or
+    future analytics.
+    """
+    try:
+        for target, other in [(identity, candidate), (candidate, identity)]:
+            metadata = target.metadata or {}
+            household = metadata.get("household_hints", [])
+
+            # Avoid duplicates
+            existing_pids = {h.get("identity_id") for h in household}
+            if other.public_id not in existing_pids:
+                household.append(
+                    {
+                        "identity_id": other.public_id,
+                        "detected_at": timezone.now().isoformat(),
+                        "match_type": "ip_household",
+                    }
+                )
+                # Keep only last 10 hints
+                metadata["household_hints"] = household[-10:]
+                target.metadata = metadata
+                target.save(update_fields=["metadata", "updated_at"])
+    except Exception:
+        logger.debug(
+            "Failed to store household hint for %s / %s",
+            identity.public_id,
+            candidate.public_id,
+            exc_info=True,
+        )

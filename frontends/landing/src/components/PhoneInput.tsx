@@ -6,6 +6,8 @@ interface PhoneInputProps {
   label: string;
   value: string;
   onChange: (phone: string) => void;
+  /** Called when the phone input loses focus */
+  onBlur?: () => void;
   error?: string;
   disabled?: boolean;
 }
@@ -19,6 +21,7 @@ export default function PhoneInput({
   label,
   value,
   onChange,
+  onBlur,
   error,
   disabled = false,
 }: PhoneInputProps) {
@@ -44,7 +47,7 @@ export default function PhoneInput({
           value={value}
           onChange={onChange}
           disabled={disabled}
-          inputProps={{ id: inputId }}
+          inputProps={{ id: inputId, onBlur }}
           inputClassName="phone-input-field"
           countrySelectorStyleProps={{
             buttonClassName: 'phone-country-selector',

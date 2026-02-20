@@ -1,7 +1,8 @@
 """
 Redis cache client with typed operations.
 """
-from typing import Any, Optional
+
+from typing import Any, Callable, Optional
 
 from django.core.cache import cache
 from django.conf import settings
@@ -22,17 +23,19 @@ class CacheClient:
     def get(self, key: str, default: Any = None) -> Any:
         return cache.get(self._make_key(key), default)
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         ttl = ttl or self.default_ttl
-        return cache.set(self._make_key(key), value, ttl)
+        cache.set(self._make_key(key), value, ttl)
 
     def delete(self, key: str) -> bool:
-        return cache.delete(self._make_key(key))
+        return bool(cache.delete(self._make_key(key)))
 
     def exists(self, key: str) -> bool:
         return cache.get(self._make_key(key)) is not None
 
-    def get_or_set(self, key: str, default_func: callable, ttl: Optional[int] = None) -> Any:
+    def get_or_set(
+        self, key: str, default_func: Callable[[], Any], ttl: Optional[int] = None
+    ) -> Any:
         ttl = ttl or self.default_ttl
         return cache.get_or_set(self._make_key(key), default_func, ttl)
 
@@ -54,6 +57,7 @@ class CacheClient:
         full_pattern = self._make_key(pattern)
         try:
             from django_redis import get_redis_connection
+
             conn = get_redis_connection("default")
             keys = conn.keys(full_pattern.replace("*", "*"))
             if keys:

@@ -1,6 +1,7 @@
 """
 Cache decorators for function/method caching.
 """
+
 import functools
 from typing import Optional, Callable, Any
 
@@ -16,6 +17,7 @@ def cached(ttl: int = 3600, key_prefix: str = "", key_func: Optional[Callable] =
         def get_user(user_id: int):
             return User.objects.get(id=user_id)
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
@@ -23,7 +25,7 @@ def cached(ttl: int = 3600, key_prefix: str = "", key_func: Optional[Callable] =
                 cache_key = key_func(*args, **kwargs)
             else:
                 key_parts = [key_prefix or func.__name__]
-                start_idx = 1 if args and hasattr(args[0], '__class__') else 0
+                start_idx = 1 if args and hasattr(args[0], "__class__") else 0
                 for arg in args[start_idx:]:
                     key_parts.append(str(arg))
                 for k, v in sorted(kwargs.items()):
@@ -43,7 +45,7 @@ def cached(ttl: int = 3600, key_prefix: str = "", key_func: Optional[Callable] =
                 cache_key = key_func(*args, **kwargs)
             else:
                 key_parts = [key_prefix or func.__name__]
-                start_idx = 1 if args and hasattr(args[0], '__class__') else 0
+                start_idx = 1 if args and hasattr(args[0], "__class__") else 0
                 for arg in args[start_idx:]:
                     key_parts.append(str(arg))
                 for k, v in sorted(kwargs.items()):
@@ -51,7 +53,7 @@ def cached(ttl: int = 3600, key_prefix: str = "", key_func: Optional[Callable] =
                 cache_key = ":".join(key_parts)
             cache_client.delete(cache_key)
 
-        wrapper.invalidate = invalidate
+        wrapper.invalidate = invalidate  # type: ignore[attr-defined]
         return wrapper
 
     return decorator
@@ -59,6 +61,7 @@ def cached(ttl: int = 3600, key_prefix: str = "", key_func: Optional[Callable] =
 
 def cache_invalidate(key_pattern: str):
     """Decorator to invalidate cache after function execution."""
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
@@ -68,5 +71,7 @@ def cache_invalidate(key_pattern: str):
             else:
                 cache_client.delete(key_pattern)
             return result
+
         return wrapper
+
     return decorator

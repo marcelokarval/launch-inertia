@@ -81,7 +81,7 @@ class BaseService(Generic[T]):
         """Get only active records (not deleted, is_active=True)."""
         qs = self.model.objects
         if hasattr(qs, "active"):
-            return qs.active().filter(**filters)
+            return qs.active().filter(**filters)  # type: ignore[attr-defined]
         return qs.filter(is_active=True, **filters)
 
     def get_queryset(self, **filters) -> models.QuerySet[T]:
@@ -95,8 +95,9 @@ class BaseService(Generic[T]):
         Full-text search across model fields.
         Uses the SearchManager if available.
         """
-        if hasattr(self.model, "search") and hasattr(self.model.search, "search"):
-            return self.model.search.search(query, fields=fields)
+        model_search = getattr(self.model, "search", None)
+        if model_search is not None and hasattr(model_search, "search"):
+            return model_search.search(query, fields=fields)
         # Fallback: basic filter on common fields
         from django.db.models import Q
 
@@ -209,7 +210,7 @@ class BaseService(Generic[T]):
         public_id = getattr(instance, "public_id", instance.pk)
 
         if hard:
-            instance.delete(hard=True) if hasattr(
+            instance.delete(hard=True) if hasattr(  # type: ignore[call-arg]
                 instance.delete, "__code__"
             ) and "hard" in instance.delete.__code__.co_varnames else instance.delete()
             logger.warning(

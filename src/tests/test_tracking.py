@@ -8,6 +8,7 @@ Covers:
 - TrackingService (create_event, capture sessions, bind_events_to_identity)
 - VisitorMiddleware (device profiling attributes on request)
 """
+# pyright: reportAttributeAccessIssue=false, reportOptionalSubscript=false
 
 import uuid
 

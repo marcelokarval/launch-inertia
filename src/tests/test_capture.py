@@ -7,6 +7,7 @@ Tests cover:
 - Campaign fixture loader
 - Capture view (GET + POST)
 """
+# pyright: reportAttributeAccessIssue=false, reportAssignmentType=false
 
 import json
 from pathlib import Path

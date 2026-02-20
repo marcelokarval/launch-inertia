@@ -5,6 +5,8 @@ Contains User and Profile models for authentication and user management.
 Uses mixin architecture from core.shared for DRY code.
 """
 
+from __future__ import annotations
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models, transaction
 from django.utils import timezone
@@ -18,7 +20,7 @@ from core.shared.models import (
 )
 
 
-class UserManager(BaseUserManager):
+class UserManager(BaseUserManager["User"]):
     """
     Custom manager for User model.
 
@@ -79,6 +81,10 @@ class User(PublicIDMixin, SoftDeleteMixin, MetadataMixin, AbstractUser):
 
     PUBLIC_ID_PREFIX = "usr"
 
+    # -- Pyright: Django auto PK + reverse relation --
+    id: int
+    profile: Profile
+
     # Remove username, use email instead
     username = None
     email = models.EmailField(
@@ -136,7 +142,7 @@ class User(PublicIDMixin, SoftDeleteMixin, MetadataMixin, AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    objects = UserManager()
+    objects = UserManager()  # type: ignore[assignment]  # Django UserManager generic bound
 
     class Meta:
         verbose_name = "User"
@@ -329,7 +335,7 @@ class Profile(BaseModel):
         """
         return self.agreed_to_terms and self.is_active and not self.is_deleted
 
-    def accept_terms(self, ip_address: str = None, version: str = "2026.02"):
+    def accept_terms(self, ip_address: str | None = None, version: str = "2026.02"):
         """
         Mark employee terms as accepted.
 

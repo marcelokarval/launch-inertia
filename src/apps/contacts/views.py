@@ -236,7 +236,7 @@ def delete(request, public_id):
 
     if request.method == "POST":
         display = identity.display_name or identity.public_id
-        identity.soft_delete()
+        identity.delete()
         flash_success(request, f"Identity {display} deleted.")
         return redirect("identities:index")
 

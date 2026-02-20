@@ -1,6 +1,7 @@
 """
 Unit tests for security decorators: require_ownership.
 """
+# pyright: reportAttributeAccessIssue=false
 
 import pytest
 from unittest.mock import MagicMock

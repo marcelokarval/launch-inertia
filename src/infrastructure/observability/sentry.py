@@ -1,8 +1,9 @@
 """
 Sentry error tracking integration.
 """
+
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from django.conf import settings
 
@@ -17,6 +18,7 @@ try:
     from sentry_sdk.integrations.celery import CeleryIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
+
     SENTRY_AVAILABLE = True
 except ImportError:
     SENTRY_AVAILABLE = False
@@ -37,7 +39,7 @@ def init_sentry() -> bool:
     if _sentry_initialized:
         return True
 
-    if not SENTRY_AVAILABLE:
+    if not SENTRY_AVAILABLE or sentry_sdk is None:
         logger.warning("Sentry SDK not installed. Error tracking disabled.")
         return False
 
@@ -95,7 +97,7 @@ def capture_exception(
         except Exception as e:
             capture_exception(e, extra={"user_id": user.id})
     """
-    if not SENTRY_AVAILABLE or not _sentry_initialized:
+    if not SENTRY_AVAILABLE or not _sentry_initialized or sentry_sdk is None:
         logger.error(f"Exception (Sentry not available): {error}", exc_info=True)
         return None
 
@@ -110,9 +112,12 @@ def capture_exception(
         return sentry_sdk.capture_exception(error)
 
 
+LogLevel = Literal["debug", "info", "warning", "error", "fatal", "critical"]
+
+
 def capture_message(
     message: str,
-    level: str = "info",
+    level: LogLevel = "info",
     extra: Optional[Dict[str, Any]] = None,
     tags: Optional[Dict[str, str]] = None,
 ) -> Optional[str]:
@@ -128,10 +133,10 @@ def capture_message(
     Returns:
         Event ID if captured, None otherwise
     """
-    if not SENTRY_AVAILABLE or not _sentry_initialized:
+    if not SENTRY_AVAILABLE or not _sentry_initialized or sentry_sdk is None:
         logger.log(
             getattr(logging, level.upper(), logging.INFO),
-            f"Message (Sentry not available): {message}"
+            f"Message (Sentry not available): {message}",
         )
         return None
 
@@ -143,7 +148,7 @@ def capture_message(
             for key, value in tags.items():
                 scope.set_tag(key, value)
 
-        return sentry_sdk.capture_message(message, level=level)
+        return sentry_sdk.capture_message(message, level=level)  # type: ignore[arg-type]
 
 
 def set_user(user) -> None:
@@ -152,14 +157,16 @@ def set_user(user) -> None:
 
     Call this after user authentication.
     """
-    if not SENTRY_AVAILABLE or not _sentry_initialized:
+    if not SENTRY_AVAILABLE or not _sentry_initialized or sentry_sdk is None:
         return
 
     if user and user.is_authenticated:
-        sentry_sdk.set_user({
-            "id": str(user.public_id),
-            "email": user.email,
-        })
+        sentry_sdk.set_user(
+            {
+                "id": str(user.public_id),
+                "email": user.email,
+            }
+        )
     else:
         sentry_sdk.set_user(None)
 
@@ -175,7 +182,7 @@ def add_breadcrumb(
 
     Breadcrumbs are trails of events leading up to an error.
     """
-    if not SENTRY_AVAILABLE or not _sentry_initialized:
+    if not SENTRY_AVAILABLE or not _sentry_initialized or sentry_sdk is None:
         return
 
     sentry_sdk.add_breadcrumb(

@@ -437,6 +437,10 @@ class CaptureSubmission(BaseModel):
 
     PUBLIC_ID_PREFIX = "csb"
 
+    # -- Pyright: FK auto-generated _id attributes --
+    capture_page_id: int
+    identity_id: int
+
     # ── WHO ──
     identity = models.ForeignKey(
         "contact_identity.Identity",

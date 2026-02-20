@@ -13,7 +13,7 @@ Verification data is stored in the model's metadata JSONField:
 import logging
 import secrets
 import string
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Optional
 
 from django.utils import timezone
@@ -107,7 +107,7 @@ class VerificationService:
             logger.warning("No verification data for email: %s", email_obj.value)
             return False
 
-        expiry = timezone.datetime.fromisoformat(expiry_str)
+        expiry = datetime.fromisoformat(expiry_str)
         if timezone.now() > expiry:
             logger.warning("Verification code expired for email: %s", email_obj.value)
             return False
@@ -143,7 +143,7 @@ class VerificationService:
         if not stored_token or not expiry_str:
             return False
 
-        expiry = timezone.datetime.fromisoformat(expiry_str)
+        expiry = datetime.fromisoformat(expiry_str)
         if timezone.now() > expiry:
             return False
 
@@ -217,7 +217,7 @@ class VerificationService:
         if not stored_code or not expiry_str:
             return False
 
-        expiry = timezone.datetime.fromisoformat(expiry_str)
+        expiry = datetime.fromisoformat(expiry_str)
         if timezone.now() > expiry:
             logger.warning("Verification code expired for phone: %s", phone_obj.value)
             return False

@@ -2,6 +2,7 @@
 Unit tests for middleware: SetupStatusMiddleware, DelinquentMiddleware,
 InertiaShareMiddleware, VisitorMiddleware, IdentitySessionMiddleware.
 """
+# pyright: reportAttributeAccessIssue=false, reportAssignmentType=false
 
 import pytest
 from unittest.mock import MagicMock, patch, PropertyMock
@@ -422,7 +423,7 @@ class TestIdentitySessionMiddleware:
         request.identity_public_id = ""
         request._visitor_mw_identity = None
         request.client_ip = "1.2.3.4"
-        return request
+        return request  # type: ignore[return-value]
 
     def test_skip_non_content_routes(self):
         """Non-content routes (static, admin) are skipped entirely."""

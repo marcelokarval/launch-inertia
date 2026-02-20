@@ -26,6 +26,9 @@ from apps.landing import checkout_views, views
 app_name = "landing"
 
 urlpatterns = [
+    # ── Beacon API endpoints (fire-and-forget, @csrf_exempt) ─────
+    path("api/fp-resolve/", views.fp_resolve, name="fp_resolve"),
+    path("api/capture-intent/", views.capture_intent, name="capture_intent"),
     # ── Capture pages ─────────────────────────────────────────────
     # Legacy format: /inscrever-wh-rc-v3/, /inscrever-bf-v1/, etc.
     # Non-existent slugs → redirect to /inscrever-wh-rc-v3/

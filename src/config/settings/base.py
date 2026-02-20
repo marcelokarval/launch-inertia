@@ -426,6 +426,11 @@ CELERY_BEAT_SCHEDULE = {
         ),  # Weekly on Sunday at 4:00 AM
         "kwargs": {"days": 90},
     },
+    "batch-merge-recent-identities": {
+        "task": "identity.batch_merge_recent",
+        "schedule": crontab(minute=0, hour="*/6"),  # Every 6 hours
+        "kwargs": {"lookback_days": 7},
+    },
 }
 
 # =============================================================================

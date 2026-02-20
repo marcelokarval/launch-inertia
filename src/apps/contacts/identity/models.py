@@ -7,10 +7,21 @@ contacts and fingerprints to create a single identity, with confidence
 scoring and merge capabilities.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.utils import timezone
 
 from core.shared.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
+
+    from apps.contacts.email.models import ContactEmail
+    from apps.contacts.phone.models import ContactPhone
+    from apps.contacts.fingerprint.models import FingerprintIdentity
 
 
 class Identity(BaseModel):
@@ -27,6 +38,15 @@ class Identity(BaseModel):
     """
 
     PUBLIC_ID_PREFIX = "idt"
+
+    # -- Pyright: reverse relation managers (auto-created by Django FKs) --
+    if TYPE_CHECKING:
+        email_contacts: Manager[ContactEmail]
+        phone_contacts: Manager[ContactPhone]
+        fingerprints: Manager[FingerprintIdentity]
+        merged_identities: Manager[Identity]
+        attributions: Manager[Attribution]
+        history: Manager[IdentityHistory]
 
     # Status constants
     ACTIVE = "active"

@@ -7,6 +7,8 @@ for Identity records.
 Ported from legacy identity/services/identity_service.py.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Optional
 
@@ -29,7 +31,7 @@ class IdentityService(BaseService[Identity]):
     @transaction.atomic
     def create_identity(
         self,
-        source: str = None,
+        source: str | None = None,
     ) -> Identity:
         """
         Create a new active Identity.
@@ -62,7 +64,7 @@ class IdentityService(BaseService[Identity]):
     def update_identity_history(
         identity: Identity,
         operation_type: str,
-        details: dict = None,
+        details: dict | None = None,
     ) -> IdentityHistory:
         """Create an audit history record for an identity operation."""
         return IdentityHistory.objects.create(

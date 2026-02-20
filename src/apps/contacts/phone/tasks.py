@@ -9,6 +9,8 @@ Async processing for:
 Ported from legacy contact/tasks.py (phone-related tasks).
 """
 
+from __future__ import annotations
+
 import logging
 from celery import shared_task
 from django.db import transaction
@@ -216,15 +218,19 @@ def confirm_phone_verification(phone_id: int, code: str) -> dict:
         if not phone:
             return {"status": "error", "message": f"Phone {phone_id} not found"}
 
-        result = VerificationService.verify_phone_with_code(phone, code)
+        verified = VerificationService.verify_phone_with_code(phone, code)
 
         # Recalculate identity confidence after verification
-        if phone.identity_id and result.get("status") == "success":
+        if phone.identity_id and verified:
             from apps.contacts.identity.tasks import calculate_confidence_score
 
             calculate_confidence_score.delay(phone.identity_id)
 
-        return result
+        return {
+            "status": "success" if verified else "error",
+            "phone_id": phone.public_id,
+            "verified": verified,
+        }
 
     except Exception as e:
         logger.exception("Error confirming phone %d: %s", phone_id, str(e))

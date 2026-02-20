@@ -147,8 +147,8 @@ class BillingService:
                 :10
             ]
 
-            data["subscription"] = subscription.to_dict() if subscription else None
-            data["invoices"] = [inv.to_dict() for inv in invoices]
+            data["subscription"] = subscription.to_dict() if subscription else None  # type: ignore[attr-defined]
+            data["invoices"] = [inv.to_dict() for inv in invoices]  # type: ignore[attr-defined]
 
         except Exception:
             logger.warning(
@@ -228,6 +228,8 @@ class BillingService:
             price_id,
             session.id,
         )
+        if not session.url:
+            raise ValueError(f"Stripe checkout session {session.id} has no URL")
         return session.url
 
     # ── Embedded Checkout (Landing — in-page) ────────────────────────
@@ -297,6 +299,10 @@ class BillingService:
             mode,
             session.id,
         )
+        if not session.client_secret:
+            raise ValueError(
+                f"Embedded checkout session {session.id} has no client_secret"
+            )
         return CheckoutResult(
             client_secret=session.client_secret,
             session_id=session.id,
@@ -410,16 +416,15 @@ class BillingService:
 
         if subscription.pending_setup_intent:
             # Trial or $0 — no payment needed, just setup
-            client_secret = subscription.pending_setup_intent.client_secret
+            client_secret = subscription.pending_setup_intent.client_secret or ""  # type: ignore[attr-defined]
             secret_type = "setup"
         elif (
             subscription.latest_invoice
             and hasattr(subscription.latest_invoice, "confirmation_secret")
-            and subscription.latest_invoice.confirmation_secret
+            and subscription.latest_invoice.confirmation_secret  # type: ignore[attr-defined]
         ):
-            client_secret = (
-                subscription.latest_invoice.confirmation_secret.client_secret
-            )
+            confirmation = subscription.latest_invoice.confirmation_secret  # type: ignore[attr-defined]
+            client_secret = confirmation.client_secret or ""
             secret_type = "payment"
 
         logger.info(
@@ -462,6 +467,11 @@ class BillingService:
 
         for item in line_items:
             price = stripe.Price.retrieve(item.price)
+            if price.unit_amount is None:
+                raise ValueError(
+                    f"Stripe Price {item.price} has no unit_amount "
+                    "(metered or tiered pricing is not supported)"
+                )
             total_amount += price.unit_amount * item.quantity
             price_ids.append(item.price)
             if not resolved_currency:
@@ -501,6 +511,8 @@ class BillingService:
             total_amount,
             resolved_currency,
         )
+        if not intent.client_secret:
+            raise ValueError(f"PaymentIntent {intent.id} has no client_secret")
         return PaymentIntentResult(
             payment_intent_id=intent.id,
             client_secret=intent.client_secret,
@@ -526,7 +538,7 @@ class BillingService:
                 id=session.id,
                 status=session.status or "",
                 object_type="checkout_session",
-                customer_email=session.customer_details.email
+                customer_email=(session.customer_details.email or "")
                 if session.customer_details
                 else "",
                 extra={"payment_status": session.payment_status},
@@ -574,4 +586,6 @@ class BillingService:
             user.pk,
             customer.id,
         )
+        if not session.url:
+            raise ValueError("Portal session has no URL")
         return session.url

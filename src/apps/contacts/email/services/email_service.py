@@ -6,6 +6,8 @@ Ported from legacy contact/services/email_service.py,
 adapted to use BaseService[ContactEmail] pattern.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Optional
 
@@ -29,7 +31,7 @@ class EmailService(BaseService[ContactEmail]):
     def get_or_create_email(
         self,
         email_value: str,
-        original_value: str = None,
+        original_value: str | None = None,
     ) -> tuple[ContactEmail, bool]:
         """
         Get or create a ContactEmail by normalized value.

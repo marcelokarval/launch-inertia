@@ -16,6 +16,7 @@ export default function CaptureIndex({
   fingerprint_api_key,
   fingerprint_endpoint,
   capture_token,
+  prefill,
   errors,
 }: CapturePageProps) {
   const { headline, subheadline, badges, form, trust_badge, social_proof, meta } =
@@ -83,6 +84,7 @@ export default function CaptureIndex({
             fingerprintApiKey={fingerprint_api_key}
             fingerprintEndpoint={fingerprint_endpoint || undefined}
             captureToken={capture_token}
+            prefill={prefill}
             serverErrors={errors}
           />
         </div>

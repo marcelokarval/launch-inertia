@@ -50,7 +50,7 @@ def checkout(request, price_id: str):
         )
         return redirect(checkout_url)
 
-    except stripe.error.StripeError as e:
+    except stripe.error.StripeError as e:  # type: ignore[attr-defined]
         logger.error("Stripe checkout error for user %s: %s", request.user.id, e)
         flash_error(request, "A payment error occurred. Please try again.")
         return redirect("billing:index")

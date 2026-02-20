@@ -336,7 +336,7 @@ class LifecycleService:
 
         preferred_device = None
         if device_counts:
-            preferred_device = max(device_counts, key=device_counts.get)
+            preferred_device = max(device_counts, key=lambda k: device_counts[k])
 
         # Detect preferred time from event timestamps
         hour_counts: dict[str, int] = {}
@@ -355,7 +355,7 @@ class LifecycleService:
 
         preferred_time = None
         if hour_counts:
-            preferred_time = max(hour_counts, key=hour_counts.get)
+            preferred_time = max(hour_counts, key=lambda k: hour_counts[k])
 
         # Preserve launch-dependent fields from existing data
         existing_behavior = lifecycle.get("behavior", {})

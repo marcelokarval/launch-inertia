@@ -5,10 +5,17 @@ Provides the config-driven page system that replaces static JSON campaign files.
 A Launch owns multiple CapturePages, each optionally linked to an Interest.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.utils import timezone
 
 from core.shared.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
 
 
 class Interest(BaseModel):
@@ -65,6 +72,10 @@ class Launch(BaseModel):
     """
 
     PUBLIC_ID_PREFIX = "lch"
+
+    # -- Pyright: reverse relation managers --
+    if TYPE_CHECKING:
+        pages: Manager[CapturePage]
 
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
@@ -144,6 +155,10 @@ class CapturePage(BaseModel):
     """
 
     PUBLIC_ID_PREFIX = "cpg"
+
+    # -- Pyright: FK auto-generated _id attributes --
+    launch_id: int
+    interest_id: int | None
 
     class PageType(models.TextChoices):
         CAPTURE = "capture", "Captura (email + phone)"

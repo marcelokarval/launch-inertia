@@ -8,9 +8,11 @@ Ported from legacy identity/services/merge_service.py.
 """
 
 import logging
-from typing import Optional
+from datetime import timedelta
+from typing import Any, Optional
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.contacts.identity.models import Identity, IdentityHistory
@@ -70,6 +72,8 @@ class MergeService:
         - ContactEmail records
         - ContactPhone records
         - FingerprintIdentity records
+        - CaptureEvent tracking events
+        - CaptureSubmission fact records
 
         Returns:
             Stats dict with counts of transferred records.
@@ -78,6 +82,8 @@ class MergeService:
             "emails_transferred": 0,
             "phones_transferred": 0,
             "fingerprints_transferred": 0,
+            "events_transferred": 0,
+            "submissions_transferred": 0,
         }
 
         # Transfer emails
@@ -94,6 +100,20 @@ class MergeService:
         fingerprints = source.fingerprints.all()
         stats["fingerprints_transferred"] = fingerprints.count()
         fingerprints.update(identity=target)
+
+        # Transfer tracking events (CaptureEvent)
+        from core.tracking.models import CaptureEvent
+
+        events = CaptureEvent.objects.filter(identity=source)
+        stats["events_transferred"] = events.count()
+        events.update(identity=target)
+
+        # Transfer capture submissions (CaptureSubmission)
+        from apps.ads.models import CaptureSubmission
+
+        submissions = CaptureSubmission.objects.filter(identity=source)
+        stats["submissions_transferred"] = submissions.count()
+        submissions.update(identity=target)
 
         return stats
 
@@ -195,13 +215,15 @@ class MergeService:
         - Email addresses (confidence 0.9)
         - Phone numbers (confidence 0.8)
         - Fingerprints (confidence 0.7)
+        - IP + same OS within 7d (confidence 0.65) — same person, different browser
+        - IP + different OS within 24h (confidence 0.3) — household, flag only
 
         Returns:
             List of dicts with candidate identity and confidence score.
         """
-        candidates = {}
+        candidates: dict[int, dict[str, Any]] = {}
 
-        # Shared emails
+        # ── Shared emails (0.9) ──────────────────────────────────────
         email_values = identity.email_contacts.values_list("value", flat=True)
         if email_values:
             from apps.contacts.email.models import ContactEmail
@@ -213,6 +235,9 @@ class MergeService:
             ).exclude(identity=identity)
 
             for email in shared_emails:
+                assert (
+                    email.identity_id is not None
+                )  # filtered by identity__isnull=False
                 candidate_id = email.identity_id
                 if (
                     candidate_id not in candidates
@@ -226,7 +251,7 @@ class MergeService:
                         "match_value": email.value,
                     }
 
-        # Shared phones
+        # ── Shared phones (0.8) ──────────────────────────────────────
         phone_values = identity.phone_contacts.values_list("value", flat=True)
         if phone_values:
             from apps.contacts.phone.models import ContactPhone
@@ -238,6 +263,9 @@ class MergeService:
             ).exclude(identity=identity)
 
             for phone in shared_phones:
+                assert (
+                    phone.identity_id is not None
+                )  # filtered by identity__isnull=False
                 candidate_id = phone.identity_id
                 if (
                     candidate_id not in candidates
@@ -251,7 +279,7 @@ class MergeService:
                         "match_value": phone.value,
                     }
 
-        # Shared fingerprints
+        # ── Shared fingerprints (0.7) ────────────────────────────────
         fp_hashes = identity.fingerprints.values_list("hash", flat=True)
         if fp_hashes:
             from apps.contacts.fingerprint.models import FingerprintIdentity
@@ -263,6 +291,7 @@ class MergeService:
             ).exclude(identity=identity)
 
             for fp in shared_fps:
+                assert fp.identity_id is not None  # filtered by identity__isnull=False
                 candidate_id = fp.identity_id
                 if (
                     candidate_id not in candidates
@@ -276,7 +305,174 @@ class MergeService:
                         "match_value": fp.hash[:12],
                     }
 
+        # ── IP + OS heuristics (0.65 same-person / 0.3 household) ───
+        ip_candidates = MergeService._find_ip_os_candidates(identity)
+        for ic in ip_candidates:
+            candidate_id = ic["identity_id"]
+            if (
+                candidate_id not in candidates
+                or candidates[candidate_id]["confidence"] < ic["confidence"]
+            ):
+                candidates[candidate_id] = ic
+
         return sorted(candidates.values(), key=lambda x: -x["confidence"])
+
+    # ── IP + OS Heuristics ────────────────────────────────────────────
+
+    @staticmethod
+    def _find_ip_os_candidates(identity: Identity) -> list[dict[str, Any]]:
+        """Find merge candidates via IP + OS heuristics.
+
+        Queries CaptureEvents to find other identities that share the same
+        IP address. Two sub-heuristics:
+
+        1. **Same-person** (confidence 0.65):
+           Same IP + same os_family (via DeviceProfile) within 7 days.
+           Scenario: same person, different browser (e.g., Safari + Chrome on Mac).
+
+        2. **Household** (confidence 0.3):
+           Same IP + different os_family/device_type within 24 hours.
+           Scenario: family members on the same network.
+           Flag only — NOT eligible for auto-merge.
+
+        Returns:
+            List of candidate dicts (may be empty).
+        """
+        from core.tracking.models import CaptureEvent
+
+        results: list[dict[str, Any]] = []
+        now = timezone.now()
+
+        # Get recent IPs for this identity (7-day window)
+        identity_events = (
+            CaptureEvent.objects.filter(
+                identity=identity,
+                ip_address__isnull=False,
+                created_at__gte=now - timedelta(days=7),
+            )
+            .exclude(ip_address="")
+            .values_list("ip_address", "device_profile_id")
+            .distinct()
+        )
+
+        if not identity_events:
+            return results
+
+        # Collect IPs and device profiles for this identity
+        identity_ips: set[str] = set()
+        identity_device_pks: set[int] = set()
+        for ip, dp_id in identity_events:
+            if ip:
+                identity_ips.add(ip)
+            if dp_id:
+                identity_device_pks.add(dp_id)
+
+        if not identity_ips:
+            return results
+
+        # Get OS families for identity's device profiles
+        from core.tracking.models import DeviceProfile
+
+        identity_os_families: set[str] = set()
+        if identity_device_pks:
+            identity_os_families = set(
+                DeviceProfile.objects.filter(pk__in=identity_device_pks).values_list(
+                    "os_family", flat=True
+                )
+            )
+
+        # Find other identities at the same IPs (7-day window)
+        other_events = (
+            CaptureEvent.objects.filter(
+                ip_address__in=identity_ips,
+                identity__isnull=False,
+                identity__status=Identity.ACTIVE,
+                created_at__gte=now - timedelta(days=7),
+            )
+            .exclude(identity=identity)
+            .values_list("identity_id", "ip_address", "device_profile_id", "created_at")
+        )
+
+        if not other_events:
+            return results
+
+        # Collect device profile PKs from other events for batch lookup
+        other_dp_pks: set[int] = set()
+        for _, _, dp_id, _ in other_events:
+            if dp_id:
+                other_dp_pks.add(dp_id)
+
+        # Batch load OS families for other device profiles
+        other_dp_os: dict[int, str] = {}
+        if other_dp_pks:
+            other_dp_os = dict(
+                DeviceProfile.objects.filter(pk__in=other_dp_pks).values_list(
+                    "pk", "os_family"
+                )
+            )
+
+        # Group by candidate identity
+        candidate_data: dict[int, dict[str, Any]] = {}
+        for cand_identity_id, ip, dp_id, event_created_at in other_events:
+            if cand_identity_id not in candidate_data:
+                candidate_data[cand_identity_id] = {
+                    "os_families": set(),
+                    "ips": set(),
+                    "recent_24h": False,
+                }
+            cd = candidate_data[cand_identity_id]
+            cd["ips"].add(ip)
+            if dp_id and dp_id in other_dp_os:
+                cd["os_families"].add(other_dp_os[dp_id])
+            if event_created_at >= now - timedelta(hours=24):
+                cd["recent_24h"] = True
+
+        # Score each candidate
+        for cand_id, cd in candidate_data.items():
+            shared_os = identity_os_families & cd["os_families"]
+
+            if shared_os:
+                # Same IP + same OS → same person, different browser (0.65)
+                results.append(
+                    {
+                        "identity_id": cand_id,
+                        "identity": None,  # Lazy-loaded below
+                        "confidence": 0.65,
+                        "match_type": "ip_same_os",
+                        "match_value": f"IP overlap, OS: {', '.join(shared_os)}",
+                    }
+                )
+            elif cd["recent_24h"] and cd["os_families"]:
+                # Same IP + different OS within 24h → household (0.3)
+                results.append(
+                    {
+                        "identity_id": cand_id,
+                        "identity": None,  # Lazy-loaded below
+                        "confidence": 0.3,
+                        "match_type": "ip_household",
+                        "match_value": f"IP overlap, different OS within 24h",
+                    }
+                )
+
+        # Lazy-load Identity objects for results
+        if results:
+            cand_ids = [r["identity_id"] for r in results]
+            identities_map = {
+                i.pk: i
+                for i in Identity.objects.filter(
+                    pk__in=cand_ids, status=Identity.ACTIVE, is_deleted=False
+                )
+            }
+            # Filter out candidates whose identity no longer exists
+            valid_results = []
+            for r in results:
+                identity_obj = identities_map.get(r["identity_id"])
+                if identity_obj:
+                    r["identity"] = identity_obj
+                    valid_results.append(r)
+            return valid_results
+
+        return results
 
     # ── Auto-Merge ───────────────────────────────────────────────────
 

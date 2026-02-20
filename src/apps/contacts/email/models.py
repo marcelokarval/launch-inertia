@@ -6,6 +6,8 @@ Each email is linked to an Identity for cross-channel resolution.
 Lifecycle fields track verification status, bounces, DNC, and domain analysis.
 """
 
+from __future__ import annotations
+
 import re
 
 from django.db import models
@@ -34,6 +36,9 @@ class ContactEmail(BaseModel):
     """
 
     PUBLIC_ID_PREFIX = "cem"
+
+    # -- Pyright: FK auto-generated _id attribute --
+    identity_id: int | None
 
     # Lifecycle status choices
     PENDING = "pending"

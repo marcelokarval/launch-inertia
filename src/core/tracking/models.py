@@ -116,6 +116,7 @@ class CaptureEvent(BaseModel):
 
     class EventType(models.TextChoices):
         PAGE_VIEW = "page_view", "Page View"
+        FORM_INTENT = "form_intent", "Form Intent"
         FORM_ATTEMPT = "form_attempt", "Form Attempt"
         FORM_SUCCESS = "form_success", "Form Success"
         FORM_ERROR = "form_error", "Form Error"

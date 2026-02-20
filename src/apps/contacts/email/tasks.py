@@ -10,6 +10,8 @@ Async processing for:
 Ported from legacy contact/tasks.py (email-related tasks).
 """
 
+from __future__ import annotations
+
 import logging
 from celery import shared_task
 from django.db import transaction
@@ -210,19 +212,23 @@ def confirm_email_verification(
             return {"status": "error", "message": f"Email {email_id} not found"}
 
         if code:
-            result = VerificationService.verify_email_with_code(email, code)
+            verified = VerificationService.verify_email_with_code(email, code)
         elif token:
-            result = VerificationService.verify_email_with_token(email, token)
+            verified = VerificationService.verify_email_with_token(email, token)
         else:
             return {"status": "error", "message": "Code or token required"}
 
         # Recalculate identity confidence after verification
-        if email.identity_id and result.get("status") == "success":
+        if email.identity_id and verified:
             from apps.contacts.identity.tasks import calculate_confidence_score
 
             calculate_confidence_score.delay(email.identity_id)
 
-        return result
+        return {
+            "status": "success" if verified else "error",
+            "email_id": email.public_id,
+            "verified": verified,
+        }
 
     except Exception as e:
         logger.exception("Error confirming email %d: %s", email_id, str(e))

@@ -614,7 +614,7 @@ class TestCorrelationServiceSaveAttribution:
         attr = CorrelationService.save_attribution(
             identity, attr_data, touchpoint_type="webhook"
         )
-        assert attr.touchpoint_type == "webhook"
+        assert attr.touchpoint_type == "webhook"  # type: ignore[union-attr]
 
     def test_save_attribution_returns_none_no_data(self):
         """No meaningful attribution data → returns None."""

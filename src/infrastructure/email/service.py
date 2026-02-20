@@ -1,6 +1,7 @@
 """
 Email service for sending transactional emails.
 """
+
 import logging
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EmailResult:
     """Result of email send operation."""
+
     success: bool
     message_id: Optional[str] = None
     error: Optional[str] = None
@@ -33,9 +35,7 @@ class EmailService:
 
     def __init__(self):
         self.default_from = getattr(
-            settings,
-            "DEFAULT_FROM_EMAIL",
-            "noreply@example.com"
+            settings, "DEFAULT_FROM_EMAIL", "noreply@example.com"
         )
 
     def send(
@@ -103,7 +103,7 @@ class EmailService:
         template_name: str,
         context: Dict[str, Any],
         subject: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> EmailResult:
         """
         Send email using Django template.
@@ -130,15 +130,12 @@ class EmailService:
             pass
 
         # Get subject from context if not provided
-        if not subject:
-            subject = context.get("subject", f"Email from {settings.SITE_NAME}")
+        resolved_subject: str = (
+            subject or context.get("subject") or f"Email from {settings.SITE_NAME}"
+        )
 
         return self.send(
-            to=to,
-            subject=subject,
-            body=body,
-            html_body=html_body,
-            **kwargs
+            to=to, subject=resolved_subject, body=body, html_body=html_body, **kwargs
         )
 
     def send_welcome(self, user) -> EmailResult:
@@ -149,7 +146,7 @@ class EmailService:
             context={
                 "user": user,
                 "subject": "Bem-vindo ao Launch!",
-            }
+            },
         )
 
     def send_password_reset(self, user, reset_url: str) -> EmailResult:
@@ -161,7 +158,7 @@ class EmailService:
                 "user": user,
                 "reset_url": reset_url,
                 "subject": "Redefinição de senha",
-            }
+            },
         )
 
     def send_email_verification(self, user, verification_url: str) -> EmailResult:
@@ -173,7 +170,7 @@ class EmailService:
                 "user": user,
                 "verification_url": verification_url,
                 "subject": "Confirme seu email",
-            }
+            },
         )
 
 

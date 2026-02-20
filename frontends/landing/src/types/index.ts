@@ -91,6 +91,12 @@ export interface CampaignProps {
   highlight_color?: string;
 }
 
+/** Pre-fill data for returning visitors */
+export interface PrefillData {
+  email?: string;
+  phone?: string;
+}
+
 /** Props for the Capture/Index page */
 export interface CapturePageProps extends SharedProps {
   campaign: CampaignProps;
@@ -99,6 +105,8 @@ export interface CapturePageProps extends SharedProps {
   fingerprint_endpoint: string;
   /** Server-generated UUID linking events of the same page load session */
   capture_token: string;
+  /** Pre-fill data from session identity or capture-intent hints */
+  prefill?: PrefillData;
 }
 
 /** Thank-you page step indicator */

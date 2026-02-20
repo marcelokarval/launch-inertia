@@ -10,15 +10,17 @@ Config resolution order (DB first, JSON fallback):
 3. get_campaign_or_default() — hardcoded defaults (safety net)
 """
 
+import json
 import logging
 import os
 import time
 import uuid
 from typing import Any
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
-from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 
 from core.inertia.helpers import inertia_render
 from core.tracking.models import CaptureEvent
@@ -213,6 +215,10 @@ def _render_capture_page(
     When errors are provided (POST validation failure), re-renders the
     page with errors as props so the frontend can display them inline.
     The identity_public_id is the session-based Identity for JS correlation.
+
+    Pre-fill logic (returning visitors):
+    1. If session Identity has ContactEmail/ContactPhone → use those
+    2. Fallback to session email_hint/phone_hint (from capture-intent beacon)
     """
     fingerprint_api_key = os.getenv("FINGERPRINT_API_KEY", "")
     fingerprint_endpoint = os.getenv("FINGERPRINT_ENDPOINT", "")
@@ -231,7 +237,63 @@ def _render_capture_page(
     if errors:
         props["errors"] = errors
 
+    # Pre-fill for returning visitors
+    prefill = _resolve_prefill(request)
+    if prefill:
+        props["prefill"] = prefill
+
     return inertia_render(request, "Capture/Index", props, app="landing")
+
+
+def _resolve_prefill(request: HttpRequest) -> dict[str, str] | None:
+    """Resolve pre-fill data for returning visitors.
+
+    Priority:
+    1. Session Identity's primary ContactEmail/ContactPhone
+    2. Session hints from capture-intent beacon
+
+    Returns None if no pre-fill data available.
+    """
+    prefill: dict[str, str] = {}
+
+    # Try resolved identity first (has email/phone from previous conversion)
+    identity = getattr(request, "identity", None)
+    if identity is not None:
+        try:
+            # Get primary email
+            primary_email = (
+                identity.email_contacts.filter(is_deleted=False)
+                .order_by("-is_primary", "-created_at")
+                .values_list("value", flat=True)
+                .first()
+            )
+            if primary_email:
+                prefill["email"] = primary_email
+
+            # Get primary phone
+            primary_phone = (
+                identity.phone_contacts.filter(is_deleted=False)
+                .order_by("-is_primary", "-created_at")
+                .values_list("value", flat=True)
+                .first()
+            )
+            if primary_phone:
+                prefill["phone"] = primary_phone
+        except Exception:
+            logger.debug("Failed to resolve prefill from identity", exc_info=True)
+
+    # Fallback: session hints from capture-intent beacon
+    if not prefill.get("email") and hasattr(request, "session"):
+        hint_email = request.session.get("email_hint", "")
+        if hint_email:
+            prefill["email"] = hint_email
+
+    if not prefill.get("phone") and hasattr(request, "session"):
+        hint_phone = request.session.get("phone_hint", "")
+        if hint_phone:
+            prefill["phone"] = hint_phone
+
+    return prefill if prefill else None
 
 
 def _handle_capture_post(
@@ -762,6 +824,257 @@ def thank_you_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
         },
         app="landing",
     )
+
+
+# ── Fingerprint beacon endpoint ────────────────────────────────────────
+
+
+@csrf_exempt
+@require_POST
+def fp_resolve(request: HttpRequest) -> HttpResponse:
+    """Receive FingerprintJS Pro result via sendBeacon.
+
+    URL: /api/fp-resolve/
+
+    Called by the landing frontend immediately after FingerprintJS Pro
+    resolves (~200ms after page load). Uses sendBeacon so the request
+    completes even if the user bounces.
+
+    Payload (JSON or form-encoded):
+        visitor_id:     FingerprintJS visitorId (required)
+        request_id:     FingerprintJS requestId
+        confidence:     Confidence score (float)
+        capture_token:  UUID from the page load (for retroactive event update)
+
+    Actions:
+        1. Find or create FingerprintIdentity from visitor_id
+        2. Link it to the session Identity (if exists)
+        3. Retroactively update PAGE_VIEW CaptureEvent with fingerprint data
+
+    Rate limited by RateLimitMiddleware. @csrf_exempt because sendBeacon
+    cannot set custom headers — acceptable for low-risk linking.
+    """
+    try:
+        # Parse body — sendBeacon sends as text/plain or application/json
+        body = _parse_beacon_body(request)
+        visitor_id = (body.get("visitor_id") or "").strip()
+
+        if not visitor_id:
+            return JsonResponse(
+                {"status": "error", "reason": "missing_visitor_id"}, status=400
+            )
+
+        request_id = (body.get("request_id") or "").strip()
+        confidence = _parse_float(body.get("confidence"), default=0.0)
+        capture_token = (body.get("capture_token") or "").strip()
+
+        # 1. Find or create FingerprintIdentity
+        from apps.contacts.fingerprint.models import FingerprintIdentity
+
+        fp_identity, fp_created = FingerprintIdentity.objects.get_or_create(
+            hash=visitor_id,
+            defaults={
+                "confidence_score": confidence,
+                "metadata": {"source": "beacon", "request_id": request_id},
+            },
+        )
+
+        if not fp_created:
+            # Update last_seen + metadata on existing fingerprint
+            fp_identity.update_last_seen()
+            if request_id:
+                fp_identity.metadata = {
+                    **(fp_identity.metadata or {}),
+                    "last_request_id": request_id,
+                    "source": "beacon",
+                }
+                fp_identity.save(update_fields=["metadata", "updated_at"])
+
+        # 2. Link to session Identity
+        identity_pk = (
+            request.session.get("identity_pk") if hasattr(request, "session") else None
+        )
+        linked = False
+
+        if identity_pk and not fp_identity.identity_id:
+            from apps.contacts.identity.models import Identity
+
+            try:
+                session_identity = Identity.objects.get(
+                    pk=identity_pk, status=Identity.ACTIVE, is_deleted=False
+                )
+                fp_identity.identity = session_identity
+                fp_identity.save(update_fields=["identity", "updated_at"])
+                linked = True
+
+                # Upgrade confidence: fingerprint adds ~0.15
+                new_confidence = min(session_identity.confidence_score + 0.15, 1.0)
+                if new_confidence > session_identity.confidence_score:
+                    session_identity.confidence_score = new_confidence
+                    session_identity.save(
+                        update_fields=["confidence_score", "updated_at"]
+                    )
+
+                logger.info(
+                    "fp-resolve: linked %s to identity %s (beacon)",
+                    visitor_id[:12],
+                    session_identity.public_id,
+                )
+            except Exception:
+                logger.debug("fp-resolve: session identity %s not found", identity_pk)
+
+        elif identity_pk and fp_identity.identity_id:
+            # FP already has an identity — check for divergence
+            if fp_identity.identity_id != identity_pk:
+                # Scenario 3: different identities — dispatch async merge
+                from apps.contacts.fingerprint.tasks import (
+                    merge_identities_from_fingerprint,
+                )
+
+                # Merge direction: session identity (newer, anonymous) → FP identity (older, richer)
+                # Oldest survives — let the task figure out direction
+                merge_identities_from_fingerprint.delay(
+                    identity_pk, fp_identity.identity_id
+                )
+                logger.info(
+                    "fp-resolve: divergence detected, merge queued "
+                    "(session=%s, fp_identity=%s, fp=%s)",
+                    identity_pk,
+                    fp_identity.identity_id,
+                    visitor_id[:12],
+                )
+
+        # 3. Retroactively update PAGE_VIEW event with fingerprint
+        events_updated = 0
+        if capture_token:
+            try:
+                capture_uuid = uuid.UUID(capture_token)
+                events_updated = CaptureEvent.objects.filter(
+                    capture_token=capture_uuid,
+                    event_type=CaptureEvent.EventType.PAGE_VIEW,
+                    fingerprint_identity__isnull=True,
+                ).update(
+                    fingerprint_identity=fp_identity,
+                    visitor_id=visitor_id,
+                )
+            except (ValueError, AttributeError):
+                logger.debug("fp-resolve: invalid capture_token %s", capture_token[:12])
+
+        return JsonResponse(
+            {
+                "status": "ok",
+                "linked": linked,
+                "fp_created": fp_created,
+                "events_updated": events_updated,
+            }
+        )
+
+    except Exception:
+        logger.exception("fp-resolve: unexpected error")
+        return JsonResponse({"status": "error"}, status=500)
+
+
+def _parse_beacon_body(request: HttpRequest) -> dict[str, Any]:
+    """Parse sendBeacon body — handles JSON, form-encoded, and text/plain.
+
+    sendBeacon typically sends Content-Type: text/plain when using
+    JSON.stringify(). We try JSON first, then fall back to form data.
+    """
+    if request.body:
+        try:
+            return json.loads(request.body)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass
+
+    # Fallback: form-encoded (unlikely for beacon but safe)
+    data = getattr(request, "data", request.POST)
+    return dict(data.items()) if hasattr(data, "items") else {}
+
+
+def _parse_float(value: Any, default: float = 0.0) -> float:
+    """Safely parse a float from beacon payload."""
+    if value is None:
+        return default
+    try:
+        if isinstance(value, dict):
+            # FingerprintJS Pro confidence is {score: 0.999}
+            return float(value.get("score", default))
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
+
+# ── Capture intent endpoint ────────────────────────────────────────────
+
+
+@csrf_exempt
+@require_POST
+def capture_intent(request: HttpRequest) -> HttpResponse:
+    """Receive partial form data (email/phone hints) via sendBeacon.
+
+    URL: /api/capture-intent/
+
+    Called by useCaptureIntent hook on field blur — captures form
+    abandonment data for visitors who start typing but don't submit.
+
+    Payload (JSON):
+        email_hint:     Partial email (valid-looking)
+        phone_hint:     Partial phone (>8 digits)
+        capture_token:  UUID from the page load
+
+    Actions:
+        1. Store hints in Django session (for pre-fill on return)
+        2. Record FORM_INTENT CaptureEvent for funnel analytics
+
+    Rate limited. @csrf_exempt — sendBeacon can't set headers.
+    """
+    try:
+        body = _parse_beacon_body(request)
+        email_hint = (body.get("email_hint") or "").strip().lower()
+        phone_hint = (body.get("phone_hint") or "").strip()
+        capture_token = (body.get("capture_token") or "").strip()
+
+        if not email_hint and not phone_hint:
+            return JsonResponse({"status": "error", "reason": "no_hints"}, status=400)
+
+        # 1. Store hints in session
+        if hasattr(request, "session"):
+            if email_hint:
+                request.session["email_hint"] = email_hint
+            if phone_hint:
+                request.session["phone_hint"] = phone_hint
+
+        # 2. Record FORM_INTENT event
+        if capture_token:
+            try:
+                extra_data: dict[str, Any] = {}
+                if email_hint:
+                    # Store domain only (not full email) for privacy
+                    extra_data["email_domain"] = (
+                        email_hint.split("@")[-1] if "@" in email_hint else ""
+                    )
+                    extra_data["has_email_hint"] = True
+                if phone_hint:
+                    extra_data["has_phone_hint"] = True
+                    # Store country code only (first 3 chars)
+                    extra_data["phone_prefix"] = phone_hint[:3]
+
+                TrackingService.create_event(
+                    event_type=CaptureEvent.EventType.FORM_INTENT,
+                    capture_token=capture_token,
+                    page_path=request.session.get("last_page", "/"),
+                    page_category=CaptureEvent.PageCategory.CAPTURE,
+                    request=request,
+                    extra_data=extra_data,
+                )
+            except Exception:
+                logger.debug("capture-intent: failed to record event", exc_info=True)
+
+        return JsonResponse({"status": "ok"})
+
+    except Exception:
+        logger.exception("capture-intent: unexpected error")
+        return JsonResponse({"status": "error"}, status=500)
 
 
 # ── Placeholder routes (legacy parity) ────────────────────────────────

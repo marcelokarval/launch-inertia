@@ -7,6 +7,7 @@ Covers:
 - User.is_delinquent property wiring
 - Input validation and error handling
 """
+# pyright: reportAttributeAccessIssue=false
 
 import json
 from dataclasses import dataclass
