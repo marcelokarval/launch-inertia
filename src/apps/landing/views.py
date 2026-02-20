@@ -521,6 +521,16 @@ def _handle_capture_post(
         submission_id = submission.public_id if submission else ""
         send_to_n8n_task.delay(n8n_webhook_url, n8n_payload, submission_id)
 
+    # Dispatch Meta CAPI Lead event (async, never blocks redirect)
+    _dispatch_meta_capi_lead(
+        email=email,
+        phone=phone,
+        capture_token=capture_token,
+        page_url=page_url,
+        request=request,
+        identity_public_id=getattr(request, "identity_public_id", ""),
+    )
+
     # Redirect to thank-you page
     thank_you_url = backend_config.get("form", {}).get(
         "thank_you_url",
@@ -534,6 +544,82 @@ def _handle_capture_post(
     _set_hashed_pii_cookies(response, email, phone)
 
     return response
+
+
+def _dispatch_meta_capi_lead(
+    *,
+    email: str,
+    phone: str,
+    capture_token: str,
+    page_url: str,
+    request: HttpRequest,
+    identity_public_id: str = "",
+) -> None:
+    """Dispatch Meta CAPI Lead event via Celery task.
+
+    Reads META_PIXEL_ID / META_CAPI_ACCESS_TOKEN from env. Silently
+    skips if not configured (dev environments typically have no token).
+
+    All heavy work (SDK call, HTTP to Meta) happens in the Celery worker.
+    This function only hashes + enqueues — never blocks the redirect.
+    """
+    pixel_id = os.getenv("META_PIXEL_ID", "")
+    access_token = os.getenv("META_CAPI_ACCESS_TOKEN", "")
+
+    if not pixel_id or not access_token:
+        return  # CAPI not configured — skip silently
+
+    try:
+        test_event_code = os.getenv("META_CAPI_TEST_EVENT_CODE", "")
+
+        # Hash PII for Meta matching (already have hash_email/hash_phone imported)
+        email_hash = ""
+        phone_hash = ""
+        if email:
+            try:
+                email_hash = hash_email(email)
+            except ValueError:
+                pass
+        if phone:
+            try:
+                phone_hash = hash_phone(phone)
+            except ValueError:
+                pass
+
+        # Extract Meta cookies (_fbc, _fbp) from request
+        fbc = request.COOKIES.get("_fbc", "")
+        fbp = request.COOKIES.get("_fbp", "")
+
+        # Client info for matching quality
+        client_ip = getattr(request, "client_ip", "") or ""
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+
+        from infrastructure.integrations.tasks import send_meta_conversion
+
+        send_meta_conversion.delay(
+            pixel_id=pixel_id,
+            access_token=access_token,
+            test_event_code=test_event_code,
+            event_name="Lead",
+            email_hash=email_hash,
+            phone_hash=phone_hash,
+            event_id=capture_token,
+            event_source_url=page_url,
+            client_ip=client_ip,
+            user_agent=user_agent,
+            fbc=fbc,
+            fbp=fbp,
+            external_id=identity_public_id,
+        )
+
+        logger.debug(
+            "MetaCAPI Lead dispatched: pixel=%s, event_id=%s",
+            pixel_id,
+            capture_token[:12],
+        )
+    except Exception:
+        # CAPI dispatch failure must NEVER block the capture flow
+        logger.debug("Failed to dispatch MetaCAPI Lead event", exc_info=True)
 
 
 def _create_capture_submission(
