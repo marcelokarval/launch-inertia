@@ -115,6 +115,13 @@ class ContactEmail(BaseModel):
         verbose_name="Quality score",
         help_text="Computed email quality (0.0 - 1.0)",
     )
+    value_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        db_index=True,
+        verbose_name="SHA-256 hash",
+        help_text="Meta-standard SHA-256 of normalized email (for CAPI + cookies)",
+    )
     first_seen = models.DateTimeField(
         auto_now_add=True,
         verbose_name="First seen",
@@ -150,10 +157,15 @@ class ContactEmail(BaseModel):
                 self.domain = self.value.split("@")[1]
 
     def save(self, *args, **kwargs):
-        """Auto-normalize and preserve original value on save."""
+        """Auto-normalize, preserve original value, compute SHA-256 on save."""
         if not self.original_value and self.value:
             self.original_value = self.value
         self.normalize()
+        # Auto-compute SHA-256 for Meta CAPI / cookie matching
+        if self.value and not self.value_sha256:
+            from core.shared.hashing import hash_email
+
+            self.value_sha256 = hash_email(self.value)
         super().save(*args, **kwargs)
 
     # ── Verification ─────────────────────────────────────────────────

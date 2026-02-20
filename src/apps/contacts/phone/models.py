@@ -111,6 +111,13 @@ class ContactPhone(BaseModel):
         verbose_name="Do not contact",
         help_text="Whether this number is on a Do Not Contact list",
     )
+    value_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        db_index=True,
+        verbose_name="SHA-256 hash",
+        help_text="Meta-standard SHA-256 of digit-only phone (for CAPI + cookies)",
+    )
     first_seen = models.DateTimeField(
         auto_now_add=True,
         verbose_name="First seen",
@@ -170,12 +177,17 @@ class ContactPhone(BaseModel):
             self.value = f"+{digits}"
 
     def save(self, *args, **kwargs):
-        """Auto-normalize, preserve original value, and detect type on save."""
+        """Auto-normalize, preserve original value, detect type, compute SHA-256."""
         if not self.original_value and self.value:
             self.original_value = self.value
         self.normalize()
         if self.phone_type == self.UNKNOWN:
             self.phone_type = self.detect_type()
+        # Auto-compute SHA-256 for Meta CAPI / cookie matching
+        if self.value and not self.value_sha256:
+            from core.shared.hashing import hash_phone
+
+            self.value_sha256 = hash_phone(self.value)
         super().save(*args, **kwargs)
 
     # ── Verification ─────────────────────────────────────────────────

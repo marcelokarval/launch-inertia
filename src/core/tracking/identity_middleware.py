@@ -129,6 +129,13 @@ class IdentitySessionMiddleware:
                 identity_public_id = ""
 
         if not identity_public_id:
+            # Try recovering from _em/_ph hashed PII cookies (returning converted user)
+            identity = self._recover_identity_from_hashed_cookies(request, session)
+            if identity:
+                req.visitor_status = "returning"
+                session["visitor_status"] = "returning"
+
+        if not identity_public_id and not identity:
             # First visit: create anonymous Identity
             identity = self._create_anonymous_identity(request, session)
 
@@ -334,6 +341,100 @@ class IdentitySessionMiddleware:
             samesite=samesite,
             path="/",
         )
+
+    def _recover_identity_from_hashed_cookies(
+        self, request: HttpRequest, session: Any
+    ) -> Any:
+        """Recover identity from _em/_ph hashed PII cookies.
+
+        When a returning visitor has no session (expired/cleared) but does
+        have hashed PII cookies from a previous conversion, look up their
+        identity via ContactEmail.value_sha256 or ContactPhone.value_sha256.
+
+        This enables cross-session identity continuity for converted leads.
+
+        Args:
+            request: The HTTP request (read cookies).
+            session: The Django session (store recovered identity data).
+
+        Returns:
+            Identity instance if found, None otherwise.
+        """
+        em_hash = request.COOKIES.get("_em", "").strip()
+        ph_hash = request.COOKIES.get("_ph", "").strip()
+
+        if not em_hash and not ph_hash:
+            return None
+
+        identity = None
+
+        # Try email hash first (higher confidence: 0.9)
+        if em_hash and len(em_hash) == 64:
+            try:
+                from apps.contacts.email.models import ContactEmail
+
+                contact = (
+                    ContactEmail.objects.filter(
+                        value_sha256=em_hash,
+                        identity__isnull=False,
+                        identity__status="active",
+                        identity__is_deleted=False,
+                        is_deleted=False,
+                    )
+                    .select_related("identity")
+                    .first()
+                )
+                if contact and contact.identity:
+                    identity = contact.identity
+                    logger.info(
+                        "Recovered identity %s from _em cookie (email: %s)",
+                        identity.public_id,
+                        contact.value[:20],
+                    )
+            except Exception:
+                logger.debug(
+                    "Failed to recover identity from _em cookie", exc_info=True
+                )
+
+        # Fallback: try phone hash (lower confidence: 0.8)
+        if identity is None and ph_hash and len(ph_hash) == 64:
+            try:
+                from apps.contacts.phone.models import ContactPhone
+
+                contact = (
+                    ContactPhone.objects.filter(
+                        value_sha256=ph_hash,
+                        identity__isnull=False,
+                        identity__status="active",
+                        identity__is_deleted=False,
+                        is_deleted=False,
+                    )
+                    .select_related("identity")
+                    .first()
+                )
+                if contact and contact.identity:
+                    identity = contact.identity
+                    logger.info(
+                        "Recovered identity %s from _ph cookie (phone: %s)",
+                        identity.public_id,
+                        contact.value[:8],
+                    )
+            except Exception:
+                logger.debug(
+                    "Failed to recover identity from _ph cookie", exc_info=True
+                )
+
+        # Store recovered identity in session
+        if identity is not None:
+            from django.utils import timezone as tz
+
+            session["identity_id"] = identity.public_id
+            session["identity_pk"] = identity.pk
+            session["visitor_status"] = "returning"
+            identity.last_seen = tz.now()
+            identity.save(update_fields=["last_seen", "updated_at"])
+
+        return identity
 
     def _adjust_session_ttl(self, request: HttpRequest, identity: Any) -> None:
         """Extend session TTL based on identity richness.

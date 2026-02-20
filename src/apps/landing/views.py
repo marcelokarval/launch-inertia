@@ -15,7 +15,7 @@ import logging
 import os
 import time
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
@@ -23,8 +23,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from core.inertia.helpers import inertia_render
+from core.shared.hashing import hash_email, hash_phone
 from core.tracking.models import CaptureEvent
 from core.tracking.services import DeviceProfileService, TrackingService
+from core.types import SameSiteType
 
 from apps.ads.models import CaptureSubmission
 from apps.ads.services.utm_parser import UTMParserService
@@ -58,6 +60,55 @@ def _track_redirect(request: HttpRequest, page_path: str) -> None:
     except Exception:
         # Tracking failure must never block a redirect
         logger.debug("Failed to track redirect for %s", page_path)
+
+
+def _set_hashed_pii_cookies(
+    response: HttpResponse,
+    email: str,
+    phone: str,
+) -> None:
+    """Set hashed PII cookies (_em, _ph) on successful form submission.
+
+    These cookies enable:
+    - Returning-visitor identification (identity_middleware reads them)
+    - Meta CAPI user_data matching (hashed email/phone for server events)
+
+    Cookies are SHA-256 hashes (not raw PII), httponly=True (server-only),
+    365-day lifetime matching Meta's attribution window.
+    """
+    from django.conf import settings
+
+    secure: bool = getattr(settings, "SESSION_COOKIE_SECURE", False)
+    samesite = cast(SameSiteType, getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax"))
+    max_age = 365 * 24 * 60 * 60  # 365 days
+
+    if email:
+        try:
+            response.set_cookie(
+                "_em",
+                hash_email(email),
+                max_age=max_age,
+                httponly=True,
+                secure=secure,
+                samesite=samesite,
+                path="/",
+            )
+        except ValueError:
+            pass  # Empty email after normalization — skip
+
+    if phone:
+        try:
+            response.set_cookie(
+                "_ph",
+                hash_phone(phone),
+                max_age=max_age,
+                httponly=True,
+                secure=secure,
+                samesite=samesite,
+                path="/",
+            )
+        except ValueError:
+            pass  # No digits in phone — skip
 
 
 def _resolve_campaign_config(
@@ -477,7 +528,12 @@ def _handle_capture_post(
             "url", f"/obrigado-{backend_config.get('slug', campaign_slug)}/"
         ),
     )
-    return redirect(thank_you_url)
+    response = redirect(thank_you_url)
+
+    # Set hashed PII cookies for returning-visitor matching + Meta CAPI
+    _set_hashed_pii_cookies(response, email, phone)
+
+    return response
 
 
 def _create_capture_submission(
