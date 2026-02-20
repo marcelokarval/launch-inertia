@@ -282,27 +282,22 @@ def settings_security_view(request):
 
 @login_required
 def dashboard_view(request):
-    """Main dashboard with dynamic stats."""
-    from apps.contacts.identity.models import Identity
+    """Main dashboard with real analytics data."""
+    from apps.ads.services import AnalyticsService
     from apps.notifications.models import Notification
 
-    stats = {
-        "total_identities": Identity.objects.filter(
-            is_deleted=False, status="active"
-        ).count(),
-        "active_subscriptions": 0,  # TODO: from djstripe
-        "unread_notifications": Notification.objects.filter(
-            recipient=request.user, is_read=False
-        ).count(),
-        "conversion_rate": 0,  # TODO: calculate
-    }
+    analytics = AnalyticsService.get_dashboard_data()
+    unread_notifications = Notification.objects.filter(
+        recipient=request.user, is_read=False
+    ).count()
 
     return inertia_render(
         request,
         "Dashboard/Index",
         {
             "user": request.user.to_dict(),
-            "stats": stats,
+            "analytics": analytics,
+            "unread_notifications": unread_notifications,
         },
     )
 

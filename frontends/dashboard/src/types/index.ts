@@ -450,11 +450,93 @@ export interface Pagination {
 // Dashboard & Analytics Types
 // ============================================================================
 
+/** @deprecated Use AnalyticsData instead */
 export interface DashboardStats {
   total_identities: number
   active_subscriptions: number
   unread_notifications: number
   conversion_rate: number
+}
+
+// ============================================================================
+// Analytics Types (matching AnalyticsService output)
+// ============================================================================
+
+export interface AnalyticsOverview {
+  total_leads: number
+  leads_today: number
+  leads_this_week: number
+  leads_prev_week: number
+  wow_growth: number
+  total_identities: number
+  conversion_rate: number
+  active_launches: number
+  total_page_views: number
+  total_form_successes: number
+}
+
+export interface DailyTrendPoint {
+  date: string
+  leads: number
+  page_views: number
+}
+
+export interface FunnelStage {
+  name: string
+  label: string
+  count: number
+  rate: number
+}
+
+export interface FunnelMetrics {
+  stages: FunnelStage[]
+  form_errors: number
+  error_rate: number
+  overall_conversion: number
+}
+
+export interface CapturePageStats {
+  slug: string
+  name: string
+  launch_name: string
+  submissions: number
+  page_views: number
+  conversion_rate: number
+}
+
+export interface DeviceBreakdownItem {
+  device_type: string
+  count: number
+  percentage: number
+}
+
+export interface UTMSourceItem {
+  source: string
+  platform: string
+  count: number
+  percentage: number
+}
+
+export interface RecentCapture {
+  id: string
+  email: string
+  phone: string
+  page_slug: string
+  page_name: string
+  source: string
+  device_type: string
+  created_at: string
+  is_duplicate: boolean
+}
+
+export interface AnalyticsData {
+  overview: AnalyticsOverview
+  daily_trend: DailyTrendPoint[]
+  funnel: FunnelMetrics
+  top_pages: CapturePageStats[]
+  device_breakdown: DeviceBreakdownItem[]
+  utm_sources: UTMSourceItem[]
+  recent_captures: RecentCapture[]
 }
 
 // ============================================================================
