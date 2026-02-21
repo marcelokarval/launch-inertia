@@ -306,20 +306,20 @@ def _resolve_prefill(request: HttpRequest) -> dict[str, str] | None:
     identity = getattr(request, "identity", None)
     if identity is not None:
         try:
-            # Get primary email
+            # Get best email (verified first, then most recent)
             primary_email = (
                 identity.email_contacts.filter(is_deleted=False)
-                .order_by("-is_primary", "-created_at")
+                .order_by("-is_verified", "-created_at")
                 .values_list("value", flat=True)
                 .first()
             )
             if primary_email:
                 prefill["email"] = primary_email
 
-            # Get primary phone
+            # Get best phone (verified first, then most recent)
             primary_phone = (
                 identity.phone_contacts.filter(is_deleted=False)
-                .order_by("-is_primary", "-created_at")
+                .order_by("-is_verified", "-created_at")
                 .values_list("value", flat=True)
                 .first()
             )
