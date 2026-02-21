@@ -15,6 +15,7 @@ import logging
 import os
 import time
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -1380,6 +1381,178 @@ def _persist_intent_contacts(
     return created_count
 
 
+# ── AgreliFlix (CPL video lesson series) ──────────────────────────────
+
+# Miami timezone offset (EST = UTC-5, EDT = UTC-4).
+# AgreliFlix dates are stored as naive datetimes in the JSON config and
+# are interpreted as US/Eastern (Miami) time. We use a fixed UTC-5 offset
+# here; for DST-aware handling, switch to zoneinfo.ZoneInfo("US/Eastern").
+_MIAMI_TZ = timezone(timedelta(hours=-5))
+
+
+def _parse_agrelliflix_episodes(
+    raw_episodes: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Parse episode dates server-side and compute availability flags.
+
+    Converts naive ``live_date`` strings into timezone-aware ISO 8601
+    strings and computes ``available_at``, ``expires_at``, and
+    ``is_live_pending`` for each episode so the frontend doesn't need
+    date math.
+
+    Args:
+        raw_episodes: Episode dicts from the campaign JSON.
+
+    Returns:
+        Episodes with computed date fields as ISO 8601 strings.
+    """
+    now = datetime.now(tz=_MIAMI_TZ)
+    parsed: list[dict[str, Any]] = []
+
+    for ep in raw_episodes:
+        episode = dict(ep)  # shallow copy — don't mutate cached config
+
+        # Parse live_date as Miami time
+        live_date_str = episode.get("live_date", "")
+        if live_date_str:
+            naive = datetime.fromisoformat(live_date_str)
+            live_dt = naive.replace(tzinfo=_MIAMI_TZ)
+        else:
+            live_dt = now  # fallback: treat as already available
+
+        # Compute available_at / expires_at
+        available_days: int = episode.get("available_days_from_now", 0)
+        expires_days: int = episode.get("expires_days_from_now", 7)
+
+        if available_days == 0:
+            available_at = live_dt
+        else:
+            available_at = now + timedelta(days=available_days)
+
+        expires_at = live_dt + timedelta(days=expires_days)
+
+        # Flags
+        is_live_pending = now < live_dt
+        is_available = available_at <= now < expires_at
+        is_expired = now >= expires_at
+
+        # Inject computed fields
+        episode["available_at"] = available_at.isoformat()
+        episode["expires_at"] = expires_at.isoformat()
+        episode["live_date"] = live_dt.isoformat()
+        episode["is_live_pending"] = is_live_pending
+        episode["is_available"] = is_available
+        episode["is_expired"] = is_expired
+
+        parsed.append(episode)
+
+    return parsed
+
+
+def _parse_agrelliflix_cart(cart: dict[str, Any]) -> dict[str, Any]:
+    """Parse cart open date and compute ``is_cart_open`` flag.
+
+    Args:
+        cart: Cart config dict from the campaign JSON.
+
+    Returns:
+        Cart dict with ``open_date`` as ISO 8601 and ``is_open`` flag.
+    """
+    now = datetime.now(tz=_MIAMI_TZ)
+    result = dict(cart)
+
+    open_date_str = result.get("open_date", "")
+    if open_date_str:
+        naive = datetime.fromisoformat(open_date_str)
+        open_dt = naive.replace(tzinfo=_MIAMI_TZ)
+        result["open_date"] = open_dt.isoformat()
+        result["is_open"] = now >= open_dt
+    else:
+        result["is_open"] = False
+
+    return result
+
+
+@require_GET
+def agrelliflix_page(
+    request: HttpRequest,
+    episode_number: int = 0,
+) -> HttpResponse:
+    """Render the AgreliFlix video lesson page.
+
+    URLs:
+      /agrelliflix/                → episode_number=0 (main page, auto-select)
+      /agrelliflix-aula-1/        → episode_number=1
+      /agrelliflix-aula-2/        → episode_number=2
+      /agrelliflix-aula-3/        → episode_number=3
+      /agrelliflix-aula-4/        → episode_number=4
+
+    Config is loaded from ``campaigns/agrelliflix.json`` (cached in memory).
+    Episode dates are parsed server-side (Miami timezone) so the frontend
+    receives ready-to-use ISO 8601 strings with availability flags.
+    """
+    config = get_campaign("agrelliflix")
+    if config is None:
+        logger.warning("agrelliflix: campaign config not found, redirecting to home")
+        return redirect("/")
+
+    # Parse episodes and cart dates server-side
+    raw_episodes: list[dict[str, Any]] = config.get("episodes", [])
+    episodes = _parse_agrelliflix_episodes(raw_episodes)
+    cart = _parse_agrelliflix_cart(config.get("cart", {}))
+
+    # Determine initial episode (0 = auto-select first available)
+    initial_episode_id = episode_number
+    if initial_episode_id == 0:
+        # Auto-select: first available episode, or episode 1
+        for ep in episodes:
+            if ep.get("is_available") and not ep.get("is_live_pending"):
+                initial_episode_id = ep["id"]
+                break
+        else:
+            initial_episode_id = 1
+
+    # Page name for tracking (matches legacy)
+    page_name = (
+        "agrelliflix" if episode_number == 0 else f"agrelliflix-aula-{episode_number}"
+    )
+
+    # Track page_view event
+    try:
+        capture_token = TrackingService.generate_capture_token()
+        TrackingService.create_event(
+            event_type=CaptureEvent.EventType.PAGE_VIEW,
+            capture_token=capture_token,
+            page_path=request.path,
+            page_category=CaptureEvent.PageCategory.CONTENT,
+            request=request,
+        )
+    except Exception:
+        logger.debug("agrelliflix: failed to track page_view for %s", page_name)
+
+    # Build props for Inertia (frontend receives ready-to-use data)
+    props: dict[str, Any] = {
+        "config": {
+            "slug": config.get("slug", "agrelliflix"),
+            "meta": config.get("meta", {}),
+            "branding": config.get("branding", {}),
+            "theme": config.get("theme", {}),
+            "episodes": episodes,
+            "achievements": config.get("achievements", {}),
+            "ctas": config.get("ctas", {}),
+            "social_proof": config.get("social_proof", {}),
+            "cart": cart,
+            "whatsapp": config.get("whatsapp", {}),
+            "banner_urls": config.get("banner_urls", {}),
+            "tracking": config.get("tracking", {}),
+        },
+        "initial_episode_id": initial_episode_id,
+        "page_name": page_name,
+    }
+
+    return inertia_render(request, "AgreliFlix/Index", props, app="landing")
+
+
 # ── Placeholder routes (legacy parity) ────────────────────────────────
 # These routes exist in the legacy Next.js project and must return a
 # response (not 404) for SEO/link parity. Pages that aren't yet ported
@@ -1402,11 +1575,10 @@ def support_launch_page(request: HttpRequest) -> HttpResponse:
 def placeholder_redirect(request: HttpRequest) -> HttpResponse:
     """Redirect placeholder for legacy routes not yet ported.
 
-    Used for: /lembrete-bf/, /recado-importante/, /onboarding/,
-    /agrelliflix/, /agrelliflix-aula-{1..4}/.
+    Used for: /lembrete-bf/, /recado-importante/, /onboarding/.
 
-    These are complex pages (sales funnels, video platforms,
-    post-purchase flows) that will be implemented in later phases.
+    These are complex pages (sales funnels, post-purchase flows)
+    that will be implemented in later phases.
 
     Tracks page_view event for visitor journey attribution before redirect.
     """

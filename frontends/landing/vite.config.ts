@@ -49,6 +49,7 @@ export default defineConfig({
           'vendor-inertia': ['react', 'react-dom', '@inertiajs/react', '@inertiajs/core'],
           'vendor-stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
           'vendor-phone': ['react-international-phone'],
+          'vendor-agrelliflix': ['react-youtube', 'framer-motion', 'react-hot-toast'],
         },
       },
     },

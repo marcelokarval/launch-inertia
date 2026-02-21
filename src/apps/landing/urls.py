@@ -110,17 +110,38 @@ urlpatterns = [
     # ── Legal pages (legacy format) ───────────────────────────────
     path("terms-of-service/", views.terms_page, name="terms"),
     path("privacy-policy/", views.privacy_page, name="privacy"),
-    # ── Placeholder routes (legacy parity) ────────────────────────
+    # ── Placeholder routes (legacy parity — remaining) ─────────────
     # Complex pages not yet ported to Inertia. Redirect to home
     # so legacy URLs don't 404.
     path("lembrete-bf/", views.placeholder_redirect, name="lembrete_bf"),
     path("recado-importante/", views.placeholder_redirect, name="recado_importante"),
     path("onboarding/", views.placeholder_redirect, name="onboarding"),
-    path("agrelliflix/", views.placeholder_redirect, name="agrelliflix"),
-    path("agrelliflix-aula-1/", views.placeholder_redirect, name="agrelliflix_aula_1"),
-    path("agrelliflix-aula-2/", views.placeholder_redirect, name="agrelliflix_aula_2"),
-    path("agrelliflix-aula-3/", views.placeholder_redirect, name="agrelliflix_aula_3"),
-    path("agrelliflix-aula-4/", views.placeholder_redirect, name="agrelliflix_aula_4"),
+    # ── AgreliFlix (CPL video lesson series) ────────────────────────
+    path("agrelliflix/", views.agrelliflix_page, name="agrelliflix"),
+    path(
+        "agrelliflix-aula-1/",
+        views.agrelliflix_page,
+        {"episode_number": 1},
+        name="agrelliflix_aula_1",
+    ),
+    path(
+        "agrelliflix-aula-2/",
+        views.agrelliflix_page,
+        {"episode_number": 2},
+        name="agrelliflix_aula_2",
+    ),
+    path(
+        "agrelliflix-aula-3/",
+        views.agrelliflix_page,
+        {"episode_number": 3},
+        name="agrelliflix_aula_3",
+    ),
+    path(
+        "agrelliflix-aula-4/",
+        views.agrelliflix_page,
+        {"episode_number": 4},
+        name="agrelliflix_aula_4",
+    ),
     # ── Home page (last — catch-all for root "/") ─────────────────
     # Legacy: redirects to /inscrever-wh-rc-v3/
     path("", views.home, name="home"),

@@ -240,3 +240,246 @@ export interface FingerprintConfig {
   apiKey: string;
   endpoint?: string;
 }
+
+// ── AgreliFlix Types (CPL video lesson series) ──────────────────────
+
+/** Chapter marker within an episode */
+export interface AgrelliflixChapter {
+  title: string;
+  start_seconds: number;
+}
+
+/** Episode — server-parsed with availability flags from Django view */
+export interface AgrelliflixEpisode {
+  id: number;
+  video_id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  duration: string;
+  /** ISO 8601 string with timezone (parsed server-side from Miami TZ) */
+  live_date: string;
+  /** ISO 8601 — when episode becomes available */
+  available_at: string;
+  /** ISO 8601 — when episode expires */
+  expires_at: string;
+  /** Server-computed: true if live hasn't happened yet */
+  is_live_pending: boolean;
+  /** Server-computed: true if episode is currently available */
+  is_available: boolean;
+  /** Server-computed: true if episode has expired */
+  is_expired: boolean;
+  available_days_from_now: number;
+  expires_days_from_now: number;
+  youtube_url: string | null;
+  chapters: AgrelliflixChapter[];
+}
+
+/** Video progress for a single episode (stored in localStorage) */
+export interface VideoProgress {
+  episodeId: number;
+  watchedSeconds: number;
+  totalSeconds: number;
+  percentage: number;
+  lastWatchedAt: string;
+  completed: boolean;
+}
+
+/** Map of episode ID → progress */
+export type ProgressRecord = Record<number, VideoProgress>;
+
+/** Achievement definition from campaign config */
+export interface AgrelliflixAchievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  points: number;
+}
+
+/** Achievement IDs supported by the system */
+export type AchievementId =
+  | 'early_bird'
+  | 'binge_watcher'
+  | 'completionist'
+  | 'speed_demon'
+  | 'social_butterfly';
+
+/** CTA configurations */
+export interface AgrelliflixPreRollCTA {
+  text: string;
+  url_campaign: string;
+  show_after_ms: number;
+  skippable: boolean;
+  skip_after_ms: number;
+}
+
+export interface AgrelliflixMidRollCTA {
+  text: string;
+  url_campaign: string;
+  show_at_percent: number;
+  duration_ms: number;
+}
+
+export interface AgrelliflixEndScreenCTA {
+  text: string;
+  url_campaign: string;
+  show_before_end_seconds: number;
+}
+
+export interface AgrelliflixFloatingCTA {
+  text: string;
+  url_campaign: string;
+  show_after_completion_percent: number;
+}
+
+export interface AgrelliflixCTAConfig {
+  pre_roll: AgrelliflixPreRollCTA;
+  mid_roll: AgrelliflixMidRollCTA;
+  end_screen: AgrelliflixEndScreenCTA;
+  floating: AgrelliflixFloatingCTA;
+}
+
+/** Social proof testimonial */
+export interface AgrelliflixTestimonial {
+  name: string;
+  location: string;
+  text: string;
+}
+
+/** Social proof stats strip */
+export interface AgrelliflixStats {
+  total_students: number;
+  average_profit: number;
+  success_rate: number;
+  rating: number;
+}
+
+/** Social proof configuration */
+export interface AgrelliflixSocialProofConfig {
+  enabled: boolean;
+  initial_viewers: number;
+  variance_range: number;
+  update_interval_ms: number;
+  testimonials: AgrelliflixTestimonial[];
+  stats: AgrelliflixStats;
+}
+
+/** Cart configuration with server-computed open status */
+export interface AgrelliflixCartConfig {
+  /** ISO 8601 — cart open date (parsed from Miami TZ) */
+  open_date: string;
+  pre_open_url: string;
+  post_open_url: string;
+  button_text: string;
+  /** Server-computed: true if cart is currently open */
+  is_open: boolean;
+}
+
+/** WhatsApp floating button config */
+export interface AgrelliflixWhatsAppConfig {
+  enabled: boolean;
+  number: string;
+  message: string;
+}
+
+/** Branding config */
+export interface AgrelliflixBrandingConfig {
+  series_title: string;
+  badge_text: string;
+}
+
+/** Theme color tokens (Netflix-inspired dark theme) */
+export interface AgrelliflixThemeConfig {
+  black_deep: string;
+  black_soft: string;
+  grey_dark: string;
+  grey_medium: string;
+  grey_light: string;
+  white_soft: string;
+  red_primary: string;
+  red_hover: string;
+  gold_accent: string;
+}
+
+/** Banner URL config */
+export interface AgrelliflixBannerUrls {
+  aulas_1_2: string;
+  aulas_3_4: string;
+}
+
+/** Tracking config */
+export interface AgrelliflixTrackingConfig {
+  page_name: string;
+  event_subtype: string;
+}
+
+/** Full AgreliFlix config received as Inertia props (server-parsed) */
+export interface AgrelliflixConfig {
+  slug: string;
+  meta: CampaignMeta;
+  branding: AgrelliflixBrandingConfig;
+  theme: AgrelliflixThemeConfig;
+  episodes: AgrelliflixEpisode[];
+  achievements: Record<AchievementId, AgrelliflixAchievement>;
+  ctas: AgrelliflixCTAConfig;
+  social_proof: AgrelliflixSocialProofConfig;
+  cart: AgrelliflixCartConfig;
+  whatsapp: AgrelliflixWhatsAppConfig;
+  banner_urls: AgrelliflixBannerUrls;
+  tracking: AgrelliflixTrackingConfig;
+}
+
+/** Props for the AgreliFlix/Index page */
+export interface AgrelliflixPageProps extends SharedProps {
+  config: AgrelliflixConfig;
+  initial_episode_id: number;
+  page_name: string;
+}
+
+// ── AgreliFlix Hook Return Types ────────────────────────────────────
+
+export interface UseVideoProgressReturn {
+  progress: ProgressRecord;
+  saveProgress: (episodeId: number, watchedSeconds: number, totalSeconds: number) => boolean;
+  getEpisodeProgress: (episodeId: number) => VideoProgress | null;
+  getOverallProgress: () => number;
+  hasWatchedAll: (totalEpisodes: number) => boolean;
+  getNextEpisode: (episodes: AgrelliflixEpisode[]) => AgrelliflixEpisode | null;
+  resetProgress: () => void;
+}
+
+export interface UseEpisodeUnlocksReturn {
+  unlockedEpisodes: number[];
+  checkUnlocks: () => void;
+  isUnlocked: (episodeId: number) => boolean;
+}
+
+export interface UseAchievementsReturn {
+  achievements: string[];
+  unlockAchievement: (id: string) => void;
+  hasAchievement: (id: string) => boolean;
+}
+
+export interface UseViewerSimulationReturn {
+  currentViewers: number;
+}
+
+/** XP level definition for gamification */
+export interface XPLevel {
+  name: string;
+  minXP: number;
+  maxXP: number;
+  color: string;
+}
+
+/** Gamification storage state (persisted in localStorage) */
+export interface AgrelliflixStorageState {
+  totalXP: number;
+  level: string;
+  achievements: string[];
+  streak: number;
+  lastVisit: string;
+  episodesCompleted: number[];
+  shareCount: number;
+}

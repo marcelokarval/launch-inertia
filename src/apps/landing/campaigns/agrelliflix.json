@@ -1,0 +1,218 @@
+{
+  "slug": "agrelliflix",
+  "meta": {
+    "title": "AgrelliFlix | Treinamento Exclusivo | Arthur Agrelli",
+    "description": "Assista as aulas exclusivas do treinamento de repasse de imoveis nos EUA",
+    "og_image": "/static/images/og-agrelliflix.jpg",
+    "keywords": ["agrelliflix", "treinamento", "arthur agrelli", "repasse imoveis", "real estate usa"]
+  },
+  "branding": {
+    "series_title": "TREINAMENTO EXCLUSIVO",
+    "badge_text": "CONTEUDO EXCLUSIVO"
+  },
+  "theme": {
+    "black_deep": "#0A0A0A",
+    "black_soft": "#141414",
+    "grey_dark": "#1F1F1F",
+    "grey_medium": "#2D2D2D",
+    "grey_light": "#404040",
+    "white_soft": "#E5E5E5",
+    "red_primary": "#E50914",
+    "red_hover": "#F40612",
+    "gold_accent": "#FFD700"
+  },
+  "episodes": [
+    {
+      "id": 1,
+      "video_id": "cx3kLa3SIHg",
+      "title": "Aula 1",
+      "subtitle": "Preparacao para o mercado americano",
+      "description": "Nesta primeira aula, Arthur Agrelli apresenta o mercado imobiliario americano e as oportunidades para imigrantes brasileiros nos EUA.",
+      "duration": "90min",
+      "live_date": "2026-01-20T20:00:00",
+      "available_days_from_now": 0,
+      "expires_days_from_now": 7,
+      "youtube_url": null,
+      "chapters": [
+        { "title": "Introducao", "start_seconds": 0 },
+        { "title": "Visao Geral do Mercado", "start_seconds": 300 },
+        { "title": "Primeiras Estrategias", "start_seconds": 1200 },
+        { "title": "Q&A", "start_seconds": 2400 }
+      ]
+    },
+    {
+      "id": 2,
+      "video_id": "nRB3RADnOJg",
+      "title": "Aula 2",
+      "subtitle": "Estrategias avancadas reveladas",
+      "description": "Aprofunde-se nas tecnicas avancadas de repasse de imoveis e conherca casos reais de sucesso.",
+      "duration": "95min",
+      "live_date": "2026-01-21T20:00:00",
+      "available_days_from_now": 0,
+      "expires_days_from_now": 7,
+      "youtube_url": null,
+      "chapters": [
+        { "title": "Recap Aula 1", "start_seconds": 0 },
+        { "title": "Tecnicas Avancadas", "start_seconds": 180 },
+        { "title": "Casos de Sucesso", "start_seconds": 1500 },
+        { "title": "Perguntas e Respostas", "start_seconds": 3000 }
+      ]
+    },
+    {
+      "id": 3,
+      "video_id": "NMNkFz8oThQ",
+      "title": "Aula 3",
+      "subtitle": "Acelerando seus resultados",
+      "description": "Descubra as ferramentas e estrategias para acelerar seus resultados no mercado imobiliario americano.",
+      "duration": "100min",
+      "live_date": "2026-01-22T20:00:00",
+      "available_days_from_now": 0,
+      "expires_days_from_now": 7,
+      "youtube_url": null,
+      "chapters": [
+        { "title": "Boas-vindas", "start_seconds": 0 },
+        { "title": "Aceleracao de Resultados", "start_seconds": 240 },
+        { "title": "Ferramentas Essenciais", "start_seconds": 1800 },
+        { "title": "Encerramento e Q&A", "start_seconds": 3600 }
+      ]
+    },
+    {
+      "id": 4,
+      "video_id": "U0qML78AHf0",
+      "title": "Aula 4",
+      "subtitle": "Preparacao final para o sucesso",
+      "description": "Na aula final, Arthur revela o plano de acao completo e os proximos passos para sua jornada de sucesso.",
+      "duration": "105min",
+      "live_date": "2026-01-25T20:00:00",
+      "available_days_from_now": 0,
+      "expires_days_from_now": 7,
+      "youtube_url": null,
+      "chapters": [
+        { "title": "Introducao", "start_seconds": 0 },
+        { "title": "Plano de Acao Completo", "start_seconds": 300 },
+        { "title": "Proximos Passos", "start_seconds": 2100 },
+        { "title": "Consideracoes Finais", "start_seconds": 4200 }
+      ]
+    }
+  ],
+  "achievements": {
+    "early_bird": {
+      "id": "early_bird",
+      "title": "Early Bird",
+      "description": "Assistiu na primeira hora de lancamento",
+      "icon": "",
+      "points": 100
+    },
+    "binge_watcher": {
+      "id": "binge_watcher",
+      "title": "Maratonista",
+      "description": "Assistiu todas as aulas de uma vez",
+      "icon": "",
+      "points": 300
+    },
+    "completionist": {
+      "id": "completionist",
+      "title": "Completista",
+      "description": "100% de conclusao em todas as aulas",
+      "icon": "",
+      "points": 500
+    },
+    "speed_demon": {
+      "id": "speed_demon",
+      "title": "Velocidade 2x",
+      "description": "Assistiu uma aula completa em 2x",
+      "icon": "",
+      "points": 150
+    },
+    "social_butterfly": {
+      "id": "social_butterfly",
+      "title": "Influencer",
+      "description": "Compartilhou o progresso 3 vezes",
+      "icon": "",
+      "points": 200
+    }
+  },
+  "ctas": {
+    "pre_roll": {
+      "text": "Garanta sua vaga no treinamento completo",
+      "url_campaign": "preroll",
+      "show_after_ms": 5000,
+      "skippable": true,
+      "skip_after_ms": 3000
+    },
+    "mid_roll": {
+      "text": "Acesso liberado por tempo limitado",
+      "url_campaign": "midroll",
+      "show_at_percent": 60,
+      "duration_ms": 10000
+    },
+    "end_screen": {
+      "text": "Comece sua jornada agora",
+      "url_campaign": "endscreen",
+      "show_before_end_seconds": 20
+    },
+    "floating": {
+      "text": "Junte-se a 5.000+ alunos",
+      "url_campaign": "floating",
+      "show_after_completion_percent": 80
+    }
+  },
+  "social_proof": {
+    "enabled": true,
+    "initial_viewers": 1247,
+    "variance_range": 50,
+    "update_interval_ms": 5000,
+    "testimonials": [
+      {
+        "name": "Joao Silva",
+        "location": "Orlando, FL",
+        "text": "Ja fiz 3 repasses seguindo o metodo!"
+      },
+      {
+        "name": "Maria Santos",
+        "location": "Miami, FL",
+        "text": "Mudou completamente minha vida financeira"
+      },
+      {
+        "name": "Pedro Costa",
+        "location": "Houston, TX",
+        "text": "Melhor investimento que ja fiz!"
+      },
+      {
+        "name": "Ana Lima",
+        "location": "Fort Lauderdale, FL",
+        "text": "Em 3 meses ja recuperei o investimento"
+      },
+      {
+        "name": "Carlos Oliveira",
+        "location": "Atlanta, GA",
+        "text": "Fechei meu primeiro deal em 15 dias!"
+      }
+    ],
+    "stats": {
+      "total_students": 5432,
+      "average_profit": 15000,
+      "success_rate": 87,
+      "rating": 4.9
+    }
+  },
+  "cart": {
+    "open_date": "2026-01-26T20:00:00",
+    "pre_open_url": "/inscrever-wh-rc-v4?utm_source=agrelliflix&utm_medium=cta&utm_campaign=cart_preopen",
+    "post_open_url": "/checkout-wh?utm_source=agrelliflix&utm_medium=cta&utm_campaign=cart_postopen",
+    "button_text": "Oferta Exclusiva!"
+  },
+  "whatsapp": {
+    "enabled": true,
+    "number": "5511999999999",
+    "message": "Oi! Vi as aulas do AgrelliFlix e quero saber mais sobre o treinamento!"
+  },
+  "banner_urls": {
+    "aulas_1_2": "https://go.arthuragrelli.com/recado-importante",
+    "aulas_3_4": "https://go.arthuragrelli.com/wpp-superinteressados-page"
+  },
+  "tracking": {
+    "page_name": "agrelliflix",
+    "event_subtype": "replay_series"
+  }
+}
