@@ -219,21 +219,35 @@ export interface DeviceFingerprint {
   fraud_signals: FraudSignal[]
 }
 
-/** FingerprintEvent as returned by FingerprintEvent.to_dict(). */
+/** Unified timeline event (FingerprintEvent + CaptureEvent merged). */
 export interface TimelineEvent {
   id: string
   event_type: string
-  page_url: string | null
+  page_url: string
   timestamp: string
-  user_data: Record<string, unknown>
-  event_data: Record<string, unknown>
+  source: 'fingerprint' | 'tracking'
+  extra_data: Record<string, unknown>
   session_id: string | null
-  fingerprint_id: string
+  fingerprint_id: string | null
 }
 
 // ============================================================================
 // Identity Detail Extended (for Show page with full identity data)
 // ============================================================================
+
+/** Intent hints extracted from form_intent CaptureEvents. */
+export interface IntentHints {
+  email_domains: string[]
+  phone_prefixes: string[]
+}
+
+/** Overview stats for identity detail page. */
+export interface IdentityOverviewStats {
+  page_views: number
+  form_intents: number
+  form_submissions: number
+  total_events: number
+}
 
 /** Full identity detail with channels, attributions, timeline for Show page. */
 export interface IdentityShowData extends IdentityDetail {
@@ -243,6 +257,8 @@ export interface IdentityShowData extends IdentityDetail {
   lifecycle_global: Record<string, unknown>
   attributions: Attribution[]
   timeline: TimelineEvent[]
+  intent_hints: IntentHints
+  overview_stats: IdentityOverviewStats
 }
 
 /** Chip color helpers for identity/channel status. */

@@ -263,11 +263,24 @@
         "noEvents": "No events recorded"
       },
       "tabs": {
+        "overview": "Overview",
         "emails": "Emails",
         "phones": "Phones",
         "devices": "Devices",
         "attributions": "Attribution",
         "timeline": "Timeline"
+      },
+      "overview": {
+        "activityStats": "Activity Stats",
+        "pageViews": "Page Views",
+        "formIntents": "Form Intents",
+        "submissions": "Submissions",
+        "totalEvents": "Total Events",
+        "knownHints": "Known Hints",
+        "emailDomains": "Email domains",
+        "phonePrefixes": "Phone prefixes",
+        "recentActivity": "Recent Activity",
+        "noActivity": "No recent activity"
       }
     },
     "delete": {

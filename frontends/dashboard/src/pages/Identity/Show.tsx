@@ -2,12 +2,16 @@ import { Head, router } from '@inertiajs/react'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import { Card, Chip, Tabs } from '@heroui/react'
 import { Button } from '@/components/ui'
-import { Mail, Phone, Fingerprint, TrendingUp, Activity, Edit, Trash2, ArrowLeft } from 'lucide-react'
+import {
+  Mail, Phone, Fingerprint, TrendingUp, Activity, Edit, Trash2,
+  ArrowLeft, LayoutDashboard,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { IdentityShowData } from '@/types'
 import {
   IdentityInfoCard,
   StatsCard,
+  OverviewTab,
   EmailChannelsSection,
   PhoneChannelsSection,
   DevicesSection,
@@ -77,8 +81,14 @@ export default function IdentityShow({ identity }: Props) {
         <div className="lg:col-span-2">
           <Card className="border border-default-200">
             <Card.Content className="p-0">
-              <Tabs className="w-full">
+              <Tabs defaultSelectedKey="overview" className="w-full">
                 <Tabs.List className="px-4 pt-3 border-b border-divider">
+                  <Tabs.Tab id="overview">
+                    <div className="flex items-center gap-1.5">
+                      <LayoutDashboard className="w-4 h-4" />
+                      <span>{t('identities.show.tabs.overview', 'Overview')}</span>
+                    </div>
+                  </Tabs.Tab>
                   <Tabs.Tab id="emails">
                     <div className="flex items-center gap-1.5">
                       <Mail className="w-4 h-4" />
@@ -121,6 +131,9 @@ export default function IdentityShow({ identity }: Props) {
                 </Tabs.List>
 
                 <div className="p-4">
+                  <Tabs.Panel id="overview">
+                    <OverviewTab identity={identity} />
+                  </Tabs.Panel>
                   <Tabs.Panel id="emails">
                     <EmailChannelsSection emails={identity.emails ?? []} />
                   </Tabs.Panel>

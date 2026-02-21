@@ -15,7 +15,7 @@ from typing import Any
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q, Subquery, OuterRef
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
 
@@ -39,7 +39,22 @@ def index(request):
     search_query = request.GET.get("q", "") or None
     tag_slug = request.GET.get("tag") or None
 
-    qs = Identity.objects.filter(is_deleted=False, status=Identity.ACTIVE)
+    from apps.contacts.email.models import ContactEmail
+
+    qs = (
+        Identity.objects.filter(is_deleted=False, status=Identity.ACTIVE)
+        .annotate(
+            _email_count=Count("email_contacts", distinct=True),
+            _phone_count=Count("phone_contacts", distinct=True),
+            _fingerprint_count=Count("fingerprints", distinct=True),
+            _primary_email=Subquery(
+                ContactEmail.objects.filter(
+                    identity_id=OuterRef("pk"),
+                ).values("value")[:1]
+            ),
+        )
+        .prefetch_related("tags")
+    )
 
     if search_query:
         q = Q()
@@ -91,19 +106,51 @@ def show(request, public_id):
         raise Http404("Identity not found")
 
     identity_data = identity.to_dict(include_contacts=True)
-    identity_data["display_name"] = identity.display_name
-    identity_data["operator_notes"] = identity.operator_notes
-    identity_data["tags"] = [
-        {"id": t.public_id, "name": t.name, "color": t.color}
-        for t in identity.tags.all()
+
+    identity_data["attributions"] = [
+        a.to_dict() for a in identity.attributions.all()[:50]
     ]
-    identity_data["lifecycle_global"] = identity.lifecycle_global
+    identity_data["timeline"] = identity.get_timeline()
 
-    attributions_data = [a.to_dict() for a in identity.attributions.all()[:50]]
-    timeline_data = [e.to_dict() for e in identity.get_timeline()[:100]]
+    # Extract intent hints from form_intent CaptureEvents (P3.3)
+    # Useful when identity has no contacts yet — shows partial data
+    from core.tracking.models import CaptureEvent
 
-    identity_data["attributions"] = attributions_data
-    identity_data["timeline"] = timeline_data
+    intent_events = CaptureEvent.objects.filter(
+        identity=identity,
+        event_type=CaptureEvent.EventType.FORM_INTENT,
+    ).order_by("-created_at")[:10]
+
+    intent_hints: dict[str, set[str]] = {
+        "email_domains": set(),
+        "phone_prefixes": set(),
+    }
+    for evt in intent_events:
+        extra = evt.extra_data or {}
+        if domain := extra.get("email_domain"):
+            intent_hints["email_domains"].add(str(domain))
+        if prefix := extra.get("phone_prefix"):
+            intent_hints["phone_prefixes"].add(str(prefix))
+
+    identity_data["intent_hints"] = {
+        "email_domains": sorted(intent_hints["email_domains"]),
+        "phone_prefixes": sorted(intent_hints["phone_prefixes"]),
+    }
+
+    # Overview stats for P3.1 Overview tab
+    all_events = CaptureEvent.objects.filter(identity=identity)
+    identity_data["overview_stats"] = {
+        "page_views": all_events.filter(
+            event_type=CaptureEvent.EventType.PAGE_VIEW,
+        ).count(),
+        "form_intents": all_events.filter(
+            event_type=CaptureEvent.EventType.FORM_INTENT,
+        ).count(),
+        "form_submissions": all_events.filter(
+            event_type=CaptureEvent.EventType.FORM_SUCCESS,
+        ).count(),
+        "total_events": all_events.count(),
+    }
 
     return inertia_render(
         request,
@@ -210,12 +257,6 @@ def edit(request, public_id):
         return redirect("identities:show", public_id=identity.public_id)
 
     identity_data = identity.to_dict()
-    identity_data["display_name"] = identity.display_name
-    identity_data["operator_notes"] = identity.operator_notes
-    identity_data["tags"] = [
-        {"id": t.public_id, "name": t.name, "color": t.color}
-        for t in identity.tags.all()
-    ]
 
     return inertia_render(
         request,
@@ -241,7 +282,6 @@ def delete(request, public_id):
         return redirect("identities:index")
 
     identity_data = identity.to_dict()
-    identity_data["display_name"] = identity.display_name
 
     return inertia_render(
         request,

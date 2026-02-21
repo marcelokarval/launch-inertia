@@ -43,11 +43,11 @@ Root causes:
 
 ### P3 — Identity Detail Improvements
 
-- [ ] P3.1: Add "Overview" tab as default in Identity Show with stats + hints + activity
-- [ ] P3.2: Timeline includes CaptureEvents for the identity (not just FingerprintEvents)
-- [ ] P3.3: Show intent hints (email_domain, phone_prefix) when identity has no contacts
-- [ ] P3.4: Fix N+1 queries in Identity Index (annotate + prefetch_related)
-- [ ] P3.5: Move display_name, operator_notes, tags into Identity.to_dict()
+- [x] P3.1: Add "Overview" tab as default in Identity Show with stats + hints + activity
+- [x] P3.2: Timeline includes CaptureEvents for the identity (not just FingerprintEvents)
+- [x] P3.3: Show intent hints (email_domain, phone_prefix) when identity has no contacts
+- [x] P3.4: Fix N+1 queries in Identity Index (annotate + prefetch_related)
+- [x] P3.5: Move display_name, operator_notes, tags into Identity.to_dict()
 
 ### P4 — Session-Identity Binding
 

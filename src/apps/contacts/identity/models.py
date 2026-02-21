@@ -160,17 +160,56 @@ class Identity(BaseModel):
 
     # ── Timeline ─────────────────────────────────────────────────────
 
-    def get_timeline(self):
-        """
-        Get all events across all fingerprints for this identity,
-        ordered by most recent first.
+    def get_timeline(self) -> list[dict]:
+        """Get unified timeline merging FingerprintEvents + CaptureEvents.
+
+        Returns a list of dicts (not QuerySet) sorted by timestamp desc.
+        Both event sources are normalized to the TimelineEvent format:
+          id, event_type, page_url, timestamp, source, extra_data
         """
         from apps.contacts.fingerprint.models import FingerprintEvent
+        from core.tracking.models import CaptureEvent
 
+        events: list[dict] = []
+
+        # FingerprintEvents (via fingerprints linked to this identity)
         fingerprint_ids = self.fingerprints.values_list("id", flat=True)
-        return FingerprintEvent.objects.filter(
+        for e in FingerprintEvent.objects.filter(
             fingerprint_id__in=fingerprint_ids
-        ).order_by("-timestamp")
+        ).order_by("-timestamp")[:100]:
+            events.append(
+                {
+                    "id": e.public_id,
+                    "event_type": e.event_type,
+                    "page_url": e.page_url or "",
+                    "timestamp": e.timestamp.isoformat() if e.timestamp else "",
+                    "source": "fingerprint",
+                    "extra_data": e.event_data,
+                    "session_id": e.session_id,
+                    "fingerprint_id": e.fingerprint.public_id,
+                }
+            )
+
+        # CaptureEvents (directly linked to this identity)
+        for e in CaptureEvent.objects.filter(
+            identity=self,
+        ).order_by("-created_at")[:100]:
+            events.append(
+                {
+                    "id": e.public_id,
+                    "event_type": e.event_type,
+                    "page_url": e.page_path or "",
+                    "timestamp": e.created_at.isoformat() if e.created_at else "",
+                    "source": "tracking",
+                    "extra_data": e.extra_data,
+                    "session_id": None,
+                    "fingerprint_id": None,
+                }
+            )
+
+        # Sort merged list by timestamp descending, take top 100
+        events.sort(key=lambda x: x["timestamp"], reverse=True)
+        return events[:100]
 
     # ── Status Management ────────────────────────────────────────────
 
@@ -193,19 +232,40 @@ class Identity(BaseModel):
     # ── Serialization ────────────────────────────────────────────────
 
     def to_list_dict(self) -> dict:
-        """Lightweight serialization for list views (Index page)."""
-        primary_email = self.email_contacts.first()
-        primary_phone = self.phone_contacts.first()
+        """Lightweight serialization for list views (Index page).
+
+        Uses annotated fields (_email_count, _phone_count, etc.) when
+        available from the queryset to avoid N+1 queries.
+        Falls back to individual queries if annotations are missing.
+        """
+        # Use annotations from queryset if available, else fallback
+        email_count = getattr(self, "_email_count", None)
+        if email_count is None:
+            email_count = self.email_contacts.count()
+
+        phone_count = getattr(self, "_phone_count", None)
+        if phone_count is None:
+            phone_count = self.phone_contacts.count()
+
+        fingerprint_count = getattr(self, "_fingerprint_count", None)
+        if fingerprint_count is None:
+            fingerprint_count = self.fingerprints.count()
+
+        primary_email = getattr(self, "_primary_email", ...)
+        if primary_email is ...:
+            email_obj = self.email_contacts.first()
+            primary_email = email_obj.value if email_obj else None
+
         return {
             "id": self.public_id,
             "display_name": self.display_name,
             "status": self.status,
             "confidence_score": self.confidence_score,
-            "primary_email": primary_email.value if primary_email else None,
-            "primary_phone": primary_phone.value if primary_phone else None,
-            "email_count": self.email_contacts.count(),
-            "phone_count": self.phone_contacts.count(),
-            "fingerprint_count": self.fingerprints.count(),
+            "primary_email": primary_email,
+            "primary_phone": None,  # Optimized: phone shown on detail only
+            "email_count": email_count,
+            "phone_count": phone_count,
+            "fingerprint_count": fingerprint_count,
             "tags": [
                 {"id": t.public_id, "name": t.name, "color": t.color}
                 for t in self.tags.all()
@@ -227,6 +287,13 @@ class Identity(BaseModel):
                 "last_seen": self.last_seen.isoformat() if self.last_seen else None,
                 "first_seen_source": self.first_seen_source,
                 "confidence_score": self.confidence_score,
+                "display_name": self.display_name,
+                "operator_notes": self.operator_notes,
+                "tags": [
+                    {"id": t.public_id, "name": t.name, "color": t.color}
+                    for t in self.tags.all()
+                ],
+                "lifecycle_global": self.lifecycle_global,
                 "email_count": self.email_contacts.count(),
                 "phone_count": self.phone_contacts.count(),
                 "fingerprint_count": self.fingerprints.count(),

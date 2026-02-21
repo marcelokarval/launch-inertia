@@ -1,16 +1,36 @@
 /**
  * Event timeline for the Identity detail tabs.
+ *
+ * Displays a unified timeline merging FingerprintEvents and CaptureEvents.
  */
 
-import { Activity, Eye, Edit, ExternalLink } from 'lucide-react'
+import { Chip } from '@heroui/react'
+import {
+  Activity, Eye, Edit, MousePointerClick,
+  AlertTriangle, FormInput, ScrollText,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TimelineEvent } from '@/types'
 
 function eventIcon(type: string) {
   if (type === 'page_view') return <Eye className="w-3.5 h-3.5 text-primary" />
-  if (type === 'form_submit') return <Edit className="w-3.5 h-3.5 text-success" />
-  if (type === 'click') return <ExternalLink className="w-3.5 h-3.5 text-warning" />
+  if (type === 'form_submit' || type === 'form_success')
+    return <Edit className="w-3.5 h-3.5 text-success" />
+  if (type === 'form_intent')
+    return <FormInput className="w-3.5 h-3.5 text-accent" />
+  if (type === 'form_attempt')
+    return <FormInput className="w-3.5 h-3.5 text-warning" />
+  if (type === 'form_error')
+    return <AlertTriangle className="w-3.5 h-3.5 text-danger" />
+  if (type === 'click' || type === 'cta_click')
+    return <MousePointerClick className="w-3.5 h-3.5 text-warning" />
+  if (type === 'scroll_milestone')
+    return <ScrollText className="w-3.5 h-3.5 text-default-500" />
   return <Activity className="w-3.5 h-3.5 text-default-400" />
+}
+
+function eventLabel(type: string): string {
+  return type.replace(/_/g, ' ')
 }
 
 interface Props {
@@ -42,9 +62,18 @@ export function TimelineSection({ events }: Props) {
             </div>
             <div className="flex-1 min-w-0 pt-1">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium text-foreground capitalize">
-                  {event.event_type.replace('_', ' ')}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-foreground capitalize">
+                    {eventLabel(event.event_type)}
+                  </p>
+                  <Chip
+                    size="sm"
+                    variant="soft"
+                    color={event.source === 'fingerprint' ? 'accent' : 'default'}
+                  >
+                    {event.source === 'fingerprint' ? 'FP' : 'Track'}
+                  </Chip>
+                </div>
                 <span className="text-xs text-default-400 whitespace-nowrap">
                   {new Date(event.timestamp).toLocaleString(undefined, {
                     day: '2-digit',

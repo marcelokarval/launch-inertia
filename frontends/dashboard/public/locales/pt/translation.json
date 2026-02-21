@@ -261,11 +261,24 @@
         "noEvents": "Nenhum evento registrado"
       },
       "tabs": {
+        "overview": "Visao Geral",
         "emails": "Emails",
         "phones": "Telefones",
         "devices": "Dispositivos",
         "attributions": "Atribuicao",
         "timeline": "Timeline"
+      },
+      "overview": {
+        "activityStats": "Estatisticas de Atividade",
+        "pageViews": "Visualizacoes",
+        "formIntents": "Intencoes de Formulario",
+        "submissions": "Envios",
+        "totalEvents": "Total de Eventos",
+        "knownHints": "Pistas Conhecidas",
+        "emailDomains": "Dominios de email",
+        "phonePrefixes": "Prefixos de telefone",
+        "recentActivity": "Atividade Recente",
+        "noActivity": "Sem atividade recente"
       }
     },
     "delete": {
