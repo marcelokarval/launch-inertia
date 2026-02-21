@@ -280,7 +280,11 @@
         "emailDomains": "Dominios de correo",
         "phonePrefixes": "Prefijos de telefono",
         "recentActivity": "Actividad Reciente",
-        "noActivity": "Sin actividad reciente"
+        "noActivity": "Sin actividad reciente",
+        "sessionHistory": "Historial de Sesiones",
+        "visitSessions": "Sesiones",
+        "uniquePages": "Paginas Unicas",
+        "daysActive": "Dias Activos"
       }
     },
     "delete": {

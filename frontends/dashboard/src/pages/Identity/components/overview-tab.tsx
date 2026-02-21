@@ -5,7 +5,10 @@
  */
 
 import { Card, Chip } from '@heroui/react'
-import { Eye, FormInput, CheckCircle, Activity, AtSign, Phone } from 'lucide-react'
+import {
+  Eye, FormInput, CheckCircle, Activity, AtSign, Phone,
+  RotateCcw, MapPin, CalendarDays,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { IdentityShowData, TimelineEvent } from '@/types'
 
@@ -86,6 +89,30 @@ export function OverviewTab({ identity }: Props) {
             icon={<Activity className="w-4 h-4 text-default-500" />}
             label={t('identities.show.overview.totalEvents', 'Total Events')}
             value={stats.total_events}
+          />
+        </div>
+      </div>
+
+      {/* Session History (P4.2) */}
+      <div>
+        <h4 className="text-sm font-semibold text-foreground mb-3">
+          {t('identities.show.overview.sessionHistory', 'Session History')}
+        </h4>
+        <div className="grid grid-cols-3 gap-3">
+          <StatMini
+            icon={<RotateCcw className="w-4 h-4 text-primary" />}
+            label={t('identities.show.overview.visitSessions', 'Sessions')}
+            value={stats.visit_sessions}
+          />
+          <StatMini
+            icon={<MapPin className="w-4 h-4 text-warning" />}
+            label={t('identities.show.overview.uniquePages', 'Unique Pages')}
+            value={stats.unique_pages}
+          />
+          <StatMini
+            icon={<CalendarDays className="w-4 h-4 text-success" />}
+            label={t('identities.show.overview.daysActive', 'Days Active')}
+            value={stats.days_active}
           />
         </div>
       </div>

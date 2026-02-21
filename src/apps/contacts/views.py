@@ -137,7 +137,9 @@ def show(request, public_id):
         "phone_prefixes": sorted(intent_hints["phone_prefixes"]),
     }
 
-    # Overview stats for P3.1 Overview tab
+    # Overview stats for P3.1 Overview tab + P4.2 session history
+    from django.db.models.functions import TruncDate
+
     all_events = CaptureEvent.objects.filter(identity=identity)
     identity_data["overview_stats"] = {
         "page_views": all_events.filter(
@@ -150,6 +152,15 @@ def show(request, public_id):
             event_type=CaptureEvent.EventType.FORM_SUCCESS,
         ).count(),
         "total_events": all_events.count(),
+        # P4.2 — Session history (computed from CaptureEvents)
+        "visit_sessions": all_events.values("capture_token").distinct().count(),
+        "unique_pages": all_events.values("page_path").distinct().count(),
+        "days_active": (
+            all_events.annotate(day=TruncDate("created_at"))
+            .values("day")
+            .distinct()
+            .count()
+        ),
     }
 
     return inertia_render(

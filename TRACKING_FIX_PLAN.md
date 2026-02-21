@@ -51,8 +51,8 @@ Root causes:
 
 ### P4 — Session-Identity Binding
 
-- [ ] P4.1: Evaluate django-user-sessions vs current IdentitySessionMiddleware approach
-- [ ] P4.2: Implement session history tracking on Identity (store visit count, pages visited)
+- [x] P4.1: Evaluate django-user-sessions → KEEP current IdentitySessionMiddleware (purpose-built for anonymous visitors, cached_db solves persistence)
+- [x] P4.2: Session history tracking — computed from CaptureEvents (visit_sessions, unique_pages, days_active) in overview_stats
 
 ## Verification Checklist
 

@@ -247,6 +247,12 @@ export interface IdentityOverviewStats {
   form_intents: number
   form_submissions: number
   total_events: number
+  /** Number of distinct capture sessions (visits). */
+  visit_sessions: number
+  /** Number of unique pages visited. */
+  unique_pages: number
+  /** Number of distinct days with activity. */
+  days_active: number
 }
 
 /** Full identity detail with channels, attributions, timeline for Show page. */
