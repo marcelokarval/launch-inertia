@@ -20,6 +20,35 @@ logger = logging.getLogger(__name__)
 CAPTURE_SESSION_TTL = 1800
 
 
+# Normalization maps for device-detector inconsistencies.
+# device-detector returns "GNU/Linux" from UA parsing, but Client Hints
+# send "Linux" — same OS, different names → duplicate DeviceProfiles.
+# Same for "Mac" (UA) vs "macOS" (Client Hints).
+_OS_NORMALIZE: dict[str, str] = {
+    "gnu/linux": "GNU/Linux",
+    "linux": "GNU/Linux",
+    "macos": "Mac",
+    "mac os x": "Mac",
+    "mac": "Mac",
+}
+
+_BROWSER_NORMALIZE: dict[str, str] = {
+    "chrome mobile": "Chrome Mobile",
+    "mobile safari": "Mobile Safari",
+    "samsung internet": "Samsung Internet",
+}
+
+
+def _normalize_os(os_family: str) -> str:
+    """Normalize OS family name for consistent dedup hashing."""
+    return _OS_NORMALIZE.get(os_family.lower().strip(), os_family)
+
+
+def _normalize_browser(browser_family: str) -> str:
+    """Normalize browser family name for consistent dedup hashing."""
+    return _BROWSER_NORMALIZE.get(browser_family.lower().strip(), browser_family)
+
+
 class DeviceProfileService:
     """Service for managing device profiles (dimension table)."""
 
@@ -57,9 +86,11 @@ class DeviceProfileService:
         Returns:
             DeviceProfile instance (existing or newly created).
         """
-        browser_family = device_data.get("browser_family", "unknown")
+        browser_family = _normalize_browser(
+            device_data.get("browser_family", "unknown")
+        )
+        os_family = _normalize_os(device_data.get("os_family", "unknown"))
         browser_version = device_data.get("browser_version", "")
-        os_family = device_data.get("os_family", "unknown")
         os_version = device_data.get("os_version", "")
         device_type = device_data.get("device_type", "unknown")
 

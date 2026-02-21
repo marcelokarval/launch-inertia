@@ -173,6 +173,74 @@ class TestDeviceProfileService:
         profile = DeviceProfileService.get_or_create_from_request(request)
         assert profile is not None
         assert profile.browser_family == "Firefox"
+        assert profile.os_family == "GNU/Linux"  # Normalized from "Linux"
+
+    def test_os_normalization_linux_variants(self):
+        """'Linux' and 'GNU/Linux' produce the same DeviceProfile."""
+        base = {
+            "browser_family": "Chrome",
+            "browser_version": "120",
+            "os_version": "",
+            "device_type": "desktop",
+        }
+        p1 = DeviceProfileService.get_or_create_from_data(
+            {**base, "os_family": "Linux"}
+        )
+        p2 = DeviceProfileService.get_or_create_from_data(
+            {**base, "os_family": "GNU/Linux"}
+        )
+        assert p1.pk == p2.pk
+        assert p1.os_family == "GNU/Linux"
+        assert DeviceProfile.objects.count() == 1
+
+    def test_os_normalization_mac_variants(self):
+        """'macOS', 'Mac OS X', and 'Mac' produce the same DeviceProfile."""
+        base = {
+            "browser_family": "Safari",
+            "browser_version": "17",
+            "os_version": "14.0",
+            "device_type": "desktop",
+        }
+        p1 = DeviceProfileService.get_or_create_from_data(
+            {**base, "os_family": "macOS"}
+        )
+        p2 = DeviceProfileService.get_or_create_from_data(
+            {**base, "os_family": "Mac OS X"}
+        )
+        p3 = DeviceProfileService.get_or_create_from_data({**base, "os_family": "Mac"})
+        assert p1.pk == p2.pk == p3.pk
+        assert p1.os_family == "Mac"
+        assert DeviceProfile.objects.count() == 1
+
+    def test_os_normalization_unknown_preserved(self):
+        """Unknown OS names are preserved as-is."""
+        profile = DeviceProfileService.get_or_create_from_data(
+            {
+                "browser_family": "Chrome",
+                "browser_version": "120",
+                "os_family": "HarmonyOS",
+                "os_version": "4.0",
+                "device_type": "smartphone",
+            }
+        )
+        assert profile.os_family == "HarmonyOS"
+
+    def test_browser_normalization(self):
+        """Browser names like 'Chrome Mobile' are normalized."""
+        base = {
+            "os_family": "Android",
+            "os_version": "14",
+            "device_type": "smartphone",
+            "browser_version": "120",
+        }
+        p1 = DeviceProfileService.get_or_create_from_data(
+            {**base, "browser_family": "chrome mobile"}
+        )
+        p2 = DeviceProfileService.get_or_create_from_data(
+            {**base, "browser_family": "Chrome Mobile"}
+        )
+        assert p1.pk == p2.pk
+        assert p1.browser_family == "Chrome Mobile"
 
 
 # ── CaptureEvent Model Tests ────────────────────────────────────────
