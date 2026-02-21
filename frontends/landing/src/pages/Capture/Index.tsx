@@ -1,8 +1,8 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 
 import CaptureLayout from '@/layouts/CaptureLayout';
 import CaptureForm from '@/components/CaptureForm';
-import type { CapturePageProps, HeadlinePart } from '@/types';
+import type { CapturePageProps, HeadlinePart, SharedProps } from '@/types';
 
 /**
  * Capture/Index — Lead capture landing page.
@@ -10,15 +10,15 @@ import type { CapturePageProps, HeadlinePart } from '@/types';
  * Dark theme, left-aligned, red accent highlights.
  * Visual parity with legacy inscrever-wh-rc-v3-layout.tsx.
  * All data comes from Django as Inertia props (campaign JSON fixture).
+ * FingerprintJS config comes from shared props (InertiaShareMiddleware).
  */
 export default function CaptureIndex({
   campaign,
-  fingerprint_api_key,
-  fingerprint_endpoint,
   capture_token,
   prefill,
   errors,
 }: CapturePageProps) {
+  const { fingerprint } = usePage<{ fingerprint?: SharedProps['fingerprint'] }>().props;
   const { headline, subheadline, badges, form, trust_badge, social_proof, meta } =
     campaign;
 
@@ -81,8 +81,8 @@ export default function CaptureIndex({
           <CaptureForm
             campaignSlug={campaign.slug}
             formConfig={form}
-            fingerprintApiKey={fingerprint_api_key}
-            fingerprintEndpoint={fingerprint_endpoint || undefined}
+            fingerprintApiKey={fingerprint?.api_key ?? ''}
+            fingerprintEndpoint={fingerprint?.endpoint || undefined}
             captureToken={capture_token}
             prefill={prefill}
             serverErrors={errors}

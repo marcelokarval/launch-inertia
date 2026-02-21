@@ -603,6 +603,15 @@ GEOIP_CITY_DB = os.getenv(
 )
 GEOIP_ASN_DB = os.getenv("GEOIP_ASN_DB", str(BASE_DIR / "data" / "GeoLite2-ASN.mmdb"))
 
+# =============================================================================
+# FINGERPRINTJS PRO
+# =============================================================================
+
+FINGERPRINT_API_KEY: str = os.getenv("FINGERPRINT_API_KEY", "")
+FINGERPRINT_ENDPOINT: str = os.getenv(
+    "FINGERPRINT_ENDPOINT", "https://finger.arthuragrelli.com"
+)
+
 
 def environment_callback(request):
     """Return environment badge for admin."""

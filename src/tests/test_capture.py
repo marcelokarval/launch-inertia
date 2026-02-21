@@ -362,7 +362,7 @@ class TestCaptureView:
         body = json.loads(response.content)
         assert body["component"] == "Capture/Index"
         assert "campaign" in body["props"]
-        assert "fingerprint_api_key" in body["props"]
+        assert "capture_token" in body["props"]
 
     def test_get_unknown_slug_redirects_to_default(self):
         """GET with unknown slug should redirect to default campaign."""

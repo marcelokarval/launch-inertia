@@ -5,13 +5,17 @@
  * Keep in sync with backend view return values.
  */
 
-/** Shared props injected by InertiaShareMiddleware (if any apply to landing) */
+/** Shared props injected by InertiaShareMiddleware for all landing pages */
 export interface SharedProps {
   flash?: {
     success?: string;
     error?: string;
     warning?: string;
     info?: string;
+  };
+  fingerprint?: {
+    api_key: string;
+    endpoint: string;
   };
   errors?: Record<string, string>;
 }
@@ -100,9 +104,6 @@ export interface PrefillData {
 /** Props for the Capture/Index page */
 export interface CapturePageProps extends SharedProps {
   campaign: CampaignProps;
-  fingerprint_api_key: string;
-  /** Custom FingerprintJS endpoint (proxy subdomain). Empty = use default. */
-  fingerprint_endpoint: string;
   /** Server-generated UUID linking events of the same page load session */
   capture_token: string;
   /** Pre-fill data from session identity or capture-intent hints */

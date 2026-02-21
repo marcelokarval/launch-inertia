@@ -271,13 +271,8 @@ def _render_capture_page(
     1. If session Identity has ContactEmail/ContactPhone → use those
     2. Fallback to session email_hint/phone_hint (from capture-intent beacon)
     """
-    fingerprint_api_key = os.getenv("FINGERPRINT_API_KEY", "")
-    fingerprint_endpoint = os.getenv("FINGERPRINT_ENDPOINT", "")
-
     props: dict[str, Any] = {
         "campaign": _build_campaign_props(campaign, campaign_slug),
-        "fingerprint_api_key": fingerprint_api_key,
-        "fingerprint_endpoint": fingerprint_endpoint,
         "capture_token": capture_token,
     }
 

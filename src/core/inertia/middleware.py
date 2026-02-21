@@ -132,6 +132,7 @@ class InertiaShareMiddleware:
                 },
                 app=lambda: self._get_app_config(request),
                 locale=lambda: self._get_locale_data(request),
+                fingerprint=lambda: self._get_fingerprint_config(),
             )
 
         return self.get_response(request)
@@ -207,6 +208,13 @@ class InertiaShareMiddleware:
         """Get locale information for frontend i18n."""
         return {
             "language": getattr(request, "LANGUAGE_CODE", "pt"),
+        }
+
+    def _get_fingerprint_config(self) -> dict:
+        """Get FingerprintJS Pro configuration for landing pages."""
+        return {
+            "api_key": getattr(settings, "FINGERPRINT_API_KEY", ""),
+            "endpoint": getattr(settings, "FINGERPRINT_ENDPOINT", ""),
         }
 
 
