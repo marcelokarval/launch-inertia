@@ -121,28 +121,64 @@ def find_merge_candidates() -> dict:
     retry_kwargs={"max_retries": 3, "countdown": 60},
     acks_late=True,
 )
-def merge_identities(source_id: int, target_id: int) -> dict:
+def merge_identities(identity_a_id: int, identity_b_id: int) -> dict:
     """
-    Merge source identity into target identity.
+    Merge two identities — oldest survives.
+
+    Direction is normalized automatically: the identity with the
+    earlier created_at becomes the target (survivor), the newer one
+    becomes the source (merged away). This ensures consistent behavior
+    regardless of which order callers pass the IDs.
 
     Args:
-        source_id: Primary key of the source Identity.
-        target_id: Primary key of the target Identity.
+        identity_a_id: Primary key of one Identity.
+        identity_b_id: Primary key of the other Identity.
     """
     try:
         from apps.contacts.identity.models import Identity
-        from apps.contacts.identity.services.merge_service import MergeService
+        from apps.contacts.identity.services.merge_service import (
+            MergeService,
+            MergeValidationError,
+        )
 
-        source = Identity.objects.filter(id=source_id).first()
-        target = Identity.objects.filter(id=target_id).first()
+        identity_a = Identity.objects.filter(id=identity_a_id).first()
+        identity_b = Identity.objects.filter(id=identity_b_id).first()
 
-        if not source or not target:
+        if not identity_a or not identity_b:
             return {
                 "status": "error",
-                "message": f"Identity not found: source={source_id}, target={target_id}",
+                "message": (
+                    f"Identity not found: a={identity_a_id}, b={identity_b_id}"
+                ),
             }
 
-        stats = MergeService.execute_merge(source, target)
+        if identity_a.pk == identity_b.pk:
+            return {"status": "skipped", "reason": "same_identity"}
+
+        # Normalize direction: oldest survives (becomes target)
+        if identity_a.created_at <= identity_b.created_at:
+            target, source = identity_a, identity_b
+        else:
+            target, source = identity_b, identity_a
+
+        try:
+            stats = MergeService.execute_merge(source, target)
+        except MergeValidationError as e:
+            # Idempotent: if source is already merged, treat as success
+            if "not active" in str(e).lower() or "already merged" in str(e).lower():
+                logger.info(
+                    "Merge skipped (idempotent): %s → %s: %s",
+                    source.public_id,
+                    target.public_id,
+                    str(e),
+                )
+                return {
+                    "status": "skipped",
+                    "reason": str(e),
+                    "source": source.public_id,
+                    "target": target.public_id,
+                }
+            raise
 
         logger.info("Merged identity %s into %s", source.public_id, target.public_id)
         return {
@@ -153,7 +189,9 @@ def merge_identities(source_id: int, target_id: int) -> dict:
         }
 
     except Exception as e:
-        logger.exception("Error merging %d -> %d: %s", source_id, target_id, str(e))
+        logger.exception(
+            "Error merging %d / %d: %s", identity_a_id, identity_b_id, str(e)
+        )
         raise
 
 
@@ -438,6 +476,77 @@ def bulk_recalculate_lifecycle(batch_size: int = 100) -> dict:
 
     except Exception as e:
         logger.exception("Error in bulk lifecycle recalculation: %s", str(e))
+        raise
+
+
+@shared_task(
+    name="identity.redirect_merged_sessions",
+    queue="identity_processing",
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 2, "countdown": 30},
+    acks_late=True,
+)
+def redirect_merged_sessions(
+    source_pk: int, target_pk: int, target_public_id: str
+) -> dict:
+    """Redirect active sessions from a merged-away identity to the survivor.
+
+    After a merge, other browser sessions may still reference the old
+    (source) identity_pk in their session data. Without this, the
+    IdentitySessionMiddleware would fail to recover the identity and
+    create a brand new one — defeating the purpose of the merge.
+
+    Scans the Django session store (DB-backed via cached_db) for
+    sessions containing the source PK and updates them to point to
+    the target (survivor).
+
+    Args:
+        source_pk: PK of the merged-away (source) identity.
+        target_pk: PK of the surviving (target) identity.
+        target_public_id: public_id of the surviving identity.
+    """
+    try:
+        from django.contrib.sessions.models import Session
+        from django.utils import timezone as tz
+
+        # Only check non-expired sessions
+        active_sessions = Session.objects.filter(expire_date__gt=tz.now())
+
+        redirected = 0
+        for session in active_sessions.iterator(chunk_size=100):
+            try:
+                data = session.get_decoded()
+                if data.get("identity_pk") == source_pk:
+                    data["identity_pk"] = target_pk
+                    data["identity_id"] = target_public_id
+                    # Re-encode and save
+                    session.session_data = Session.objects.encode(data)
+                    session.save(update_fields=["session_data"])
+                    redirected += 1
+            except Exception:
+                # Individual session decode failures are non-critical
+                continue
+
+        if redirected:
+            logger.info(
+                "Redirected %d sessions from merged identity PK=%d to PK=%d (%s)",
+                redirected,
+                source_pk,
+                target_pk,
+                target_public_id,
+            )
+
+        return {
+            "status": "success",
+            "sessions_redirected": redirected,
+            "source_pk": source_pk,
+            "target_pk": target_pk,
+        }
+
+    except Exception as e:
+        logger.exception(
+            "Error redirecting sessions for merged identity %d: %s", source_pk, str(e)
+        )
         raise
 
 

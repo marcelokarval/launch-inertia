@@ -115,7 +115,53 @@ class MergeService:
         stats["submissions_transferred"] = submissions.count()
         submissions.update(identity=target)
 
+        # Transfer attribution records
+        attributions = source.attributions.all()
+        stats["attributions_transferred"] = attributions.count()
+        attributions.update(identity=target)
+
         return stats
+
+    # ── Enriched Field Transfer ────────────────────────────────────────
+
+    @staticmethod
+    def _transfer_enriched_fields(source: Identity, target: Identity) -> None:
+        """Transfer enriched fields from source to target.
+
+        Preserves the richer value:
+        - display_name: keep target's if non-empty, else take source's
+        - operator_notes: append source's notes to target's (if any)
+        - tags: union source's tags into target's (M2M)
+
+        Called inside execute_merge's atomic transaction.
+        """
+        update_fields: list[str] = []
+
+        # display_name: prefer target's, fill from source if target is empty
+        if not target.display_name and source.display_name:
+            target.display_name = source.display_name
+            update_fields.append("display_name")
+
+        # operator_notes: append source notes (if any) to target
+        if source.operator_notes:
+            if target.operator_notes:
+                target.operator_notes = (
+                    f"{target.operator_notes}\n\n"
+                    f"--- Merged from {source.public_id} ---\n"
+                    f"{source.operator_notes}"
+                )
+            else:
+                target.operator_notes = source.operator_notes
+            update_fields.append("operator_notes")
+
+        if update_fields:
+            update_fields.append("updated_at")
+            target.save(update_fields=update_fields)
+
+        # tags: union (M2M — add source's tags to target)
+        source_tags = source.tags.all()
+        if source_tags.exists():
+            target.tags.add(*source_tags)
 
     # ── Execute Merge ────────────────────────────────────────────────
 
@@ -126,13 +172,14 @@ class MergeService:
         Execute a full identity merge.
 
         Steps:
-        1. Validate preconditions
-        2. Fire pre-merge signal
-        3. Transfer all relationships
-        4. Mark source as MERGED
-        5. Update history for both
-        6. Fire post-merge signal
-        7. Update target last_seen
+        1. Lock both rows with select_for_update (prevents concurrent merges)
+        2. Re-validate preconditions against locked rows
+        3. Fire pre-merge signal
+        4. Transfer all relationships (including Attribution, tags, display_name)
+        5. Mark source as MERGED
+        6. Update history for both
+        7. Fire post-merge signal
+        8. Update target last_seen
 
         Args:
             source: Identity to merge FROM (will be deactivated).
@@ -144,10 +191,26 @@ class MergeService:
         Raises:
             MergeValidationError: If preconditions fail.
         """
-        # 1. Validate
+        # 1. Lock both rows to prevent concurrent merges.
+        #    Order by PK to avoid deadlocks (always lock lower PK first).
+        pks = sorted([source.pk, target.pk])
+        locked = list(
+            Identity.objects.filter(pk__in=pks).select_for_update().order_by("pk")
+        )
+        if len(locked) != 2:
+            raise MergeValidationError(
+                f"Could not lock both identities: "
+                f"source={source.pk}, target={target.pk}"
+            )
+
+        # Refresh source/target from locked rows (DB state, not stale in-memory)
+        source = locked[0] if locked[0].pk == source.pk else locked[1]
+        target = locked[0] if locked[0].pk == target.pk else locked[1]
+
+        # 2. Re-validate against locked (fresh) rows
         cls.validate_merge_conditions(source, target)
 
-        # 2. Pre-merge signal
+        # 3. Pre-merge signal
         from apps.contacts.identity.signals_def import identity_pre_merge
 
         identity_pre_merge.send(
@@ -156,13 +219,16 @@ class MergeService:
             target=target,
         )
 
-        # 3. Transfer relationships
+        # 4. Transfer relationships
         stats = cls.transfer_relationships(source, target)
 
-        # 4. Mark source as merged
+        # 4b. Transfer enriched fields (display_name, operator_notes, tags)
+        cls._transfer_enriched_fields(source, target)
+
+        # 5. Mark source as merged
         source.mark_as_merged(target)
 
-        # 5. Update history
+        # 6. Update history
         IdentityHistory.objects.create(
             identity=source,
             operation_type=IdentityHistory.MERGE,
@@ -180,7 +246,7 @@ class MergeService:
             },
         )
 
-        # 6. Post-merge signal
+        # 7. Post-merge signal
         from apps.contacts.identity.signals_def import identity_post_merge
 
         identity_post_merge.send(
@@ -190,7 +256,7 @@ class MergeService:
             stats=stats,
         )
 
-        # 7. Update target
+        # 8. Update target
         target.update_last_seen()
 
         logger.info(

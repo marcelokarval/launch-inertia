@@ -65,8 +65,9 @@ def identity_post_save(sender, instance, created, **kwargs):
 @receiver(identity_post_merge)
 def identity_post_merge_handler(sender, source, target, stats, **kwargs):
     """
-    After an identity merge, recalculate confidence and analyze graph
-    for the surviving (target) identity.
+    After an identity merge:
+    1. Recalculate confidence and analyze graph for survivor
+    2. Redirect any active sessions that pointed to the merged-away source
     """
     logger.info(
         "Identity merge completed: %s -> %s",
@@ -80,3 +81,10 @@ def identity_post_merge_handler(sender, source, target, stats, **kwargs):
     calc_confidence.delay(target.id)
     analyze_graph.delay(target.id)
     recalc_lifecycle.delay(target.id)
+
+    # Redirect sessions that referenced the merged-away identity.
+    # This ensures other browser sessions for the same person now
+    # resolve to the surviving identity instead of creating a new one.
+    from apps.contacts.identity.tasks import redirect_merged_sessions
+
+    redirect_merged_sessions.delay(source.pk, target.pk, target.public_id)

@@ -1069,8 +1069,8 @@ def fp_resolve(request: HttpRequest) -> HttpResponse:
                     merge_identities_from_fingerprint,
                 )
 
-                # Merge direction: session identity (newer, anonymous) → FP identity (older, richer)
-                # Oldest survives — let the task figure out direction
+                # Direction normalized inside merge_identities task
+                # (oldest survives regardless of argument order)
                 merge_identities_from_fingerprint.delay(
                     identity_pk, fp_identity.identity_id
                 )

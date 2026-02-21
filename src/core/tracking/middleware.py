@@ -164,21 +164,24 @@ class VisitorMiddleware:
         # DB lookup
         try:
             from apps.contacts.fingerprint.models import FingerprintIdentity
+            from apps.contacts.identity.models import Identity
 
-            fp = FingerprintIdentity.objects.filter(hash=visitor_id).first()
+            fp = (
+                FingerprintIdentity.objects.filter(hash=visitor_id)
+                .select_related("identity")
+                .first()
+            )
             if fp:
                 req.fingerprint_identity = fp
-                # Resolve identity via the junction table
-                identity = None
-                try:
-                    contact = fp.contacts.first()  # type: ignore[attr-defined]
-                    if contact and hasattr(contact, "identity"):
-                        identity = contact.identity  # type: ignore[attr-defined]
-                except Exception:
-                    pass
-
-                if identity:
-                    req.identity = identity
+                # Resolve identity via direct FK (canonical path)
+                # Only use identity if it's still active (not merged/deleted)
+                if (
+                    fp.identity_id
+                    and fp.identity
+                    and fp.identity.status == Identity.ACTIVE
+                    and not fp.identity.is_deleted
+                ):
+                    req.identity = fp.identity
 
                 req.is_known_visitor = True
 
@@ -187,7 +190,7 @@ class VisitorMiddleware:
                     f"visitor:{visitor_id}",
                     {
                         "fp_id": fp.pk,
-                        "identity_id": identity.pk if identity else None,
+                        "identity_id": fp.identity_id,
                     },
                     timeout=_VISITOR_CACHE_TTL,
                 )
@@ -198,7 +201,12 @@ class VisitorMiddleware:
             logger.debug("Visitor identification failed for %s", visitor_id[:8])
 
     def _load_cached_visitor(self, request: TrackedHttpRequest, cached: dict) -> None:
-        """Load visitor from cached data."""
+        """Load visitor from cached data.
+
+        Validates that the cached identity is still ACTIVE.
+        If the identity was merged, invalidates cache and returns
+        without setting identity (will be re-resolved from DB).
+        """
         from apps.contacts.fingerprint.models import FingerprintIdentity
         from apps.contacts.identity.models import Identity
 
@@ -207,7 +215,17 @@ class VisitorMiddleware:
             request.fingerprint_identity = FingerprintIdentity.objects.get(pk=fp_id)
             identity_id = cached.get("identity_id")
             if identity_id:
-                request.identity = Identity.objects.get(pk=identity_id)
+                try:
+                    identity = Identity.objects.get(
+                        pk=identity_id,
+                        status=Identity.ACTIVE,
+                        is_deleted=False,
+                    )
+                    request.identity = identity
+                except Identity.DoesNotExist:
+                    # Identity was merged or deleted — invalidate cache
+                    cache.delete(f"visitor:{request.visitor_id}")
+                    raise  # Force DB re-lookup in caller
             request.is_known_visitor = True
 
     def _profile_device(self, request: HttpRequest) -> None:

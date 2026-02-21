@@ -1090,13 +1090,21 @@ class TestIdentityTasks:
         assert result["status"] == "error"
 
     def test_merge_identities_task(self):
+        """Test merge_identities task with direction normalization.
+
+        The task normalizes direction: oldest survives. Since `older` is
+        created first, it becomes the survivor (target). The email on
+        `newer` gets transferred to `older`.
+        """
         from apps.contacts.identity.tasks import merge_identities
 
-        source = Identity.objects.create(status=Identity.ACTIVE)
-        target = Identity.objects.create(status=Identity.ACTIVE)
-        ContactEmail.objects.create(value="task_merge@example.com", identity=source)
+        older = Identity.objects.create(status=Identity.ACTIVE)
+        newer = Identity.objects.create(status=Identity.ACTIVE)
+        # Put the email on the NEWER identity so it gets transferred
+        ContactEmail.objects.create(value="task_merge@example.com", identity=newer)
 
-        result = merge_identities(source.id, target.id)
+        # Direction normalized: older survives regardless of argument order
+        result = merge_identities(newer.id, older.id)
         assert result["status"] == "success"
         assert result["stats"]["emails_transferred"] == 1
 
@@ -1285,6 +1293,248 @@ class TestFingerprintTasks:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# ELIMINATED: Contact.identity FK and AdditionalEmail/AdditionalPhone tests
-# removed in Phase 0 cleanup. Contact model has been removed.
+# P2: IDENTITY MERGE HARDENING TESTS
 # ═══════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.django_db
+class TestMergeServiceP2:
+    """Tests for P2 merge improvements: locking, direction, enriched fields."""
+
+    def test_select_for_update_prevents_double_merge(self):
+        """Concurrent merge of same source is prevented by validation."""
+        from apps.contacts.identity.services.merge_service import (
+            MergeService,
+            MergeValidationError,
+        )
+
+        source = Identity.objects.create(status=Identity.ACTIVE)
+        target = Identity.objects.create(status=Identity.ACTIVE)
+
+        # First merge succeeds
+        MergeService.execute_merge(source, target)
+        source.refresh_from_db()
+        assert source.status == Identity.MERGED
+
+        # Second merge of same source fails gracefully
+        source_stale = Identity.objects.get(pk=source.pk)
+        target2 = Identity.objects.create(status=Identity.ACTIVE)
+        with pytest.raises(MergeValidationError, match="not active"):
+            MergeService.execute_merge(source_stale, target2)
+
+    def test_direction_normalization_oldest_survives(self):
+        """merge_identities task normalizes direction: oldest survives."""
+        from apps.contacts.identity.tasks import merge_identities
+
+        older = Identity.objects.create(status=Identity.ACTIVE)
+        newer = Identity.objects.create(status=Identity.ACTIVE)
+
+        # Pass newer as first arg — direction should still be normalized
+        result = merge_identities(newer.id, older.id)
+        assert result["status"] == "success"
+        assert result["source"] == newer.public_id
+        assert result["target"] == older.public_id
+
+        newer.refresh_from_db()
+        older.refresh_from_db()
+        assert newer.status == Identity.MERGED
+        assert newer.merged_into == older
+        assert older.status == Identity.ACTIVE
+
+    def test_direction_normalization_same_identity_skipped(self):
+        """Merging an identity into itself is skipped."""
+        from apps.contacts.identity.tasks import merge_identities
+
+        identity = Identity.objects.create(status=Identity.ACTIVE)
+        result = merge_identities(identity.id, identity.id)
+        assert result["status"] == "skipped"
+        assert result["reason"] == "same_identity"
+
+    def test_idempotent_merge_already_merged(self):
+        """Re-merging an already-merged source is treated as idempotent skip."""
+        from apps.contacts.identity.tasks import merge_identities
+
+        older = Identity.objects.create(status=Identity.ACTIVE)
+        newer = Identity.objects.create(status=Identity.ACTIVE)
+
+        # First merge succeeds
+        result1 = merge_identities(newer.id, older.id)
+        assert result1["status"] == "success"
+
+        # Second merge skipped (idempotent)
+        result2 = merge_identities(newer.id, older.id)
+        assert result2["status"] == "skipped"
+
+    def test_display_name_transferred_to_empty_target(self):
+        """Source's display_name fills target's empty display_name."""
+        from apps.contacts.identity.services.merge_service import MergeService
+
+        source = Identity.objects.create(
+            status=Identity.ACTIVE, display_name="João Silva"
+        )
+        target = Identity.objects.create(status=Identity.ACTIVE, display_name="")
+
+        MergeService.execute_merge(source, target)
+        target.refresh_from_db()
+        assert target.display_name == "João Silva"
+
+    def test_display_name_target_preserved(self):
+        """Target's non-empty display_name is NOT overwritten by source's."""
+        from apps.contacts.identity.services.merge_service import MergeService
+
+        source = Identity.objects.create(
+            status=Identity.ACTIVE, display_name="Source Name"
+        )
+        target = Identity.objects.create(
+            status=Identity.ACTIVE, display_name="Target Name"
+        )
+
+        MergeService.execute_merge(source, target)
+        target.refresh_from_db()
+        assert target.display_name == "Target Name"
+
+    def test_operator_notes_merged(self):
+        """Source's operator_notes are appended to target's."""
+        from apps.contacts.identity.services.merge_service import MergeService
+
+        source = Identity.objects.create(
+            status=Identity.ACTIVE, operator_notes="Note from source"
+        )
+        target = Identity.objects.create(
+            status=Identity.ACTIVE, operator_notes="Note from target"
+        )
+
+        MergeService.execute_merge(source, target)
+        target.refresh_from_db()
+        assert "Note from target" in target.operator_notes
+        assert "Note from source" in target.operator_notes
+        assert source.public_id in target.operator_notes
+
+    def test_operator_notes_source_only(self):
+        """Source's notes fill empty target notes (no separator)."""
+        from apps.contacts.identity.services.merge_service import MergeService
+
+        source = Identity.objects.create(
+            status=Identity.ACTIVE, operator_notes="Only note"
+        )
+        target = Identity.objects.create(status=Identity.ACTIVE, operator_notes="")
+
+        MergeService.execute_merge(source, target)
+        target.refresh_from_db()
+        assert target.operator_notes == "Only note"
+
+    def test_tags_union(self):
+        """Source's tags are added to target's (union)."""
+        from apps.contacts.identity.services.merge_service import MergeService
+        from apps.contacts.models import Tag
+
+        tag_a = Tag.objects.create(name="tag_a")
+        tag_b = Tag.objects.create(name="tag_b")
+        tag_c = Tag.objects.create(name="tag_c")
+
+        source = Identity.objects.create(status=Identity.ACTIVE)
+        source.tags.add(tag_a, tag_b)
+
+        target = Identity.objects.create(status=Identity.ACTIVE)
+        target.tags.add(tag_b, tag_c)
+
+        MergeService.execute_merge(source, target)
+        target_tags = set(target.tags.values_list("name", flat=True))
+        assert target_tags == {"tag_a", "tag_b", "tag_c"}
+
+    def test_attribution_transferred(self):
+        """Attribution records are transferred from source to target."""
+        from apps.contacts.identity.services.merge_service import MergeService
+
+        source = Identity.objects.create(status=Identity.ACTIVE)
+        target = Identity.objects.create(status=Identity.ACTIVE)
+        Attribution.objects.create(
+            identity=source, utm_source="google", utm_medium="cpc"
+        )
+
+        stats = MergeService.execute_merge(source, target)
+        assert stats["attributions_transferred"] == 1
+        assert Attribution.objects.filter(identity=target).count() == 1
+        assert Attribution.objects.filter(identity=source).count() == 0
+
+
+@pytest.mark.django_db
+class TestSessionRedirect:
+    """Tests for session redirection after merge."""
+
+    def test_redirect_merged_sessions_task(self):
+        """Sessions pointing to merged identity are updated."""
+        from apps.contacts.identity.tasks import redirect_merged_sessions
+        from django.contrib.sessions.backends.db import SessionStore
+
+        source = Identity.objects.create(status=Identity.ACTIVE)
+        target = Identity.objects.create(status=Identity.ACTIVE)
+
+        # Create a session referencing the source
+        store = SessionStore()
+        store["identity_pk"] = source.pk
+        store["identity_id"] = source.public_id
+        store.create()
+
+        result = redirect_merged_sessions(source.pk, target.pk, target.public_id)
+        assert result["status"] == "success"
+        assert result["sessions_redirected"] == 1
+
+        # Verify session was updated
+        updated_store = SessionStore(session_key=store.session_key)
+        assert updated_store["identity_pk"] == target.pk
+        assert updated_store["identity_id"] == target.public_id
+
+    def test_redirect_no_matching_sessions(self):
+        """No error when no sessions match."""
+        from apps.contacts.identity.tasks import redirect_merged_sessions
+
+        result = redirect_merged_sessions(99999, 99998, "idt_fake")
+        assert result["status"] == "success"
+        assert result["sessions_redirected"] == 0
+
+
+@pytest.mark.django_db
+class TestVisitorMiddlewareFKResolution:
+    """Tests for VisitorMiddleware using fp.identity FK directly."""
+
+    def test_fingerprint_resolves_via_fk(self):
+        """VisitorMiddleware resolves identity via fp.identity FK."""
+        from core.tracking.middleware import VisitorMiddleware
+        from django.test import RequestFactory
+
+        identity = Identity.objects.create(status=Identity.ACTIVE)
+        fp = FingerprintIdentity.objects.create(hash="test_fp_123", identity=identity)
+
+        factory = RequestFactory()
+        request = factory.get("/inscrever-test/")
+        request.COOKIES["fpjs_vid"] = fp.hash
+
+        middleware = VisitorMiddleware(lambda r: None)
+        middleware._set_empty_defaults(request)
+
+        with patch.object(middleware, "_load_cached_visitor", side_effect=Exception):
+            # Force DB lookup (bypass cache)
+            middleware._identify_visitor(request)
+
+        assert request.identity == identity  # type: ignore[attr-defined]
+        assert request.fingerprint_identity == fp  # type: ignore[attr-defined]
+
+    def test_merged_identity_cache_invalidated(self):
+        """Cached identity that was merged is invalidated."""
+        from core.tracking.middleware import VisitorMiddleware
+        from django.test import RequestFactory
+
+        identity = Identity.objects.create(status=Identity.MERGED)
+        fp = FingerprintIdentity.objects.create(hash="test_fp_456", identity=identity)
+
+        factory = RequestFactory()
+        request = factory.get("/inscrever-test/")
+        request.COOKIES["fpjs_vid"] = fp.hash
+
+        middleware = VisitorMiddleware(lambda r: None)
+        middleware._set_empty_defaults(request)
+        middleware._identify_visitor(request)
+
+        # Merged identity should NOT be set (filtered by status=ACTIVE in cache load)
+        assert request.identity is None  # type: ignore[attr-defined]
