@@ -40,6 +40,8 @@ def index(request):
     tag_slug = request.GET.get("tag") or None
 
     from apps.contacts.email.models import ContactEmail
+    from apps.contacts.phone.models import ContactPhone
+    from core.tracking.models import CaptureEvent
 
     qs = (
         Identity.objects.filter(is_deleted=False, status=Identity.ACTIVE)
@@ -52,6 +54,16 @@ def index(request):
                     identity_id=OuterRef("pk"),
                 ).values("value")[:1]
             ),
+            _primary_phone=Subquery(
+                ContactPhone.objects.filter(
+                    identity_id=OuterRef("pk"),
+                ).values("value")[:1]
+            ),
+            _page_view_count=Count(
+                "tracking_events",
+                filter=Q(tracking_events__event_type=CaptureEvent.EventType.PAGE_VIEW),
+            ),
+            _total_event_count=Count("tracking_events"),
         )
         .prefetch_related("tags")
     )

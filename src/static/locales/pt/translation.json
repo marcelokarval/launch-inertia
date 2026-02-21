@@ -184,13 +184,20 @@
       "searchPlaceholder": "Buscar identidades...",
       "table": {
         "name": "Nome",
+        "displayName": "Nome de Exibicao",
         "contact": "Contato",
+        "channels": "Canais",
+        "activity": "Atividade",
+        "pageViews": "Visualizacoes",
+        "totalEvents": "Total de eventos",
         "status": "Status",
         "tags": "Tags",
+        "lastSeen": "Ultima Atividade",
         "actions": "Acoes",
         "edit": "Editar",
         "identity": "Identidade"
       },
+      "anonymous": "Anonimo",
       "noIdentity": "Sem identidade",
       "emptyTitle": "Nenhuma identidade ainda",
       "emptyDesc": "Comece a construir sua audiencia importando sua primeira identidade.",
@@ -249,7 +256,9 @@
       },
       "channels": {
         "noEmails": "Sem canais de email",
-        "noPhones": "Sem canais de telefone"
+        "noPhones": "Sem canais de telefone",
+        "knownDomains": "Dominios de email conhecidos da atividade no formulario",
+        "knownPrefixes": "Prefixos de telefone conhecidos da atividade no formulario"
       },
       "devices": {
         "noDevices": "Nenhum dispositivo rastreado",

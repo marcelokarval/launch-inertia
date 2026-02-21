@@ -184,13 +184,20 @@
       "searchPlaceholder": "Search identities...",
       "table": {
         "name": "Name",
+        "displayName": "Display Name",
         "contact": "Contact",
+        "channels": "Channels",
+        "activity": "Activity",
+        "pageViews": "Page views",
+        "totalEvents": "Total events",
         "status": "Status",
         "tags": "Tags",
+        "lastSeen": "Last Seen",
         "actions": "Actions",
         "edit": "Edit",
         "identity": "Identity"
       },
+      "anonymous": "Anonymous",
       "noIdentity": "No identity",
       "emptyTitle": "No identities yet",
       "emptyDesc": "Start building your audience by importing your first identity.",
@@ -249,7 +256,9 @@
       },
       "channels": {
         "noEmails": "No email channels",
-        "noPhones": "No phone channels"
+        "noPhones": "No phone channels",
+        "knownDomains": "Known email domains from form activity",
+        "knownPrefixes": "Known phone prefixes from form activity"
       },
       "devices": {
         "noDevices": "No devices tracked",

@@ -256,16 +256,31 @@ class Identity(BaseModel):
             email_obj = self.email_contacts.first()
             primary_email = email_obj.value if email_obj else None
 
+        primary_phone = getattr(self, "_primary_phone", ...)
+        if primary_phone is ...:
+            phone_obj = self.phone_contacts.first()
+            primary_phone = phone_obj.value if phone_obj else None
+
+        page_view_count = getattr(self, "_page_view_count", None)
+        if page_view_count is None:
+            page_view_count = 0
+
+        total_event_count = getattr(self, "_total_event_count", None)
+        if total_event_count is None:
+            total_event_count = 0
+
         return {
             "id": self.public_id,
             "display_name": self.display_name,
             "status": self.status,
             "confidence_score": self.confidence_score,
             "primary_email": primary_email,
-            "primary_phone": None,  # Optimized: phone shown on detail only
+            "primary_phone": primary_phone,
             "email_count": email_count,
             "phone_count": phone_count,
             "fingerprint_count": fingerprint_count,
+            "page_view_count": page_view_count,
+            "total_event_count": total_event_count,
             "tags": [
                 {"id": t.public_id, "name": t.name, "color": t.color}
                 for t in self.tags.all()

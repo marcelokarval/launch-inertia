@@ -93,6 +93,8 @@ export interface IdentityListItem {
   email_count: number
   phone_count: number
   fingerprint_count: number
+  page_view_count: number
+  total_event_count: number
   tags: Tag[]
   lifecycle_global: Record<string, unknown>
   last_seen: string | null

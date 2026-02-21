@@ -1,5 +1,9 @@
 /**
  * DailyTrendChart — Area chart showing leads + page views over last 30 days.
+ *
+ * Uses inline style colors (not CSS vars) for Recharts compatibility.
+ * Recharts SVG elements don't resolve CSS custom properties reliably
+ * across theme changes, so we use fixed colors with good contrast in both modes.
  */
 
 import { Card } from '@heroui/react';
@@ -11,9 +15,19 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import type { DailyTrendPoint } from '@/types';
+
+/** Fixed colors that work in both light and dark themes. */
+const COLORS = {
+  leads: '#7c3aed',       // vivid purple — always visible
+  pageViews: '#6b7280',   // neutral gray-500 — good in both
+  unique: '#10b981',      // emerald-500 — good in both
+  grid: '#d1d5db',        // gray-300
+  tick: '#9ca3af',        // gray-400
+} as const;
 
 interface Props {
   data: DailyTrendPoint[];
@@ -41,28 +55,28 @@ export function DailyTrendChart({ data }: Props) {
             <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradientLeads" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--heroui-primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--heroui-primary))" stopOpacity={0} />
+                  <stop offset="5%" stopColor={COLORS.leads} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={COLORS.leads} stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradientViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--heroui-default-400))" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="hsl(var(--heroui-default-400))" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradientUnique" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--heroui-success))" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="hsl(var(--heroui-success))" stopOpacity={0} />
-                  </linearGradient>
+                  <stop offset="5%" stopColor={COLORS.pageViews} stopOpacity={0.15} />
+                  <stop offset="95%" stopColor={COLORS.pageViews} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradientUnique" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={COLORS.unique} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={COLORS.unique} stopOpacity={0} />
+                </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--heroui-default-200))" />
+              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} strokeOpacity={0.4} />
               <XAxis
                 dataKey="date"
                 tickFormatter={formatDate}
-                tick={{ fontSize: 11, fill: 'hsl(var(--heroui-default-500))' }}
+                tick={{ fontSize: 11, fill: COLORS.tick }}
                 interval="preserveStartEnd"
                 tickCount={7}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: 'hsl(var(--heroui-default-500))' }}
+                tick={{ fontSize: 11, fill: COLORS.tick }}
                 width={40}
               />
               <Tooltip
@@ -74,14 +88,17 @@ export function DailyTrendChart({ data }: Props) {
                   color: 'hsl(var(--heroui-foreground))',
                 }}
                 labelStyle={{ color: 'hsl(var(--heroui-foreground))' }}
-                itemStyle={{ color: 'hsl(var(--heroui-default-700))' }}
+                itemStyle={{ color: 'hsl(var(--heroui-foreground))' }}
                 labelFormatter={(label) => formatDate(label)}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
               />
               <Area
                 type="monotone"
                 dataKey="page_views"
                 name={t('dashboard.analytics.visualizacoes', 'Page Views')}
-                stroke="hsl(var(--heroui-default-400))"
+                stroke={COLORS.pageViews}
                 fill="url(#gradientViews)"
                 strokeWidth={1.5}
               />
@@ -89,7 +106,7 @@ export function DailyTrendChart({ data }: Props) {
                 type="monotone"
                 dataKey="unique_visitors"
                 name={t('dashboard.analytics.visitantesUnicos', 'Unique Visitors')}
-                stroke="hsl(var(--heroui-success))"
+                stroke={COLORS.unique}
                 fill="url(#gradientUnique)"
                 strokeWidth={1.5}
                 strokeDasharray="4 2"
@@ -98,9 +115,9 @@ export function DailyTrendChart({ data }: Props) {
                 type="monotone"
                 dataKey="leads"
                 name={t('dashboard.analytics.leads', 'Leads')}
-                stroke="hsl(var(--heroui-primary))"
+                stroke={COLORS.leads}
                 fill="url(#gradientLeads)"
-                strokeWidth={2}
+                strokeWidth={2.5}
               />
             </AreaChart>
           </ResponsiveContainer>

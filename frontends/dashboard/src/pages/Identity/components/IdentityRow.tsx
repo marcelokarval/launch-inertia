@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Chip, Avatar } from '@heroui/react';
-import { Mail, Phone, User } from 'lucide-react';
+import { Mail, Phone, User, Eye, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { IdentityListItem } from '@/types';
 import { IDENTITY_STATUS_CHIP_COLOR } from '@/types';
@@ -27,6 +27,7 @@ export function IdentityRow({ identity }: IdentityRowProps) {
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') navigateToIdentity(); }}
     >
+      {/* Name + Contact */}
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
           <Avatar size="sm" className="bg-primary/10 flex-shrink-0">
@@ -58,6 +59,8 @@ export function IdentityRow({ identity }: IdentityRowProps) {
           </div>
         </div>
       </td>
+
+      {/* Channels */}
       <td className="py-3 px-4 hidden md:table-cell">
         <ChannelCounts
           emailCount={identity.email_count}
@@ -65,9 +68,27 @@ export function IdentityRow({ identity }: IdentityRowProps) {
           fpCount={identity.fingerprint_count}
         />
       </td>
+
+      {/* Activity Stats */}
+      <td className="py-3 px-4 hidden lg:table-cell">
+        <div className="flex items-center gap-3 text-xs text-default-500">
+          <span className="flex items-center gap-1" title={t('identities.index.table.pageViews', 'Page views')}>
+            <Eye className="w-3 h-3" />
+            {identity.page_view_count}
+          </span>
+          <span className="flex items-center gap-1" title={t('identities.index.table.totalEvents', 'Total events')}>
+            <Activity className="w-3 h-3" />
+            {identity.total_event_count}
+          </span>
+        </div>
+      </td>
+
+      {/* Tags */}
       <td className="py-3 px-4 hidden xl:table-cell">
         <TagChips tags={identity.tags} />
       </td>
+
+      {/* Status */}
       <td className="py-3 px-4">
         <Chip
           color={IDENTITY_STATUS_CHIP_COLOR[identity.status] ?? 'default'}
@@ -77,6 +98,8 @@ export function IdentityRow({ identity }: IdentityRowProps) {
           {identity.status}
         </Chip>
       </td>
+
+      {/* Last Seen */}
       <td className="py-3 px-4 hidden lg:table-cell text-right">
         {identity.last_seen ? (
           <span className="text-xs text-default-400">

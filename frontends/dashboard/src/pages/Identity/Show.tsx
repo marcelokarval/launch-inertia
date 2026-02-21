@@ -135,10 +135,16 @@ export default function IdentityShow({ identity }: Props) {
                     <OverviewTab identity={identity} />
                   </Tabs.Panel>
                   <Tabs.Panel id="emails">
-                    <EmailChannelsSection emails={identity.emails ?? []} />
+                    <EmailChannelsSection
+                      emails={identity.emails ?? []}
+                      emailDomainHints={identity.intent_hints?.email_domains}
+                    />
                   </Tabs.Panel>
                   <Tabs.Panel id="phones">
-                    <PhoneChannelsSection phones={identity.phones ?? []} />
+                    <PhoneChannelsSection
+                      phones={identity.phones ?? []}
+                      phonePrefixHints={identity.intent_hints?.phone_prefixes}
+                    />
                   </Tabs.Panel>
                   <Tabs.Panel id="devices">
                     <DevicesSection fingerprints={identity.fingerprints ?? []} />

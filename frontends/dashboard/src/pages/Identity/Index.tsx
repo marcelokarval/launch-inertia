@@ -108,6 +108,9 @@ export default function IdentitiesIndex({ identities, filters, pagination }: Pro
                 <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider hidden md:table-cell">
                   {t('identities.index.table.channels', 'Channels')}
                 </th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider hidden lg:table-cell">
+                  {t('identities.index.table.activity', 'Activity')}
+                </th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider hidden xl:table-cell">
                   {t('identities.index.table.tags', 'Tags')}
                 </th>

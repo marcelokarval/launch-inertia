@@ -1,18 +1,22 @@
 /**
  * Email channels list for the Identity detail tabs.
+ *
+ * When no emails exist but intent hints have email domains,
+ * shows those as "known hints" instead of a bare empty state.
  */
 
 import { Chip } from '@heroui/react'
-import { Mail, CheckCircle, Clock } from 'lucide-react'
+import { Mail, CheckCircle, Clock, AtSign } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ChannelEmail } from '@/types'
-import { EMAIL_LIFECYCLE_CHIP_COLOR } from '@/types'
 
 interface Props {
   emails: ChannelEmail[]
+  /** Email domain hints from form_intent events. */
+  emailDomainHints?: string[]
 }
 
-export function EmailChannelsSection({ emails }: Props) {
+export function EmailChannelsSection({ emails, emailDomainHints = [] }: Props) {
   const { t } = useTranslation()
 
   if (emails.length === 0) {
@@ -20,6 +24,23 @@ export function EmailChannelsSection({ emails }: Props) {
       <div className="text-center py-8 text-default-400">
         <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
         <p>{t('identities.show.channels.noEmails', 'No email channels')}</p>
+        {emailDomainHints.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-default-200">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <AtSign className="w-4 h-4 text-default-400" />
+              <span className="text-xs text-default-500">
+                {t('identities.show.channels.knownDomains', 'Known email domains from form activity')}
+              </span>
+            </div>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {emailDomainHints.map((domain) => (
+                <Chip key={domain} size="sm" variant="soft" color="accent">
+                  @{domain}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -66,3 +87,6 @@ export function EmailChannelsSection({ emails }: Props) {
     </div>
   )
 }
+
+// Re-export for convenience
+import { EMAIL_LIFECYCLE_CHIP_COLOR } from '@/types'
