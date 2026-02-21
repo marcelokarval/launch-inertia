@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import ChatwootGlobalLoader from '@/components/ChatwootGlobalLoader';
+import GlobalFingerprintInit from '@/components/GlobalFingerprintInit';
 import './styles/globals.css';
 
 createInertiaApp({
@@ -20,6 +21,7 @@ createInertiaApp({
     const root = createRoot(el);
     root.render(
       createElement('div', null,
+        createElement(GlobalFingerprintInit),
         createElement(ChatwootGlobalLoader),
         createElement(App, props),
       ),

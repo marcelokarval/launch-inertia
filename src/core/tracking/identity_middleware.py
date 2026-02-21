@@ -51,24 +51,24 @@ _TTL_ANONYMOUS = 60 * 60 * 24 * 90  # 90 days — session only
 _TTL_FINGERPRINTED = 60 * 60 * 24 * 180  # 180 days — has visitor_id
 _TTL_CONVERTED = 60 * 60 * 24 * 365  # 365 days — has email/phone
 
-# Routes that should create/load identity session.
-# Non-content routes (static, admin, debug, JSON APIs) are skipped.
-_LANDING_PREFIXES = (
-    "/inscrever-",
-    "/obrigado-",
-    "/checkout-",
-    "/suporte",
-    "/terms-of-service/",
-    "/privacy-policy/",
-    "/insc-base/",
-    "/lista-de-espera/",
+# Routes that should NOT create/load identity session.
+# Non-content routes: static files, admin, debug toolbar, JSON APIs,
+# browser auto-requests. Every real page (landing, dashboard, content)
+# is processed by default — no whitelist needed.
+_SKIP_PREFIXES = (
+    "/static/",
+    "/media/",
+    "/__debug__/",
+    "/admin/",
+    "/.well-known/",
+    "/api/",  # JSON API endpoints (capture-intent, fp-resolve, checkout, etc.)
 )
 
-# Dashboard routes also get identity session (for authenticated users)
-_DASHBOARD_PREFIXES = (
-    "/app/",
-    "/auth/",
-    "/onboarding/",
+_SKIP_EXACT: frozenset[str] = frozenset(
+    {
+        "/favicon.ico",
+        "/robots.txt",
+    }
 )
 
 
@@ -87,16 +87,18 @@ class IdentitySessionMiddleware:
         self.get_response = get_response
 
     def _should_process(self, path: str) -> bool:
-        """Return True if this path should get identity session."""
-        if path == "/":
-            return True
-        for prefix in _LANDING_PREFIXES:
+        """Return True if this path should get identity session.
+
+        Blacklist approach: every page is processed UNLESS it matches
+        a known non-content route (static, admin, API, etc.).
+        This ensures new pages automatically get identity tracking.
+        """
+        if path in _SKIP_EXACT:
+            return False
+        for prefix in _SKIP_PREFIXES:
             if path.startswith(prefix):
-                return True
-        for prefix in _DASHBOARD_PREFIXES:
-            if path.startswith(prefix):
-                return True
-        return False
+                return False
+        return True
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         req = cast(TrackedHttpRequest, request)

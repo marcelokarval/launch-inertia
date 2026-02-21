@@ -48,20 +48,27 @@ class FeatureFlags:
     @property
     def allowed_hosts(self) -> list[str]:
         if is_development():
-            return ["localhost", "127.0.0.1", "0.0.0.0"]
+            # "*" allows LAN access (e.g., 192.168.x.x from mobile devices)
+            # Safe in development only — production reads from env var.
+            return ["*"]
         return get_list_env("ALLOWED_HOSTS", default=["localhost"])
 
     @property
     def csrf_trusted_origins(self) -> list[str]:
         if is_development():
-            return [
+            origins = [
                 "http://localhost:8844",
                 "http://127.0.0.1:8844",
-                "http://localhost:3344",   # Dashboard Vite
+                "http://localhost:3344",  # Dashboard Vite
                 "http://127.0.0.1:3344",
-                "http://localhost:3345",   # Landing Vite
+                "http://localhost:3345",  # Landing Vite
                 "http://127.0.0.1:3345",
             ]
+            # Allow LAN IPs for mobile device testing (e.g., Android via Wi-Fi)
+            extra = os.getenv("CSRF_TRUSTED_ORIGINS_EXTRA", "")
+            if extra:
+                origins.extend(extra.split(","))
+            return origins
         return get_list_env("CSRF_TRUSTED_ORIGINS", default=[])
 
     # =========================================================================

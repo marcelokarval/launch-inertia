@@ -70,21 +70,13 @@ class VisitorMiddleware:
         "/checkout/session-status/",
     )
 
-    # Exact paths that are redirect-only (no content page).
-    # Tracking for these happens in the view (lightweight, no device profile).
+    # Exact paths that are NOT content pages (browser auto-requests).
+    # Every content/landing/dashboard page MUST be processed for
+    # identification, device profiling, and geo resolution.
     _SKIP_EXACT: frozenset[str] = frozenset(
         {
-            "/",
             "/favicon.ico",
             "/robots.txt",
-            "/lembrete-bf/",
-            "/recado-importante/",
-            "/onboarding/",
-            "/agrelliflix/",
-            "/agrelliflix-aula-1/",
-            "/agrelliflix-aula-2/",
-            "/agrelliflix-aula-3/",
-            "/agrelliflix-aula-4/",
         }
     )
 
