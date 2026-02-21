@@ -59,7 +59,7 @@ def index(request):
             identity__in=active_identities,
         ).count(),
         "devices": DeviceProfile.objects.filter(
-            tracking_events__identity__in=active_identities,
+            events__identity__in=active_identities,
         )
         .distinct()
         .count(),
@@ -403,11 +403,11 @@ def _build_devices_data(
     # Device profiles that have events linked to active identities
     device_qs = (
         DeviceProfile.objects.filter(
-            tracking_events__identity__in=active_identities,
+            events__identity__in=active_identities,
         )
         .distinct()
         .annotate(
-            _event_count=Count("tracking_events"),
+            _event_count=Count("events"),
         )
         .order_by("-_event_count")[:50]
     )
@@ -416,7 +416,7 @@ def _build_devices_data(
     for d in device_qs:
         # Find which identities used this device
         identity_ids = list(
-            d.tracking_events.filter(
+            d.events.filter(
                 identity__in=active_identities,
             )
             .values_list("identity__public_id", flat=True)
