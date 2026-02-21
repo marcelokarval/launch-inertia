@@ -26,7 +26,7 @@ function formatDate(value: unknown): string {
 
 export function DailyTrendChart({ data }: Props) {
   const { t } = useTranslation();
-  const hasData = data.some((d) => d.leads > 0 || d.page_views > 0);
+  const hasData = data.some((d) => d.leads > 0 || d.page_views > 0 || d.unique_visitors > 0);
 
   return (
     <Card className="border border-default-200 animate-fade-in">
@@ -45,9 +45,13 @@ export function DailyTrendChart({ data }: Props) {
                   <stop offset="95%" stopColor="hsl(var(--heroui-primary))" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradientViews" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--heroui-default-400))" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="hsl(var(--heroui-default-400))" stopOpacity={0} />
-                </linearGradient>
+                    <stop offset="5%" stopColor="hsl(var(--heroui-default-400))" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="hsl(var(--heroui-default-400))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradientUnique" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--heroui-success))" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="hsl(var(--heroui-success))" stopOpacity={0} />
+                  </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--heroui-default-200))" />
               <XAxis
@@ -80,6 +84,15 @@ export function DailyTrendChart({ data }: Props) {
                 stroke="hsl(var(--heroui-default-400))"
                 fill="url(#gradientViews)"
                 strokeWidth={1.5}
+              />
+              <Area
+                type="monotone"
+                dataKey="unique_visitors"
+                name={t('dashboard.analytics.visitantesUnicos', 'Unique Visitors')}
+                stroke="hsl(var(--heroui-success))"
+                fill="url(#gradientUnique)"
+                strokeWidth={1.5}
+                strokeDasharray="4 2"
               />
               <Area
                 type="monotone"

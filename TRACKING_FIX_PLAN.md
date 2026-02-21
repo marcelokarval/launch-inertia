@@ -35,11 +35,11 @@ Root causes:
 
 ### P2 — Dashboard Analytics Enhancements
 
-- [ ] P2.1: Add unique_visitors to get_overview_stats() (StatCards: show total + unique views)
-- [ ] P2.2: Add unique_visitors to get_daily_trend() (DailyTrendChart: 3rd line)
-- [ ] P2.3: Add unique_visitors to get_top_capture_pages() (TopPagesTable: new column)
-- [ ] P2.4: Update TypeScript types for new analytics fields
-- [ ] P2.5: Update frontend components (StatCards, DailyTrendChart, TopPagesTable)
+- [x] P2.1: Add unique_visitors to get_overview_stats() (StatCards: show total + unique views)
+- [x] P2.2: Add unique_visitors to get_daily_trend() (DailyTrendChart: 3rd line)
+- [x] P2.3: Add unique_visitors to get_top_capture_pages() (TopPagesTable: new column)
+- [x] P2.4: Update TypeScript types for new analytics fields
+- [x] P2.5: Update frontend components (StatCards, DailyTrendChart, TopPagesTable)
 
 ### P3 — Identity Detail Improvements
 

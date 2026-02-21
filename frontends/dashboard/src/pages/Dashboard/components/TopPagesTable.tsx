@@ -42,6 +42,9 @@ export function TopPagesTable({ pages }: Props) {
                   {t('dashboard.analytics.views', 'Views')}
                 </th>
                 <th className="text-right py-3 px-2 font-medium text-default-500">
+                  {t('dashboard.analytics.unique', 'Unique')}
+                </th>
+                <th className="text-right py-3 px-2 font-medium text-default-500">
                   {t('dashboard.analytics.leads', 'Leads')}
                 </th>
                 <th className="text-right py-3 px-2 font-medium text-default-500">
@@ -61,6 +64,9 @@ export function TopPagesTable({ pages }: Props) {
                   <td className="py-3 px-2 text-default-600">{page.launch_name || '--'}</td>
                   <td className="py-3 px-2 text-right text-default-600">
                     {page.page_views.toLocaleString()}
+                  </td>
+                  <td className="py-3 px-2 text-right text-default-400">
+                    {page.unique_visitors.toLocaleString()}
                   </td>
                   <td className="py-3 px-2 text-right font-medium text-foreground">
                     {page.submissions.toLocaleString()}

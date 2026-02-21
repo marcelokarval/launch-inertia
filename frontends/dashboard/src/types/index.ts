@@ -472,6 +472,7 @@ export interface AnalyticsOverview {
   conversion_rate: number
   active_launches: number
   total_page_views: number
+  unique_page_views: number
   total_form_successes: number
 }
 
@@ -479,6 +480,7 @@ export interface DailyTrendPoint {
   date: string
   leads: number
   page_views: number
+  unique_visitors: number
 }
 
 export interface FunnelStage {
@@ -501,6 +503,7 @@ export interface CapturePageStats {
   launch_name: string
   submissions: number
   page_views: number
+  unique_visitors: number
   conversion_rate: number
 }
 

@@ -77,11 +77,29 @@ class AnalyticsService:
         capture_events = CaptureEvent.objects.filter(
             page_category="capture",
         )
-        page_views = capture_events.filter(event_type="page_view").count()
+        page_view_qs = capture_events.filter(event_type="page_view")
+        page_views = page_view_qs.count()
         form_successes = capture_events.filter(event_type="form_success").count()
         conversion_rate = (
             round((form_successes / page_views) * 100, 1) if page_views > 0 else 0.0
         )
+
+        # Unique page views: count distinct identities (best metric),
+        # fallback to ip_address for events without identity.
+        unique_page_views = (
+            page_view_qs.filter(identity__isnull=False)
+            .values("identity")
+            .distinct()
+            .count()
+        )
+        # Add visitors without identity (counted by distinct IP)
+        unique_no_identity = (
+            page_view_qs.filter(identity__isnull=True, ip_address__isnull=False)
+            .values("ip_address")
+            .distinct()
+            .count()
+        )
+        unique_page_views += unique_no_identity
 
         # Active launches
         active_launches = Launch.objects.filter(status="active").count()
@@ -96,6 +114,7 @@ class AnalyticsService:
             "conversion_rate": conversion_rate,
             "active_launches": active_launches,
             "total_page_views": page_views,
+            "unique_page_views": unique_page_views,
             "total_form_successes": form_successes,
         }
 
@@ -103,7 +122,7 @@ class AnalyticsService:
     def get_daily_trend(cls, days: int = 30) -> list[dict[str, Any]]:
         """Daily lead capture count for the last N days.
 
-        Returns list of {date: "YYYY-MM-DD", leads: int, page_views: int}.
+        Returns list of {date, leads, page_views, unique_visitors}.
         """
         from apps.ads.models import CaptureSubmission
         from core.tracking.models import CaptureEvent
@@ -122,16 +141,25 @@ class AnalyticsService:
         )
 
         # Page views per day (capture pages only)
+        page_view_qs = CaptureEvent.objects.filter(
+            event_type="page_view",
+            page_category="capture",
+            created_at__gte=since,
+        )
         views_by_day = dict(
-            CaptureEvent.objects.filter(
-                event_type="page_view",
-                page_category="capture",
-                created_at__gte=since,
-            )
-            .annotate(date=TruncDate("created_at"))
+            page_view_qs.annotate(date=TruncDate("created_at"))
             .values("date")
             .annotate(count=Count("id"))
             .values_list("date", "count")
+        )
+
+        # Unique visitors per day (distinct identity_id per day)
+        unique_by_day = dict(
+            page_view_qs.filter(identity__isnull=False)
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(unique=Count("identity", distinct=True))
+            .values_list("date", "unique")
         )
 
         # Build complete date range
@@ -144,6 +172,7 @@ class AnalyticsService:
                     "date": d.isoformat(),
                     "leads": leads_by_day.get(d, 0),
                     "page_views": views_by_day.get(d, 0),
+                    "unique_visitors": unique_by_day.get(d, 0),
                 }
             )
         return result
@@ -235,20 +264,29 @@ class AnalyticsService:
         pages = CapturePage.objects.filter(id__in=page_ids).select_related("launch")
 
         # Count page_views per capture page
+        page_view_qs = CaptureEvent.objects.filter(
+            capture_page_id__in=page_ids,
+            event_type="page_view",
+        )
         page_view_counts = dict(
-            CaptureEvent.objects.filter(
-                capture_page_id__in=page_ids,
-                event_type="page_view",
-            )
-            .values("capture_page_id")
+            page_view_qs.values("capture_page_id")
             .annotate(count=Count("id"))
             .values_list("capture_page_id", "count")
+        )
+
+        # Unique visitors per capture page (distinct identity)
+        unique_visitor_counts = dict(
+            page_view_qs.filter(identity__isnull=False)
+            .values("capture_page_id")
+            .annotate(unique=Count("identity", distinct=True))
+            .values_list("capture_page_id", "unique")
         )
 
         result: list[dict[str, Any]] = []
         for page in pages:
             submissions = submission_map.get(page.id, 0)
             views = page_view_counts.get(page.id, 0)
+            unique = unique_visitor_counts.get(page.id, 0)
             rate = round((submissions / views) * 100, 1) if views > 0 else 0.0
             result.append(
                 {
@@ -257,6 +295,7 @@ class AnalyticsService:
                     "launch_name": page.launch.name if page.launch else "",
                     "submissions": submissions,
                     "page_views": views,
+                    "unique_visitors": unique,
                     "conversion_rate": rate,
                 }
             )

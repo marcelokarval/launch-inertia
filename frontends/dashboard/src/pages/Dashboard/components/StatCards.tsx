@@ -18,12 +18,13 @@ import type { AnalyticsOverview } from '@/types';
 interface StatCardProps {
   title: string;
   value: string | number;
+  subtitle?: string;
   icon: ComponentType<{ className?: string }>;
   trend?: { value: string; positive: boolean };
   variant?: 'default' | 'gradient';
 }
 
-function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: StatCardProps) {
+function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 'default' }: StatCardProps) {
   const { t } = useTranslation();
   const isGradient = variant === 'gradient';
 
@@ -44,6 +45,11 @@ function StatCard({ title, value, icon: Icon, trend, variant = 'default' }: Stat
             <p className={`text-3xl font-bold ${isGradient ? 'text-white' : 'text-foreground'}`}>
               {value}
             </p>
+            {subtitle && (
+              <p className={`text-xs mt-0.5 ${isGradient ? 'text-background/60' : 'text-default-400'}`}>
+                {subtitle}
+              </p>
+            )}
           </div>
           <div className={`p-3 rounded-xl ${isGradient ? 'bg-background/20' : 'bg-primary/10'}`}>
             <Icon className={`h-6 w-6 ${isGradient ? 'text-white' : 'text-primary'}`} />
@@ -98,6 +104,9 @@ export function StatCards({ overview }: Props) {
     {
       title: t('dashboard.analytics.visualizacoes', 'Page Views'),
       value: overview.total_page_views.toLocaleString(),
+      subtitle: overview.unique_page_views > 0
+        ? `${overview.unique_page_views.toLocaleString()} ${t('dashboard.analytics.unique', 'unique')}`
+        : undefined,
       icon: Eye,
     },
     {

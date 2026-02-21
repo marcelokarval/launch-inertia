@@ -2,6 +2,9 @@
 # Launch Inertia - Git Ignore
 # =============================================================================
 
+# Agents / Skills (Kilo auto-generated)
+.agents/
+
 # Python
 __pycache__/
 *.py[cod]
