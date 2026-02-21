@@ -4,6 +4,13 @@ export { EmptyState } from './EmptyState';
 export { PaginationControls } from './PaginationControls';
 export { IdentityRow } from './IdentityRow';
 
+// Hub tab components (Identity Index page)
+export { HubOverviewTab } from './hub-overview-tab';
+export { HubPeopleTab } from './hub-people-tab';
+export { HubEmailsTab } from './hub-emails-tab';
+export { HubPhonesTab } from './hub-phones-tab';
+export { HubDevicesTab } from './hub-devices-tab';
+
 // Show page sub-components
 export { IdentityInfoCard } from './identity-info-card';
 export { StatsCard } from './stats-card';

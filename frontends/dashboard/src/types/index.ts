@@ -269,6 +269,124 @@ export interface IdentityShowData extends IdentityDetail {
   overview_stats: IdentityOverviewStats
 }
 
+// ============================================================================
+// Identity Hub Types (for tabbed Index page)
+// ============================================================================
+
+export type IdentityHubTab = 'overview' | 'people' | 'emails' | 'phones' | 'devices'
+
+export interface IdentityHubCounts {
+  people: number
+  emails: number
+  phones: number
+  devices: number
+}
+
+/** Recent event as returned by _build_overview_data. */
+export interface HubRecentEvent {
+  id: string
+  event_type: string
+  page_path: string
+  created_at: string | null
+  identity_id: string | null
+  identity_name: string | null
+}
+
+export interface HubAttributionSource {
+  source: string
+  count: number
+}
+
+export interface HubDomainHint {
+  domain: string
+  identities: string[]
+}
+
+export interface HubPrefixHint {
+  prefix: string
+  identities: string[]
+}
+
+export interface HubTag {
+  id: string
+  name: string
+  slug: string
+  color: string
+  identity_count: number
+}
+
+export interface HubOverviewData {
+  total_events: number
+  total_page_views: number
+  total_form_intents: number
+  identified_count: number
+  anonymous_count: number
+  recent_events: HubRecentEvent[]
+  attribution_sources: HubAttributionSource[]
+  domain_hints: HubDomainHint[]
+  prefix_hints: HubPrefixHint[]
+  tags: HubTag[]
+}
+
+/** Email channel as returned by _build_emails_data. */
+export interface EmailChannelListItem {
+  id: string
+  value: string
+  domain: string
+  lifecycle_status: EmailLifecycleStatus
+  is_verified: boolean
+  quality_score: number
+  first_seen: string | null
+  last_seen: string | null
+  identity_id: string | null
+  identity_name: string | null
+}
+
+/** Phone channel as returned by _build_phones_data. */
+export interface PhoneChannelListItem {
+  id: string
+  value: string
+  country_code: string
+  phone_type: PhoneType
+  display_value: string
+  is_verified: boolean
+  is_whatsapp: boolean
+  is_sms_capable: boolean
+  first_seen: string | null
+  last_seen: string | null
+  identity_id: string | null
+  identity_name: string | null
+}
+
+/** Device profile as returned by _build_devices_data. */
+export interface DeviceListItem {
+  id: string
+  browser_family: string
+  browser_version: string
+  os_family: string
+  os_version: string
+  device_type: string
+  device_brand: string
+  is_bot: boolean
+  event_count: number
+  identity_ids: string[]
+}
+
+/** FingerprintJS identity for the devices tab. */
+export interface FingerprintListItem {
+  id: string
+  hash: string
+  confidence_score: number
+  browser: string
+  os: string
+  device_type: string
+  is_master: boolean
+  first_seen: string | null
+  last_seen: string | null
+  identity_id: string | null
+  identity_name: string | null
+}
+
 /** Chip color helpers for identity/channel status. */
 export const EMAIL_LIFECYCLE_CHIP_COLOR: Record<EmailLifecycleStatus, 'accent' | 'success' | 'warning' | 'danger' | 'default'> = {
   pending: 'accent',

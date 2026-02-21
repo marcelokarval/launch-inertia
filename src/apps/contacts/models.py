@@ -5,9 +5,16 @@ Shared models used by the identity resolution system and future launch managemen
 The CRM Contact model has been eliminated — Identity is now the primary entity.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 from core.shared.models.base import BaseModel, BaseTagModel
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
 
 
 class Tag(BaseTagModel):
@@ -26,6 +33,11 @@ class Tag(BaseTagModel):
     """
 
     PUBLIC_ID_PREFIX = "tag"
+
+    if TYPE_CHECKING:
+        from apps.contacts.identity.models import Identity
+
+        identities: Manager[Identity]
 
     class Meta(BaseTagModel.Meta):
         verbose_name = "Tag"

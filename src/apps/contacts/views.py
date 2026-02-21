@@ -29,7 +29,189 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def index(request):
-    """List all active identities with filtering and pagination."""
+    """Identity Hub — tabbed view of the identity ecosystem.
+
+    Tabs: overview | people | emails | phones | devices
+    Each tab loads only its own data. Common counts are always included.
+    """
+    tab = request.GET.get("tab", "overview")
+    valid_tabs = {"overview", "people", "emails", "phones", "devices"}
+    if tab not in valid_tabs:
+        tab = "overview"
+
+    from apps.contacts.email.models import ContactEmail
+    from apps.contacts.phone.models import ContactPhone
+    from apps.contacts.fingerprint.models import FingerprintIdentity
+    from core.tracking.models import CaptureEvent, DeviceProfile
+
+    active_identities = Identity.objects.filter(
+        is_deleted=False,
+        status=Identity.ACTIVE,
+    )
+
+    # ── Common counts (always sent, used for tab badges) ──
+    counts = {
+        "people": active_identities.count(),
+        "emails": ContactEmail.objects.filter(
+            identity__in=active_identities,
+        ).count(),
+        "phones": ContactPhone.objects.filter(
+            identity__in=active_identities,
+        ).count(),
+        "devices": DeviceProfile.objects.filter(
+            tracking_events__identity__in=active_identities,
+        )
+        .distinct()
+        .count(),
+    }
+
+    props: dict[str, Any] = {"tab": tab, "counts": counts}
+
+    # ── Tab-specific data ──
+
+    if tab == "overview":
+        props.update(_build_overview_data(active_identities, CaptureEvent))
+
+    elif tab == "people":
+        props.update(
+            _build_people_data(
+                request,
+                active_identities,
+                ContactEmail,
+                ContactPhone,
+                CaptureEvent,
+            )
+        )
+
+    elif tab == "emails":
+        props.update(
+            _build_emails_data(request, active_identities, ContactEmail, CaptureEvent)
+        )
+
+    elif tab == "phones":
+        props.update(
+            _build_phones_data(request, active_identities, ContactPhone, CaptureEvent)
+        )
+
+    elif tab == "devices":
+        props.update(
+            _build_devices_data(active_identities, DeviceProfile, FingerprintIdentity)
+        )
+
+    return inertia_render(request, "Identity/Index", props)
+
+
+def _build_overview_data(active_identities, CaptureEvent) -> dict[str, Any]:  # type: ignore[type-arg]
+    """Build data for the Overview tab."""
+    from apps.contacts.models import Tag
+
+    all_events = CaptureEvent.objects.filter(identity__in=active_identities)
+
+    # Recent events (last 15)
+    recent_events = []
+    for evt in all_events.select_related("identity").order_by("-created_at")[:15]:
+        recent_events.append(
+            {
+                "id": evt.public_id,
+                "event_type": evt.event_type,
+                "page_path": evt.page_path,
+                "created_at": evt.created_at.isoformat() if evt.created_at else None,
+                "identity_id": evt.identity.public_id if evt.identity else None,
+                "identity_name": evt.identity.display_name if evt.identity else None,
+            }
+        )
+
+    # Attribution sources (top 10)
+    from apps.contacts.identity.models import Attribution
+
+    source_counts = (
+        Attribution.objects.filter(identity__in=active_identities)
+        .values("utm_source")
+        .annotate(count=Count("id"))
+        .order_by("-count")[:10]
+    )
+    attribution_sources = [
+        {"source": s["utm_source"] or "(direct)", "count": s["count"]}
+        for s in source_counts
+    ]
+
+    # Domain + prefix hints (aggregated from form_intent events)
+    domain_hints: dict[str, list[str]] = {}
+    prefix_hints: dict[str, list[str]] = {}
+    intent_events = (
+        all_events.filter(
+            event_type=CaptureEvent.EventType.FORM_INTENT,
+        )
+        .select_related("identity")
+        .order_by("-created_at")[:50]
+    )
+
+    for evt in intent_events:
+        extra = evt.extra_data or {}
+        idt_id = evt.identity.public_id if evt.identity else "unknown"
+        if d := extra.get("email_domain"):
+            domain_hints.setdefault(str(d), [])
+            if idt_id not in domain_hints[str(d)]:
+                domain_hints[str(d)].append(idt_id)
+        if p := extra.get("phone_prefix"):
+            prefix_hints.setdefault(str(p), [])
+            if idt_id not in prefix_hints[str(p)]:
+                prefix_hints[str(p)].append(idt_id)
+
+    # Tags with identity count
+    tags = [
+        {
+            "id": t.public_id,
+            "name": t.name,
+            "slug": t.slug,
+            "color": t.color,
+            "identity_count": t.identities.filter(
+                is_deleted=False,
+                status="active",
+            ).count(),
+        }
+        for t in Tag.objects.filter(is_deleted=False)
+    ]
+
+    # Anonymous vs identified counts
+    identified_count = (
+        active_identities.filter(
+            Q(email_contacts__isnull=False) | Q(phone_contacts__isnull=False),
+        )
+        .distinct()
+        .count()
+    )
+
+    return {
+        "overview": {
+            "total_events": all_events.count(),
+            "total_page_views": all_events.filter(
+                event_type=CaptureEvent.EventType.PAGE_VIEW,
+            ).count(),
+            "total_form_intents": all_events.filter(
+                event_type=CaptureEvent.EventType.FORM_INTENT,
+            ).count(),
+            "identified_count": identified_count,
+            "anonymous_count": active_identities.count() - identified_count,
+            "recent_events": recent_events,
+            "attribution_sources": attribution_sources,
+            "domain_hints": [
+                {"domain": d, "identities": ids}
+                for d, ids in sorted(domain_hints.items())
+            ],
+            "prefix_hints": [
+                {"prefix": p, "identities": ids}
+                for p, ids in sorted(prefix_hints.items())
+            ],
+            "tags": tags,
+        },
+    }
+
+
+def _build_people_data(
+    request, active_identities, ContactEmail, ContactPhone, CaptureEvent
+) -> dict[str, Any]:  # type: ignore[type-arg]
+    """Build data for the People tab (previous Index logic)."""
     try:
         page = int(request.GET.get("page", 1))
     except (ValueError, TypeError):
@@ -39,34 +221,26 @@ def index(request):
     search_query = request.GET.get("q", "") or None
     tag_slug = request.GET.get("tag") or None
 
-    from apps.contacts.email.models import ContactEmail
-    from apps.contacts.phone.models import ContactPhone
-    from core.tracking.models import CaptureEvent
-
-    qs = (
-        Identity.objects.filter(is_deleted=False, status=Identity.ACTIVE)
-        .annotate(
-            _email_count=Count("email_contacts", distinct=True),
-            _phone_count=Count("phone_contacts", distinct=True),
-            _fingerprint_count=Count("fingerprints", distinct=True),
-            _primary_email=Subquery(
-                ContactEmail.objects.filter(
-                    identity_id=OuterRef("pk"),
-                ).values("value")[:1]
-            ),
-            _primary_phone=Subquery(
-                ContactPhone.objects.filter(
-                    identity_id=OuterRef("pk"),
-                ).values("value")[:1]
-            ),
-            _page_view_count=Count(
-                "tracking_events",
-                filter=Q(tracking_events__event_type=CaptureEvent.EventType.PAGE_VIEW),
-            ),
-            _total_event_count=Count("tracking_events"),
-        )
-        .prefetch_related("tags")
-    )
+    qs = active_identities.annotate(
+        _email_count=Count("email_contacts", distinct=True),
+        _phone_count=Count("phone_contacts", distinct=True),
+        _fingerprint_count=Count("fingerprints", distinct=True),
+        _primary_email=Subquery(
+            ContactEmail.objects.filter(
+                identity_id=OuterRef("pk"),
+            ).values("value")[:1]
+        ),
+        _primary_phone=Subquery(
+            ContactPhone.objects.filter(
+                identity_id=OuterRef("pk"),
+            ).values("value")[:1]
+        ),
+        _page_view_count=Count(
+            "tracking_events",
+            filter=Q(tracking_events__event_type=CaptureEvent.EventType.PAGE_VIEW),
+        ),
+        _total_event_count=Count("tracking_events"),
+    ).prefetch_related("tags")
 
     if search_query:
         q = Q()
@@ -84,23 +258,254 @@ def index(request):
     offset = (page - 1) * per_page
     identities = qs[offset : offset + per_page]
 
-    return inertia_render(
-        request,
-        "Identity/Index",
-        {
-            "identities": [i.to_list_dict() for i in identities],
-            "filters": {
-                "q": search_query or "",
-                "tag": tag_slug,
-            },
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": total,
-                "pages": total_pages,
-            },
+    return {
+        "identities": [i.to_list_dict() for i in identities],
+        "filters": {"q": search_query or "", "tag": tag_slug},
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "pages": total_pages,
         },
+    }
+
+
+def _build_emails_data(
+    request, active_identities, ContactEmail, CaptureEvent
+) -> dict[str, Any]:  # type: ignore[type-arg]
+    """Build data for the Emails tab."""
+    try:
+        page = int(request.GET.get("page", 1))
+    except (ValueError, TypeError):
+        page = 1
+
+    per_page = 25
+    search_query = request.GET.get("q", "") or None
+
+    qs = (
+        ContactEmail.objects.filter(
+            identity__in=active_identities,
+        )
+        .select_related("identity")
+        .order_by("-created_at")
     )
+
+    if search_query:
+        qs = qs.filter(
+            Q(value__icontains=search_query) | Q(domain__icontains=search_query)
+        )
+
+    total = qs.count()
+    total_pages = (total + per_page - 1) // per_page if total else 1
+    offset = (page - 1) * per_page
+    emails = qs[offset : offset + per_page]
+
+    email_list = []
+    for e in emails:
+        email_list.append(
+            {
+                "id": e.public_id,
+                "value": e.value,
+                "domain": e.domain,
+                "lifecycle_status": e.lifecycle_status,
+                "is_verified": e.is_verified,
+                "quality_score": e.quality_score,
+                "first_seen": e.first_seen.isoformat() if e.first_seen else None,
+                "last_seen": e.last_seen.isoformat() if e.last_seen else None,
+                "identity_id": e.identity.public_id if e.identity else None,
+                "identity_name": e.identity.display_name if e.identity else None,
+            }
+        )
+
+    # Domain hints from form_intent (for empty state)
+    domain_hints = _get_domain_hints(active_identities, CaptureEvent)
+
+    return {
+        "emails": email_list,
+        "domain_hints": domain_hints,
+        "filters": {"q": search_query or ""},
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "pages": total_pages,
+        },
+    }
+
+
+def _build_phones_data(
+    request, active_identities, ContactPhone, CaptureEvent
+) -> dict[str, Any]:  # type: ignore[type-arg]
+    """Build data for the Phones tab."""
+    try:
+        page = int(request.GET.get("page", 1))
+    except (ValueError, TypeError):
+        page = 1
+
+    per_page = 25
+    search_query = request.GET.get("q", "") or None
+
+    qs = (
+        ContactPhone.objects.filter(
+            identity__in=active_identities,
+        )
+        .select_related("identity")
+        .order_by("-created_at")
+    )
+
+    if search_query:
+        qs = qs.filter(value__icontains=search_query)
+
+    total = qs.count()
+    total_pages = (total + per_page - 1) // per_page if total else 1
+    offset = (page - 1) * per_page
+    phones = qs[offset : offset + per_page]
+
+    phone_list = []
+    for p in phones:
+        phone_list.append(
+            {
+                "id": p.public_id,
+                "value": p.value,
+                "country_code": p.country_code,
+                "phone_type": p.phone_type,
+                "display_value": p.format_for_display(),
+                "is_verified": p.is_verified,
+                "is_whatsapp": p.is_whatsapp,
+                "is_sms_capable": p.is_sms_capable,
+                "first_seen": p.first_seen.isoformat() if p.first_seen else None,
+                "last_seen": p.last_seen.isoformat() if p.last_seen else None,
+                "identity_id": p.identity.public_id if p.identity else None,
+                "identity_name": p.identity.display_name if p.identity else None,
+            }
+        )
+
+    # Prefix hints from form_intent (for empty state)
+    prefix_hints = _get_prefix_hints(active_identities, CaptureEvent)
+
+    return {
+        "phones": phone_list,
+        "prefix_hints": prefix_hints,
+        "filters": {"q": search_query or ""},
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "pages": total_pages,
+        },
+    }
+
+
+def _build_devices_data(
+    active_identities, DeviceProfile, FingerprintIdentity
+) -> dict[str, Any]:  # type: ignore[type-arg]
+    """Build data for the Devices tab."""
+    # Device profiles that have events linked to active identities
+    device_qs = (
+        DeviceProfile.objects.filter(
+            tracking_events__identity__in=active_identities,
+        )
+        .distinct()
+        .annotate(
+            _event_count=Count("tracking_events"),
+        )
+        .order_by("-_event_count")[:50]
+    )
+
+    device_list = []
+    for d in device_qs:
+        # Find which identities used this device
+        identity_ids = list(
+            d.tracking_events.filter(
+                identity__in=active_identities,
+            )
+            .values_list("identity__public_id", flat=True)
+            .distinct()[:10]
+        )
+        device_list.append(
+            {
+                "id": d.public_id,
+                "browser_family": d.browser_family,
+                "browser_version": d.browser_version,
+                "os_family": d.os_family,
+                "os_version": d.os_version,
+                "device_type": d.device_type,
+                "device_brand": d.device_brand,
+                "is_bot": d.is_bot,
+                "event_count": getattr(d, "_event_count", 0),
+                "identity_ids": identity_ids,
+            }
+        )
+
+    # FingerprintJS identities (separate from device profiles)
+    fp_list = []
+    for fp in (
+        FingerprintIdentity.objects.filter(
+            identity__in=active_identities,
+        )
+        .select_related("identity")
+        .order_by("-last_seen")[:50]
+    ):
+        fp_list.append(
+            {
+                "id": fp.public_id,
+                "hash": fp.hash[:12] + "...",
+                "confidence_score": fp.confidence_score,
+                "browser": fp.browser,
+                "os": fp.os,
+                "device_type": fp.device_type,
+                "is_master": fp.is_master,
+                "first_seen": fp.first_seen.isoformat() if fp.first_seen else None,
+                "last_seen": fp.last_seen.isoformat() if fp.last_seen else None,
+                "identity_id": fp.identity.public_id if fp.identity else None,
+                "identity_name": fp.identity.display_name if fp.identity else None,
+            }
+        )
+
+    return {
+        "devices": device_list,
+        "fingerprints": fp_list,
+    }
+
+
+def _get_domain_hints(active_identities, CaptureEvent) -> list[dict[str, Any]]:  # type: ignore[type-arg]
+    """Get email domain hints from form_intent events."""
+    hints: dict[str, list[str]] = {}
+    for evt in (
+        CaptureEvent.objects.filter(
+            identity__in=active_identities,
+            event_type=CaptureEvent.EventType.FORM_INTENT,
+        )
+        .select_related("identity")
+        .order_by("-created_at")[:50]
+    ):
+        extra = evt.extra_data or {}
+        if d := extra.get("email_domain"):
+            idt_id = evt.identity.public_id if evt.identity else "unknown"
+            hints.setdefault(str(d), [])
+            if idt_id not in hints[str(d)]:
+                hints[str(d)].append(idt_id)
+    return [{"domain": d, "identities": ids} for d, ids in sorted(hints.items())]
+
+
+def _get_prefix_hints(active_identities, CaptureEvent) -> list[dict[str, Any]]:  # type: ignore[type-arg]
+    """Get phone prefix hints from form_intent events."""
+    hints: dict[str, list[str]] = {}
+    for evt in (
+        CaptureEvent.objects.filter(
+            identity__in=active_identities,
+            event_type=CaptureEvent.EventType.FORM_INTENT,
+        )
+        .select_related("identity")
+        .order_by("-created_at")[:50]
+    ):
+        extra = evt.extra_data or {}
+        if p := extra.get("phone_prefix"):
+            idt_id = evt.identity.public_id if evt.identity else "unknown"
+            hints.setdefault(str(p), [])
+            if idt_id not in hints[str(p)]:
+                hints[str(p)].append(idt_id)
+    return [{"prefix": p, "identities": ids} for p, ids in sorted(hints.items())]
 
 
 @login_required

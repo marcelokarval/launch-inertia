@@ -1,45 +1,46 @@
 import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { Card, Form, SearchField, Input, Label } from '@heroui/react';
-import { Button } from '@/components/ui';
-import { Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Tabs } from '@heroui/react';
+import { Users, Mail, Phone, Monitor, LayoutDashboard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Pagination, IdentityListItem } from '@/types';
-import { EmptyState, PaginationControls, IdentityRow } from './components';
-
-// ============================================================================
-// Types
-// ============================================================================
+import type {
+  IdentityHubTab, IdentityHubCounts, HubOverviewData,
+  Pagination, IdentityListItem, EmailChannelListItem,
+  PhoneChannelListItem, DeviceListItem, FingerprintListItem,
+  HubDomainHint, HubPrefixHint,
+} from '@/types';
+import {
+  HubOverviewTab, HubPeopleTab, HubEmailsTab, HubPhonesTab, HubDevicesTab,
+} from './components';
 
 interface Props {
-  identities: IdentityListItem[];
-  filters: {
-    q: string;
-    tag: string | null;
-  };
-  pagination: Pagination;
+  tab: IdentityHubTab;
+  counts: IdentityHubCounts;
+  // Overview tab
+  overview?: HubOverviewData;
+  // People tab
+  identities?: IdentityListItem[];
+  filters?: { q: string; tag: string | null };
+  pagination?: Pagination;
+  // Emails tab
+  emails?: EmailChannelListItem[];
+  domain_hints?: HubDomainHint[];
+  // Phones tab
+  phones?: PhoneChannelListItem[];
+  prefix_hints?: HubPrefixHint[];
+  // Devices tab
+  devices?: DeviceListItem[];
+  fingerprints?: FingerprintListItem[];
 }
 
-// ============================================================================
-// Main Page
-// ============================================================================
+const EMPTY_PAGINATION: Pagination = { page: 1, per_page: 25, total: 0, pages: 1 };
 
-export default function IdentitiesIndex({ identities, filters, pagination }: Props) {
+export default function IdentitiesIndex(props: Props) {
   const { t } = useTranslation();
-  const [search, setSearch] = useState(filters.q || '');
+  const { tab, counts } = props;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.get('/app/identities/', { q: search }, { preserveState: true });
-  };
-
-  const handlePageChange = (page: number) => {
-    router.get(
-      '/app/identities/',
-      { page, ...(search ? { q: search } : {}) },
-      { preserveState: true },
-    );
+  const handleTabChange = (key: React.Key) => {
+    router.get('/app/identities/', { tab: String(key) }, { preserveState: false });
   };
 
   return (
@@ -47,94 +48,87 @@ export default function IdentitiesIndex({ identities, filters, pagination }: Pro
       <Head title={t('identities.index.pageTitle', 'Identities')} />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            {t('identities.index.title', 'Identities')}
-          </h2>
-          <p className="text-sm text-default-500">
-            {t('identities.index.totalCount', { total: pagination.total, defaultValue: '{{total}} identities' })}
-          </p>
-        </div>
-        <Button
-          variant="primary"
-          onPress={() => router.visit('/app/identities/create/')}
-        >
-          <Plus className="w-4 h-4" />
-          {t('identities.index.importIdentity', 'Import Identity')}
-        </Button>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-foreground">
+          {t('identities.index.title', 'Identities')}
+        </h2>
+        <p className="text-sm text-default-500">
+          {t('identities.hub.subtitle', 'Your audience intelligence hub')}
+        </p>
       </div>
 
-      {/* Search Bar */}
-      <Card className="border border-default-200 mb-6">
-        <Card.Content className="p-4">
-          <Form onSubmit={handleSearch}>
-            <SearchField
-              value={search}
-              onChange={setSearch}
-              aria-label={t('identities.index.searchPlaceholder', 'Search identities...')}
-              className="w-full"
-            >
-              <Label className="sr-only">
-                {t('identities.index.searchPlaceholder', 'Search identities...')}
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-default-400 z-10" />
-                <Input
-                  placeholder={t('identities.index.searchPlaceholder', 'Search identities...')}
-                  className="pl-10"
-                />
-              </div>
-            </SearchField>
-          </Form>
-        </Card.Content>
-      </Card>
+      {/* Tabs */}
+      <Tabs selectedKey={tab} onSelectionChange={handleTabChange} className="w-full">
+        <Tabs.List className="border-b border-divider mb-6">
+          <Tabs.Tab id="overview">
+            <LayoutDashboard className="w-4 h-4" />
+            {t('identities.hub.tabOverview', 'Overview')}
+          </Tabs.Tab>
+          <Tabs.Tab id="people">
+            <Users className="w-4 h-4" />
+            {t('identities.hub.tabPeople', 'People')}
+            {counts.people > 0 && <TabBadge count={counts.people} />}
+          </Tabs.Tab>
+          <Tabs.Tab id="emails">
+            <Mail className="w-4 h-4" />
+            {t('identities.hub.tabEmails', 'Emails')}
+            {counts.emails > 0 && <TabBadge count={counts.emails} />}
+          </Tabs.Tab>
+          <Tabs.Tab id="phones">
+            <Phone className="w-4 h-4" />
+            {t('identities.hub.tabPhones', 'Phones')}
+            {counts.phones > 0 && <TabBadge count={counts.phones} />}
+          </Tabs.Tab>
+          <Tabs.Tab id="devices">
+            <Monitor className="w-4 h-4" />
+            {t('identities.hub.tabDevices', 'Devices')}
+            {counts.devices > 0 && <TabBadge count={counts.devices} />}
+          </Tabs.Tab>
+        </Tabs.List>
 
-      {/* Identity Table */}
-      {identities.length === 0 ? (
-        <Card className="border border-default-200">
-          <Card.Content>
-            <EmptyState />
-          </Card.Content>
-        </Card>
-      ) : (
-        <Card className="border border-default-200 overflow-hidden">
-          <table className="w-full" role="grid" aria-label={t('identities.index.title', 'Identities')}>
-            <thead>
-              <tr className="border-b border-divider bg-default-50">
-                <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider">
-                  {t('identities.index.table.displayName', 'Display Name')}
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider hidden md:table-cell">
-                  {t('identities.index.table.channels', 'Channels')}
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider hidden lg:table-cell">
-                  {t('identities.index.table.activity', 'Activity')}
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider hidden xl:table-cell">
-                  {t('identities.index.table.tags', 'Tags')}
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-default-500 uppercase tracking-wider">
-                  {t('identities.index.table.status', 'Status')}
-                </th>
-                <th className="py-3 px-4 text-right text-xs font-semibold text-default-500 uppercase tracking-wider hidden lg:table-cell">
-                  {t('identities.index.table.lastSeen', 'Last Seen')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {identities.map((identity) => (
-                <IdentityRow key={identity.id} identity={identity} />
-              ))}
-            </tbody>
-          </table>
-        </Card>
-      )}
+        <Tabs.Panel id="overview">
+          {props.overview && <HubOverviewTab overview={props.overview} counts={counts} />}
+        </Tabs.Panel>
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <PaginationControls pagination={pagination} onPageChange={handlePageChange} />
-      )}
+        <Tabs.Panel id="people">
+          <HubPeopleTab
+            identities={props.identities ?? []}
+            filters={props.filters ?? { q: '', tag: null }}
+            pagination={props.pagination ?? EMPTY_PAGINATION}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel id="emails">
+          <HubEmailsTab
+            emails={props.emails ?? []}
+            domainHints={props.domain_hints ?? []}
+            pagination={props.pagination ?? EMPTY_PAGINATION}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel id="phones">
+          <HubPhonesTab
+            phones={props.phones ?? []}
+            prefixHints={props.prefix_hints ?? []}
+            pagination={props.pagination ?? EMPTY_PAGINATION}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel id="devices">
+          <HubDevicesTab
+            devices={props.devices ?? []}
+            fingerprints={props.fingerprints ?? []}
+          />
+        </Tabs.Panel>
+      </Tabs>
     </DashboardLayout>
+  );
+}
+
+function TabBadge({ count }: { count: number }) {
+  return (
+    <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-default-200 text-default-600">
+      {count}
+    </span>
   );
 }
