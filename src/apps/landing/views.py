@@ -1259,11 +1259,13 @@ def agrelliflix_page(
       /agrelliflix-aula-3/        → episode_number=3
       /agrelliflix-aula-4/        → episode_number=4
 
-    Config is loaded from ``campaigns/agrelliflix.json`` (cached in memory).
+    AgrelliFlix is a content/CPL exception that intentionally remains outside
+    the standard CapturePage runtime. Its config is centralized in
+    LandingPageConfigService and still backed by the dedicated legacy JSON.
     Episode dates are parsed server-side (Miami timezone) so the frontend
     receives ready-to-use ISO 8601 strings with availability flags.
     """
-    config = get_campaign("agrelliflix")
+    config = LandingPageConfigService.get_agrelliflix_config()
     if config is None:
         logger.warning("agrelliflix: campaign config not found, redirecting to home")
         return redirect("/")

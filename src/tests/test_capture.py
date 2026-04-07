@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.test import override_settings
 from django.test import RequestFactory
 
 from apps.landing.campaigns import get_campaign, get_campaign_or_default, _cache
@@ -395,6 +396,36 @@ class TestCaptureView:
         response = capture_page(request, "unknown-thing")
         assert response.status_code == 302
         assert "/inscrever-wh-rc-v3/" in response.url
+
+    @override_settings(LANDING_JSON_FALLBACK_ENABLED=False)
+    def test_get_db_backed_capture_page_still_renders_without_json_fallback(self):
+        from apps.landing.views import capture_page
+        from tests.factories import CapturePageFactory
+
+        CapturePageFactory(slug="db-only-capture")
+
+        request = self.rf.get("/inscrever-db-only-capture/")
+        request.session = {}
+        request.META["HTTP_X_INERTIA"] = "true"
+        request.data = {}
+
+        response = capture_page(request, "db-only-capture")
+
+        assert response.status_code == 200
+
+    @override_settings(LANDING_JSON_FALLBACK_ENABLED=False)
+    def test_get_default_capture_page_returns_404_without_db_when_json_fallback_disabled(
+        self,
+    ):
+        from apps.landing.views import capture_page
+
+        request = self.rf.get("/inscrever-wh-rc-v3/")
+        request.session = {}
+        request.data = {}
+
+        response = capture_page(request, "wh-rc-v3")
+
+        assert response.status_code == 404
 
     def test_post_valid_data_redirects(self):
         """POST with valid data should redirect to thank-you page."""
@@ -1122,3 +1153,25 @@ class TestThankYouView:
         body = json.loads(response.content)
         assert body["component"] == "ThankYou/Index"
         assert "campaign" in body["props"]
+
+
+@pytest.mark.django_db
+class TestSpecialLandingFlows:
+    def setup_method(self):
+        self.rf = RequestFactory()
+        _cache.clear()
+
+    @override_settings(LANDING_JSON_FALLBACK_ENABLED=False)
+    def test_agrelliflix_remains_available_as_explicit_special_flow(self):
+        from apps.landing.views import agrelliflix_page
+
+        request = self.rf.get("/agrelliflix/")
+        request.session = {}
+        request.META["HTTP_X_INERTIA"] = "true"
+        request.data = {}
+
+        response = agrelliflix_page(request)
+
+        assert response.status_code == 200
+        body = json.loads(response.content)
+        assert body["component"] == "AgreliFlix/Index"

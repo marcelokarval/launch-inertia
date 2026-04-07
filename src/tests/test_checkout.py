@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from django.test import Client
+from django.test import override_settings
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────
@@ -55,6 +56,33 @@ class TestCheckoutPageView:
         """Non-existent campaign slug should redirect to home."""
         response = client.get("/checkout-nonexistent/")
         assert response.status_code == 302
+
+    @override_settings(LANDING_JSON_FALLBACK_ENABLED=False)
+    def test_db_backed_checkout_page_renders_without_json_fallback(self, client, db):
+        from tests.factories import CapturePageFactory
+
+        CapturePageFactory(slug="checkout-db-only")
+
+        response = client.get("/checkout-checkout-db-only/")
+        assert response.status_code == 200
+
+    @override_settings(LANDING_JSON_FALLBACK_ENABLED=False)
+    def test_json_only_checkout_redirects_when_fallback_disabled(self, client, db):
+        response = client.get("/checkout-wh-rc-v3/")
+        assert response.status_code == 302
+
+    @override_settings(LANDING_JSON_FALLBACK_ENABLED=False)
+    def test_db_backed_checkout_page_uses_capture_page_service_contract(
+        self, client, db
+    ):
+        from tests.factories import CapturePageFactory
+
+        page = CapturePageFactory(slug="checkout-db-contract")
+
+        response = client.get("/checkout-checkout-db-contract/")
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert page.slug in content
 
     def test_only_allows_get(self, client, db):
         """POST should return 405 for existing campaign."""
