@@ -15,6 +15,7 @@ import type { CapturePageProps, HeadlinePart, SharedProps } from '@/types';
 export default function CaptureIndex({
   campaign,
   capture_token,
+  capture_page_public_id,
   prefill,
   errors,
 }: CapturePageProps) {
@@ -84,6 +85,7 @@ export default function CaptureIndex({
             fingerprintApiKey={fingerprint?.api_key ?? ''}
             fingerprintEndpoint={fingerprint?.endpoint || undefined}
             captureToken={capture_token}
+            capturePagePublicId={capture_page_public_id}
             prefill={prefill}
             serverErrors={errors}
           />

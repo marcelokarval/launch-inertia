@@ -189,6 +189,32 @@ class FeatureFlags:
     def vite_dev_server_url(self) -> str:
         return os.getenv("VITE_DEV_URL", "http://localhost:3344")
 
+    # =========================================================================
+    # Landing / Migration Runtime
+    # =========================================================================
+
+    @property
+    def landing_json_fallback_enabled(self) -> bool:
+        """Whether legacy JSON campaign fallback is allowed at runtime.
+
+        Production should converge to DB-backed CapturePage configs only.
+        Dev/test keep JSON fallback enabled by default during migration.
+        """
+        default = not is_production()
+        return get_bool_env("LANDING_JSON_FALLBACK_ENABLED", default=default)
+
+    @property
+    def lead_outbox_failed_threshold(self) -> int:
+        return get_int_env("LEAD_OUTBOX_FAILED_THRESHOLD", default=5)
+
+    @property
+    def lead_outbox_pending_threshold(self) -> int:
+        return get_int_env("LEAD_OUTBOX_PENDING_THRESHOLD", default=10)
+
+    @property
+    def lead_outbox_pending_max_age_minutes(self) -> int:
+        return get_int_env("LEAD_OUTBOX_PENDING_MAX_AGE_MINUTES", default=30)
+
 
 # Global instance
 flags = FeatureFlags()

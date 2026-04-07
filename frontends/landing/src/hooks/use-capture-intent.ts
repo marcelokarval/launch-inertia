@@ -14,6 +14,8 @@ const DEBOUNCE_MS = 2000;
 
 interface UseCaptureIntentOptions {
   captureToken: string;
+  visitorId?: string;
+  requestId?: string;
 }
 
 interface UseCaptureIntentReturn {
@@ -37,6 +39,8 @@ interface UseCaptureIntentReturn {
  */
 export function useCaptureIntent({
   captureToken,
+  visitorId,
+  requestId,
 }: UseCaptureIntentOptions): UseCaptureIntentReturn {
   const lastEmailSent = useRef('');
   const lastPhoneSent = useRef('');
@@ -51,6 +55,8 @@ export function useCaptureIntent({
         email_hint: emailHint,
         phone_hint: phoneHint,
         capture_token: captureToken,
+        visitor_id: visitorId || '',
+        request_id: requestId || '',
       });
 
       try {
@@ -70,7 +76,7 @@ export function useCaptureIntent({
         // Silent — non-critical
       }
     },
-    [captureToken],
+    [captureToken, requestId, visitorId],
   );
 
   const handleEmailBlur = useCallback(

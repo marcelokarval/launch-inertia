@@ -18,6 +18,10 @@ interface Props {
 export default function Delinquent({ message }: Props) {
   const { t } = useTranslation()
 
+  const openPortal = () => {
+    router.post('/app/billing/portal/', {}, { forceFormData: true })
+  }
+
   return (
     <>
       <Head title={t('delinquent.pageTitle')} />
@@ -47,7 +51,7 @@ export default function Delinquent({ message }: Props) {
               variant="primary"
               size="lg"
               fullWidth
-              onPress={() => router.visit('/app/billing/portal/')}
+              onPress={openPortal}
             >
               <CreditCard className="h-5 w-5" />
               {t('delinquent.goToBilling')}

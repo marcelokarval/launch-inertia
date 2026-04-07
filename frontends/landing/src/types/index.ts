@@ -106,6 +106,8 @@ export interface CapturePageProps extends SharedProps {
   campaign: CampaignProps;
   /** Server-generated UUID linking events of the same page load session */
   capture_token: string;
+  /** CapturePage public_id when this landing is already backed by the DB */
+  capture_page_public_id?: string;
   /** Pre-fill data from session identity or capture-intent hints */
   prefill?: PrefillData;
 }
@@ -482,4 +484,190 @@ export interface AgrelliflixStorageState {
   lastVisit: string;
   episodesCompleted: number[];
   shareCount: number;
+}
+
+/* ===================================================================
+ * Onboarding (Post-Purchase) Page
+ * =================================================================== */
+
+/** Onboarding page configuration */
+export interface OnboardingConfig {
+  /** YouTube video ID */
+  video_id: string;
+  /** Page title displayed above the video */
+  title: string;
+  /** Marquee header items */
+  marquee_items: string[];
+  /** Marquee header background color */
+  marquee_color: string;
+  /** Background image URL */
+  background_image: string;
+  /** WhatsApp group link (optional) */
+  whatsapp_link?: string;
+}
+
+/** Props for Onboarding/Index page */
+export interface OnboardingPageProps extends SharedProps {
+  config: OnboardingConfig;
+}
+
+/* ===================================================================
+ * Lembrete BF (Black Friday Reminder) Page
+ * =================================================================== */
+
+/** Course card in the BF reminder page */
+export interface BFCourseCard {
+  title: string;
+  description: string;
+  image: string;
+}
+
+/** Bonus tier in the BF page */
+export interface BFBonus {
+  tier: string;
+  title: string;
+  description: string;
+}
+
+/** Price comparison entry */
+export interface BFPriceEntry {
+  label: string;
+  value: string;
+}
+
+/** Lembrete BF page configuration */
+export interface LembreteBFConfig {
+  /** Target date for countdown (ISO 8601) */
+  target_date: string;
+  /** CTA link (WhatsApp group or checkout) */
+  cta_link: string;
+  /** CTA button text */
+  cta_text: string;
+  /** Hero headline */
+  headline: string;
+  /** Hero benefits list */
+  benefits: string[];
+  /** Course cards */
+  courses: BFCourseCard[];
+  /** Bonus tiers */
+  bonuses: BFBonus[];
+  /** Normal price entries (strikethrough) */
+  normal_prices: BFPriceEntry[];
+  /** Special offer price */
+  special_price: string;
+  /** Special offer installments text */
+  installments_text: string;
+  /** Background images */
+  images: {
+    logo: string;
+    hero_cross?: string;
+    summary_bg?: string;
+    phone_mockup?: string;
+    warning_bg?: string;
+  };
+}
+
+/** Props for LembreteBF/Index page */
+export interface LembreteBFPageProps extends SharedProps {
+  config: LembreteBFConfig;
+}
+
+/* ===================================================================
+ * Suporte Launch (Video Background Support) Page
+ * =================================================================== */
+
+/** Suporte Launch page configuration */
+export interface SuporteLaunchConfig {
+  /** YouTube video ID for background */
+  video_id: string;
+  /** Header title */
+  title: string;
+  /** Header subtitle */
+  subtitle: string;
+  /** CTA link (inscription page) */
+  cta_link: string;
+  /** CTA button text */
+  cta_text: string;
+  /** Chatwoot config (same as support page) */
+  chatwoot: {
+    website_token: string;
+    base_url: string;
+    locale: string;
+  };
+}
+
+/** Props for SuporteLaunch/Index page */
+export interface SuporteLaunchPageProps extends SharedProps {
+  config: SuporteLaunchConfig;
+}
+
+/* ===================================================================
+ * Recado Importante (Long-Form Sales Page)
+ * =================================================================== */
+
+/** Video testimonial entry */
+export interface VideoTestimonial {
+  video_id: string;
+  name: string;
+  description: string;
+}
+
+/** Course module entry */
+export interface CourseModule {
+  title: string;
+  description: string;
+}
+
+/** Bonus entry for the sales page */
+export interface SalesBonus {
+  title: string;
+  description: string;
+  value: string;
+  image?: string;
+}
+
+/** Recado Importante page configuration */
+export interface RecadoImportanteConfig {
+  /** Hero video ID */
+  video_id: string;
+  /** CTA WhatsApp group link */
+  cta_link: string;
+  /** CTA button text */
+  cta_text: string;
+  /** Countdown target date (ISO 8601) */
+  target_date?: string;
+  /** Expert/instructor info */
+  expert: {
+    name: string;
+    title: string;
+    description: string;
+    image?: string;
+  };
+  /** Video testimonials */
+  testimonials: VideoTestimonial[];
+  /** Course description text */
+  course_description: string;
+  /** Course modules list */
+  modules: CourseModule[];
+  /** Bonuses */
+  bonuses: SalesBonus[];
+  /** Mega bonus (featured) */
+  mega_bonus?: SalesBonus;
+  /** Pricing section */
+  pricing: {
+    original_price: string;
+    current_price: string;
+    installments_text: string;
+    discount_text: string;
+  };
+  /** Background images */
+  images: {
+    hero_bg?: string;
+    course_map?: string;
+  };
+}
+
+/** Props for RecadoImportante/Index page */
+export interface RecadoImportantePageProps extends SharedProps {
+  config: RecadoImportanteConfig;
 }

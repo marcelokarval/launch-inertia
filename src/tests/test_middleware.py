@@ -4,6 +4,7 @@ InertiaShareMiddleware, VisitorMiddleware, IdentitySessionMiddleware.
 """
 # pyright: reportAttributeAccessIssue=false, reportAssignmentType=false
 
+import json
 import pytest
 from unittest.mock import MagicMock, patch, PropertyMock
 from django.test import RequestFactory
@@ -138,6 +139,60 @@ class TestDelinquentMiddleware:
         ):
             self.middleware(request)
         self.get_response.assert_called_once_with(request)
+
+
+@pytest.mark.django_db
+class TestDelinquentView:
+    """Tests for the standalone delinquent page."""
+
+    def test_delinquent_route_renders_delinquent_component(self, client):
+        user = UserFactory(email="delinquent-view@test.com")
+        client.force_login(user)
+
+        mock_status = MagicMock()
+        mock_status.is_complete = True
+        mock_status.redirect_url = "/app/"
+
+        with patch(
+            "apps.identity.services.SetupStatusService.get_setup_status",
+            return_value=mock_status,
+        ):
+            with patch.object(
+                type(user),
+                "is_delinquent",
+                new_callable=PropertyMock,
+                return_value=True,
+            ):
+                response = client.get("/app/delinquent/", HTTP_X_INERTIA="true")
+
+        assert response.status_code == 200
+        assert response["X-Inertia"] == "true"
+        body = json.loads(response.content)
+        assert body["component"] == "Delinquent"
+        assert body["props"]["message"] is None
+
+    def test_non_delinquent_user_is_redirected_to_dashboard(self, client):
+        user = UserFactory(email="healthy-view@test.com")
+        client.force_login(user)
+
+        mock_status = MagicMock()
+        mock_status.is_complete = True
+        mock_status.redirect_url = "/app/"
+
+        with patch(
+            "apps.identity.services.SetupStatusService.get_setup_status",
+            return_value=mock_status,
+        ):
+            with patch.object(
+                type(user),
+                "is_delinquent",
+                new_callable=PropertyMock,
+                return_value=False,
+            ):
+                response = client.get("/app/delinquent/")
+
+        assert response.status_code == 302
+        assert response.url == "/app/"
 
 
 class TestInertiaShareMiddleware:

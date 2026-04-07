@@ -10,8 +10,16 @@ Orchestrates:
 
 import logging
 import re
+import hashlib
+import time
+import uuid
 from typing import Any
 
+from django.db import IntegrityError, transaction
+from django.http import HttpRequest
+
+from apps.ads.models import CaptureSubmission
+from apps.ads.services.utm_parser import UTMParserService
 from apps.contacts.fingerprint.services.correlation_service import (
     CorrelationService,
 )
@@ -19,7 +27,11 @@ from apps.contacts.identity.models import Identity
 from apps.contacts.identity.services.resolution_service import (
     ResolutionService,
 )
+from apps.landing.models import LeadCaptureIdempotencyKey
 from apps.landing.services.n8n_proxy import N8NProxyService
+from apps.landing.services.outbox import LeadIntegrationOutboxService
+from core.tracking.models import CaptureEvent
+from core.tracking.services import DeviceProfileService, TrackingService
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +63,73 @@ _PHONE_MAX_DIGITS = 18
 
 class CaptureService:
     """Lead capture business logic."""
+
+    @staticmethod
+    def build_submit_idempotency_key(
+        *,
+        campaign_slug: str,
+        email: str,
+        capture_token: str,
+        request_id: str,
+    ) -> str:
+        """Build a deterministic idempotency key for one logical submit."""
+        normalized_email = email.strip().lower()
+        source = request_id.strip() or str(capture_token).strip()
+        raw = f"{campaign_slug}|{source}|{normalized_email}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    @classmethod
+    def _lock_submit_idempotency(
+        cls,
+        *,
+        campaign_slug: str,
+        email: str,
+        capture_token: str,
+        request_id: str,
+        capture_page: Any = None,
+    ) -> LeadCaptureIdempotencyKey:
+        """Lock or create the idempotency record for one logical submit."""
+        key = cls.build_submit_idempotency_key(
+            campaign_slug=campaign_slug,
+            email=email,
+            capture_token=capture_token,
+            request_id=request_id,
+        )
+
+        try:
+            capture_uuid = uuid.UUID(str(capture_token))
+        except (TypeError, ValueError, AttributeError):
+            capture_uuid = uuid.uuid4()
+
+        defaults = {
+            "capture_token": capture_uuid,
+            "request_id": request_id,
+            "email_normalized": email.strip().lower(),
+            "status": LeadCaptureIdempotencyKey.Status.PROCESSING,
+            "capture_page": capture_page,
+        }
+
+        try:
+            record, _ = LeadCaptureIdempotencyKey.objects.get_or_create(
+                key=key,
+                defaults=defaults,
+            )
+        except IntegrityError:
+            record = LeadCaptureIdempotencyKey.objects.get(key=key)
+
+        record = LeadCaptureIdempotencyKey.objects.select_for_update().get(pk=record.pk)
+
+        update_fields: list[str] = []
+        if not record.request_id and request_id:
+            record.request_id = request_id
+            update_fields.append("request_id")
+        if record.capture_page_id is None and capture_page is not None:
+            record.capture_page = capture_page
+            update_fields.append("capture_page")
+        if update_fields:
+            record.save(update_fields=update_fields + ["updated_at"])
+
+        return record
 
     @classmethod
     def validate_form_data(cls, data: dict[str, Any]) -> dict[str, str]:
@@ -249,3 +328,285 @@ class CaptureService:
             "n8n_payload": n8n_payload,
             "n8n_webhook_url": campaign_config.get("n8n", {}).get("webhook_url", ""),
         }
+
+    @classmethod
+    def create_capture_submission(
+        cls,
+        *,
+        identity: Any,
+        email_raw: str,
+        phone_raw: str,
+        capture_page: Any,
+        utm_data: dict[str, str],
+        extra_ad_params: dict[str, str],
+        capture_token: str,
+        visitor_id: str,
+        request: HttpRequest,
+        t_start: float,
+    ) -> CaptureSubmission | None:
+        """Parse UTMs and create a CaptureSubmission fact record.
+
+        Resilient: if parsing or submission creation fails, logs error
+        and returns None (never blocks the redirect).
+        """
+        try:
+            launch = getattr(capture_page, "launch", None)
+            parsed = UTMParserService.parse(
+                utm_data,
+                extra_ad_params,
+                launch=launch,
+            )
+
+            server_render_time_ms = (time.monotonic() - t_start) * 1000
+            device_profile = DeviceProfileService.get_or_create_from_request(request)
+            ip_address = getattr(request, "client_ip", None) or None
+            geo_data = getattr(request, "geo_data", {})
+
+            is_duplicate = False
+            if launch is not None:
+                is_duplicate = CaptureSubmission.objects.filter(
+                    email_raw__iexact=email_raw.strip(),
+                    capture_page__launch=launch,
+                    is_deleted=False,
+                ).exists()
+
+            try:
+                capture_token_uuid = uuid.UUID(capture_token)
+            except (ValueError, AttributeError, TypeError):
+                capture_token_uuid = uuid.uuid4()
+
+            click_id = parsed.click_id or extra_ad_params.get("fbclid", "")
+
+            submission = CaptureSubmission.objects.create(
+                identity=identity,
+                email_raw=email_raw,
+                phone_raw=phone_raw,
+                capture_page=capture_page,
+                traffic_source=parsed.traffic_source,
+                ad_group=parsed.ad_group,
+                ad_creative=parsed.creative,
+                click_id=click_id,
+                visitor_id=visitor_id,
+                capture_token=capture_token_uuid,
+                device_profile=device_profile,
+                ip_address=ip_address,
+                geo_data=geo_data or {},
+                n8n_status="pending",
+                server_render_time_ms=server_render_time_ms,
+                is_duplicate=is_duplicate,
+                raw_utm_data={**utm_data, **extra_ad_params},
+            )
+
+            logger.info(
+                "CaptureSubmission created: %s (email=%s, page=%s, duplicate=%s)",
+                submission.public_id,
+                email_raw[:20],
+                capture_page.slug,
+                is_duplicate,
+            )
+            return submission
+
+        except Exception:
+            logger.exception(
+                "Failed to create CaptureSubmission (email=%s, page=%s)",
+                email_raw[:20],
+                getattr(capture_page, "slug", "?"),
+            )
+            return None
+
+    @classmethod
+    def complete_capture(
+        cls,
+        *,
+        request: HttpRequest,
+        data: dict[str, Any],
+        backend_config: dict[str, Any],
+        campaign_slug: str,
+        capture_token: str,
+        capture_page_model: Any,
+        t_start: float,
+    ) -> dict[str, Any]:
+        """Complete a validated capture submit through a single orchestration path.
+
+        The database-facing parts of the capture flow run inside one atomic
+        transaction so identity resolution, tracking success, intent completion,
+        and fact creation move together.
+        """
+        page_path = f"/inscrever-{campaign_slug}/"
+        email = (data.get("email") or "").strip().lower()
+        phone = (data.get("phone") or "").strip()
+        visitor_id = data.get("visitor_id") or data.get("fingerprint") or ""
+        request_id = data.get("request_id") or data.get("eventid") or ""
+
+        utm_data: dict[str, str] = {
+            "utm_source": data.get("utm_source", ""),
+            "utm_medium": data.get("utm_medium", ""),
+            "utm_campaign": data.get("utm_campaign", ""),
+            "utm_content": data.get("utm_content", ""),
+            "utm_term": data.get("utm_term", ""),
+            "utm_id": data.get("utm_id", ""),
+        }
+
+        extra_ad_params: dict[str, str] = {
+            "fbclid": data.get("fbclid", ""),
+            "vk_ad_id": data.get("vk_ad_id", ""),
+            "vk_source": data.get("vk_source", ""),
+        }
+
+        page_url = request.build_absolute_uri()
+        referrer = request.META.get("HTTP_REFERER", "")
+        session_identity = getattr(request, "identity", None)
+        thank_you_url = backend_config.get("form", {}).get(
+            "thank_you_url",
+            backend_config.get("thank_you", {}).get(
+                "url", f"/obrigado-{backend_config.get('slug', campaign_slug)}/"
+            ),
+        )
+        idempotent_result: dict[str, Any] | None = None
+        outbox_entries: list[Any] = []
+
+        with transaction.atomic():
+            idempotency = cls._lock_submit_idempotency(
+                campaign_slug=campaign_slug,
+                email=email,
+                capture_token=capture_token,
+                request_id=request_id,
+                capture_page=capture_page_model,
+            )
+
+            if (
+                idempotency.status == LeadCaptureIdempotencyKey.Status.COMPLETED
+                or idempotency.capture_submission_id is not None
+            ):
+                identity = idempotency.identity
+                submission = idempotency.capture_submission
+                idempotent_result = {
+                    "resolution": {},
+                    "identity": identity,
+                    "identity_id": getattr(identity, "public_id", ""),
+                    "is_new": False,
+                    "n8n_payload": {},
+                    "n8n_webhook_url": "",
+                    "submission": submission,
+                    "outbox_entries": [],
+                    "thank_you_url": idempotency.thank_you_url or thank_you_url,
+                    "email": email,
+                    "phone": phone,
+                    "page_url": page_url,
+                    "capture_token": capture_token,
+                    "idempotent_replay": True,
+                }
+            else:
+                result = cls.process_lead(
+                    email=email,
+                    phone=phone,
+                    visitor_id=visitor_id,
+                    request_id=request_id,
+                    utm_data=utm_data,
+                    campaign_config=backend_config,
+                    page_url=page_url,
+                    referrer=referrer,
+                    session_identity=session_identity,
+                )
+
+                identity = result.get("identity")
+
+                TrackingService.create_event(
+                    event_type=CaptureEvent.EventType.FORM_SUCCESS,
+                    capture_token=capture_token,
+                    page_path=page_path,
+                    page_category=CaptureEvent.PageCategory.CAPTURE,
+                    request=request,
+                    capture_page=capture_page_model,
+                    extra_data={
+                        "email_domain": email.split("@")[-1] if "@" in email else ""
+                    },
+                )
+
+                if identity is not None:
+                    TrackingService.bind_events_to_identity(
+                        capture_token=capture_token,
+                        identity=identity,
+                        visitor_id=visitor_id,
+                    )
+
+                TrackingService.complete_capture_intent(
+                    capture_token=capture_token,
+                    identity=identity,
+                    capture_page=capture_page_model,
+                )
+
+                submission = None
+                if identity is not None and capture_page_model is not None:
+                    submission = cls.create_capture_submission(
+                        identity=identity,
+                        email_raw=data.get("email", ""),
+                        phone_raw=data.get("phone", ""),
+                        capture_page=capture_page_model,
+                        utm_data=utm_data,
+                        extra_ad_params=extra_ad_params,
+                        capture_token=capture_token,
+                        visitor_id=visitor_id,
+                        request=request,
+                        t_start=t_start,
+                    )
+
+                outbox_entries = LeadIntegrationOutboxService.enqueue_for_capture(
+                    capture_token=capture_token,
+                    capture_submission=submission,
+                    identity_public_id=getattr(identity, "public_id", ""),
+                    n8n_webhook_url=result.get("n8n_webhook_url", ""),
+                    n8n_payload=result.get("n8n_payload", {}),
+                    email=email,
+                    phone=phone,
+                    page_url=page_url,
+                    request=request,
+                )
+
+                idempotency.status = LeadCaptureIdempotencyKey.Status.COMPLETED
+                idempotency.capture_page = capture_page_model
+                idempotency.identity = identity
+                idempotency.capture_submission = submission
+                idempotency.thank_you_url = thank_you_url
+                idempotency.save(
+                    update_fields=[
+                        "status",
+                        "capture_page",
+                        "identity",
+                        "capture_submission",
+                        "thank_you_url",
+                        "updated_at",
+                    ]
+                )
+
+        if idempotent_result is not None:
+            result = idempotent_result
+
+        identity = result.get("identity")
+        TrackingService.mark_session_converted(request, email=email)
+
+        if identity is not None and hasattr(request, "session"):
+            request.session["identity_pk"] = identity.pk
+            request.session["identity_id"] = identity.public_id
+
+        TrackingService.update_capture_session(
+            capture_token=capture_token,
+            updates={
+                "status": "converted",
+                "email_domain": email.split("@")[-1] if "@" in email else "",
+            },
+        )
+
+        result.update(
+            {
+                "identity": identity,
+                "submission": submission,
+                "outbox_entries": outbox_entries,
+                "thank_you_url": thank_you_url,
+                "email": email,
+                "phone": phone,
+                "page_url": page_url,
+                "capture_token": capture_token,
+            }
+        )
+        return result

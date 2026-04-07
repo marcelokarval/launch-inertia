@@ -14,6 +14,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import RequestFactory
 
 from apps.landing.campaigns import get_campaign, get_campaign_or_default, _cache
@@ -364,6 +366,24 @@ class TestCaptureView:
         assert "campaign" in body["props"]
         assert "capture_token" in body["props"]
 
+    def test_get_db_backed_page_includes_capture_page_public_id(self):
+        """DB-backed landings should expose capture_page_public_id to the frontend."""
+        from apps.landing.views import capture_page
+        from tests.factories import CapturePageFactory
+
+        page = CapturePageFactory(slug="db-backed-capture")
+
+        request = self.rf.get("/inscrever-db-backed-capture/")
+        request.session = {}
+        request.META["HTTP_X_INERTIA"] = "true"
+        request.data = {}
+
+        response = capture_page(request, "db-backed-capture")
+
+        assert response.status_code == 200
+        body = json.loads(response.content)
+        assert body["props"]["capture_page_public_id"] == page.public_id
+
     def test_get_unknown_slug_redirects_to_default(self):
         """GET with unknown slug should redirect to default campaign."""
         from apps.landing.views import capture_page
@@ -378,6 +398,7 @@ class TestCaptureView:
 
     def test_post_valid_data_redirects(self):
         """POST with valid data should redirect to thank-you page."""
+        from apps.landing.models import LeadIntegrationOutbox
         from apps.landing.views import capture_page
 
         request = self.rf.post(
@@ -401,12 +422,151 @@ class TestCaptureView:
                 "n8n_payload": {"E-mail": "test@example.com"},
                 "n8n_webhook_url": "https://n8n.example.com/webhook/test",
             }
-            with patch("apps.landing.views.send_to_n8n_task") as mock_task:
+            with patch(
+                "apps.landing.tasks.process_lead_integration_outbox_task"
+            ) as mock_task:
                 response = capture_page(request, "wh-rc-v3")
 
                 assert response.status_code == 302
                 assert "/obrigado-wh-rc-v3/" in response.url
-                mock_task.delay.assert_called_once()
+                assert (
+                    LeadIntegrationOutbox.objects.filter(
+                        integration_type=LeadIntegrationOutbox.IntegrationType.N8N
+                    ).count()
+                    == 1
+                )
+
+    def test_post_json_fallback_materializes_page_and_creates_submission(self):
+        """Valid submit on JSON fallback should still create CaptureSubmission."""
+        from apps.ads.models import AdProvider, CaptureSubmission
+        from apps.landing.views import capture_page
+        from tests.factories import IdentityFactory
+
+        AdProvider.objects.create(
+            code="direct",
+            name="Direto",
+            source_patterns={
+                "utm_source_patterns": [],
+                "vk_source_values": [],
+                "click_id_param": "",
+            },
+            naming_convention={},
+        )
+
+        request = self.rf.post(
+            "/inscrever-wh-rc-v3/",
+            content_type="application/json",
+        )
+        request.session = {}
+        request.data = {
+            "email": "lead-json@example.com",
+            "phone": "+5511999887766",
+            "visitor_id": "fp_json_test",
+            "request_id": "req_json_test",
+            "utm_source": "",
+            "utm_medium": "",
+            "utm_campaign": "",
+            "utm_content": "",
+            "utm_term": "",
+            "utm_id": "",
+            "fbclid": "",
+            "vk_ad_id": "",
+            "vk_source": "",
+        }
+        request.client_ip = None
+        request.geo_data = {}
+        request.device_data = None
+        request.device_profile = None
+        request.META["HTTP_USER_AGENT"] = "pytest"
+
+        identity = IdentityFactory()
+
+        with patch("apps.landing.views.CaptureService.process_lead") as mock_process:
+            mock_process.return_value = {
+                "resolution": {},
+                "identity": identity,
+                "identity_id": identity.public_id,
+                "is_new": True,
+                "n8n_payload": {},
+                "n8n_webhook_url": "",
+            }
+
+            response = capture_page(request, "wh-rc-v3")
+
+        assert response.status_code == 302
+        assert "/obrigado-wh-rc-v3/" in response.url
+
+        submission = CaptureSubmission.objects.get(email_raw="lead-json@example.com")
+        assert submission.capture_page.slug == "wh-rc-v3"
+        assert submission.identity == identity
+
+    def test_post_replay_is_idempotent(self):
+        """A repeated valid submit with the same logical key should not duplicate side effects."""
+        from apps.ads.models import CaptureSubmission
+        from apps.landing.models import LeadCaptureIdempotencyKey, LeadIntegrationOutbox
+        from apps.landing.views import capture_page
+        from core.tracking.models import CaptureEvent
+        from tests.factories import CapturePageFactory, IdentityFactory
+
+        page = CapturePageFactory(slug="idempotent-capture")
+        identity = IdentityFactory()
+
+        payload = {
+            "email": "idempotent@example.com",
+            "phone": "+5511999777666",
+            "visitor_id": "fp_idempotent",
+            "request_id": "req_idempotent",
+            "capture_token": "44444444-4444-4444-8444-444444444444",
+            "capture_page_public_id": page.public_id,
+        }
+
+        def make_request():
+            request = self.rf.post(
+                "/inscrever-idempotent-capture/",
+                content_type="application/json",
+            )
+            request.session = {
+                "capture_slug": page.slug,
+                "last_page": f"/inscrever-{page.slug}/",
+            }
+            request.data = dict(payload)
+            request.client_ip = None
+            request.geo_data = {}
+            request.device_data = None
+            request.device_profile = None
+            request.META["HTTP_USER_AGENT"] = "pytest"
+            return request
+
+        with patch("apps.landing.views.CaptureService.process_lead") as mock_process:
+            mock_process.return_value = {
+                "resolution": {},
+                "identity": identity,
+                "identity_id": identity.public_id,
+                "is_new": True,
+                "n8n_payload": {"E-mail": "idempotent@example.com"},
+                "n8n_webhook_url": "https://n8n.example.com/webhook/test",
+            }
+
+            response1 = capture_page(make_request(), page.slug)
+            response2 = capture_page(make_request(), page.slug)
+
+        assert response1.status_code == 302
+        assert response2.status_code == 302
+        assert response1.url == response2.url
+        assert mock_process.call_count == 1
+        assert (
+            CaptureSubmission.objects.filter(email_raw="idempotent@example.com").count()
+            == 1
+        )
+        assert (
+            CaptureEvent.objects.filter(
+                event_type=CaptureEvent.EventType.FORM_SUCCESS,
+                capture_token=payload["capture_token"],
+            ).count()
+            == 1
+        )
+        assert LeadIntegrationOutbox.objects.count() == 1
+        assert LeadCaptureIdempotencyKey.objects.count() == 1
 
     def test_post_invalid_data_returns_errors(self):
         """POST with empty data should re-render with errors."""
@@ -447,6 +607,485 @@ class TestCaptureView:
         assert response.status_code == 200
         body = json.loads(response.content)
         assert "email" in body["props"]["errors"]
+
+
+@pytest.mark.django_db
+class TestCaptureIntentView:
+    """Tests for the capture-intent prelead endpoint."""
+
+    def setup_method(self):
+        self.rf = RequestFactory()
+        _cache.clear()
+
+    def test_capture_intent_creates_prelead_without_contact_channels(self):
+        from apps.contacts.email.models import ContactEmail
+        from apps.contacts.phone.models import ContactPhone
+        from apps.landing.views import capture_intent
+        from core.tracking.models import CaptureIntent
+        from tests.factories import CapturePageFactory, IdentityFactory
+
+        identity = IdentityFactory(confidence_score=0.05)
+        identity.refresh_from_db()
+        initial_confidence = identity.confidence_score
+        page = CapturePageFactory(slug="intent-test-page")
+        payload = {
+            "email_hint": "prelead@example.com",
+            "phone_hint": "+5511999887766",
+            "capture_token": "11111111-1111-4111-8111-111111111111",
+            "visitor_id": "fp_intent_123",
+            "request_id": "req_intent_456",
+        }
+
+        request = self.rf.post(
+            "/api/capture-intent/",
+            data=json.dumps(payload),
+            content_type="text/plain",
+        )
+        request.session = {
+            "capture_slug": page.slug,
+            "last_page": f"/inscrever-{page.slug}/",
+            "identity_pk": identity.pk,
+        }
+        request.identity = identity
+        request.fingerprint_identity = None
+        request.visitor_id = "fp_intent_123"
+        request.META["HTTP_REFERER"] = f"http://testserver/inscrever-{page.slug}/"
+
+        response = capture_intent(request)
+
+        assert response.status_code == 202
+        body = json.loads(response.content)
+        assert body["status"] == "ok"
+        assert body["intent_created"] is True
+
+        intent = CaptureIntent.objects.get(capture_token=payload["capture_token"])
+        assert intent.identity == identity
+        assert intent.capture_page == page
+        assert intent.email_hint == "prelead@example.com"
+        assert intent.phone_hint == "+5511999887766"
+        assert intent.visitor_id == "fp_intent_123"
+        assert intent.request_id == "req_intent_456"
+        assert intent.status == CaptureIntent.Status.PENDING
+
+        assert ContactEmail.objects.count() == 0
+        assert ContactPhone.objects.count() == 0
+        identity.refresh_from_db()
+        assert identity.confidence_score == initial_confidence
+
+    def test_capture_intent_submit_marks_prelead_completed(self):
+        from apps.landing.views import capture_page
+        from core.tracking.models import CaptureIntent
+        from tests.factories import CapturePageFactory, IdentityFactory
+
+        identity = IdentityFactory()
+        page = CapturePageFactory(slug="complete-intent-page")
+        intent = CaptureIntent.objects.create(
+            capture_token="22222222-2222-4222-8222-222222222222",
+            page_path=f"/inscrever-{page.slug}/",
+            capture_page=page,
+            identity=identity,
+            email_hint="complete@example.com",
+            phone_hint="+5511999000111",
+        )
+
+        request = self.rf.post(
+            f"/inscrever-{page.slug}/",
+            content_type="application/json",
+        )
+        request.session = {
+            "capture_slug": page.slug,
+            "last_page": f"/inscrever-{page.slug}/",
+        }
+        request.data = {
+            "email": "complete@example.com",
+            "phone": "+5511999000111",
+            "capture_token": str(intent.capture_token),
+            "capture_page_public_id": page.public_id,
+            "visitor_id": "",
+            "request_id": "",
+        }
+        request.client_ip = None
+        request.geo_data = {}
+        request.device_data = None
+        request.device_profile = None
+        request.META["HTTP_USER_AGENT"] = "pytest"
+
+        with patch("apps.landing.views.CaptureService.process_lead") as mock_process:
+            mock_process.return_value = {
+                "resolution": {},
+                "identity": identity,
+                "identity_id": identity.public_id,
+                "is_new": False,
+                "n8n_payload": {},
+                "n8n_webhook_url": "",
+            }
+            with patch(
+                "apps.landing.views._create_capture_submission", return_value=None
+            ):
+                response = capture_page(request, page.slug)
+
+        assert response.status_code == 302
+        intent.refresh_from_db()
+        assert intent.status == CaptureIntent.Status.COMPLETED
+        assert intent.completed_at is not None
+
+
+@pytest.mark.django_db
+class TestLeadIntegrationOutbox:
+    """Tests for the durable outbox processor."""
+
+    def test_process_n8n_outbox_marks_sent(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from apps.landing.tasks import process_lead_integration_outbox_task
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory(n8n_status="pending")
+        outbox = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="33333333-3333-4333-8333-333333333333",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            payload={
+                "webhook_url": "https://n8n.example.com/webhook/test",
+                "payload": {"E-mail": "lead@example.com"},
+                "submission_id": submission.public_id,
+            },
+        )
+
+        with patch(
+            "apps.landing.tasks.N8NProxyService.send_to_n8n",
+            return_value=True,
+        ) as mock_send:
+            result = process_lead_integration_outbox_task.run(outbox.public_id)
+
+        assert result is True
+        mock_send.assert_called_once()
+        outbox.refresh_from_db()
+        submission.refresh_from_db()
+        assert outbox.status == LeadIntegrationOutbox.Status.SENT
+        assert outbox.processed_at is not None
+        assert outbox.attempts == 1
+        assert submission.n8n_status == "sent"
+
+    def test_process_n8n_outbox_marks_failed_on_permanent_failure(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from apps.landing.tasks import process_lead_integration_outbox_task
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory(n8n_status="pending")
+        outbox = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="34333333-3333-4333-8333-333333333333",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            payload={
+                "webhook_url": "https://n8n.example.com/webhook/test",
+                "payload": {"E-mail": "lead@example.com"},
+                "submission_id": submission.public_id,
+            },
+        )
+
+        original_retries = process_lead_integration_outbox_task.request.retries
+        try:
+            process_lead_integration_outbox_task.request.retries = (
+                process_lead_integration_outbox_task.max_retries
+            )
+            with patch(
+                "apps.landing.tasks.N8NProxyService.send_to_n8n",
+                side_effect=RuntimeError("n8n down"),
+            ):
+                result = process_lead_integration_outbox_task.run(outbox.public_id)
+        finally:
+            process_lead_integration_outbox_task.request.retries = original_retries
+
+        assert result is False
+        outbox.refresh_from_db()
+        submission.refresh_from_db()
+        assert outbox.status == LeadIntegrationOutbox.Status.FAILED
+        assert outbox.processed_at is not None
+        assert outbox.last_error == "n8n down"
+        assert submission.n8n_status == "failed"
+
+
+@pytest.mark.django_db
+class TestRequeueLeadIntegrationsCommand:
+    def test_requeue_failed_integrations_requeues_matching_entries(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory()
+        failed_n8n = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="55555555-5555-4555-8555-555555555555",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            status=LeadIntegrationOutbox.Status.FAILED,
+            last_error="boom",
+        )
+        sent_meta = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="66666666-6666-4666-8666-666666666666",
+            integration_type=LeadIntegrationOutbox.IntegrationType.META_CAPI,
+            status=LeadIntegrationOutbox.Status.SENT,
+        )
+
+        with patch(
+            "apps.landing.management.commands.requeue_failed_lead_integrations.process_lead_integration_outbox_task"
+        ) as mock_task:
+            call_command("requeue_failed_lead_integrations")
+
+        failed_n8n.refresh_from_db()
+        sent_meta.refresh_from_db()
+
+        assert failed_n8n.status == LeadIntegrationOutbox.Status.PENDING
+        assert failed_n8n.last_error == ""
+        assert failed_n8n.processed_at is None
+        assert sent_meta.status == LeadIntegrationOutbox.Status.SENT
+        mock_task.delay.assert_called_once_with(failed_n8n.public_id)
+
+    def test_requeue_failed_integrations_dry_run_does_not_mutate(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory()
+        failed_n8n = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="77777777-7777-4777-8777-777777777777",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            status=LeadIntegrationOutbox.Status.FAILED,
+            last_error="boom",
+        )
+
+        with patch(
+            "apps.landing.management.commands.requeue_failed_lead_integrations.process_lead_integration_outbox_task"
+        ) as mock_task:
+            call_command("requeue_failed_lead_integrations", "--dry-run")
+
+        failed_n8n.refresh_from_db()
+        assert failed_n8n.status == LeadIntegrationOutbox.Status.FAILED
+        assert failed_n8n.last_error == "boom"
+        mock_task.delay.assert_not_called()
+
+    def test_requeue_failed_integrations_filters_by_outbox_id(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory()
+        first = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="88888888-8888-4888-8888-888888888888",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            status=LeadIntegrationOutbox.Status.FAILED,
+        )
+        second = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="99999999-9999-4999-8999-999999999999",
+            integration_type=LeadIntegrationOutbox.IntegrationType.META_CAPI,
+            status=LeadIntegrationOutbox.Status.FAILED,
+        )
+
+        with patch(
+            "apps.landing.management.commands.requeue_failed_lead_integrations.process_lead_integration_outbox_task"
+        ) as mock_task:
+            call_command(
+                "requeue_failed_lead_integrations",
+                "--outbox-id",
+                first.public_id,
+            )
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        assert first.status == LeadIntegrationOutbox.Status.PENDING
+        assert second.status == LeadIntegrationOutbox.Status.FAILED
+        mock_task.delay.assert_called_once_with(first.public_id)
+
+
+@pytest.mark.django_db
+class TestLeadIntegrationHealth:
+    def test_health_check_passes_when_outbox_is_healthy(self):
+        from apps.landing.services.outbox import LeadIntegrationOutboxMonitoringService
+
+        snapshot = LeadIntegrationOutboxMonitoringService.get_health_snapshot(
+            failed_threshold=1,
+            pending_threshold=1,
+            pending_max_age_minutes=1,
+        )
+
+        assert snapshot["healthy"] is True
+        call_command(
+            "check_lead_integration_health",
+            "--failed-threshold",
+            "1",
+            "--pending-threshold",
+            "1",
+            "--pending-max-age-minutes",
+            "1",
+        )
+
+    def test_health_check_fails_when_failed_threshold_is_breached(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory()
+        LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            status=LeadIntegrationOutbox.Status.FAILED,
+        )
+
+        with pytest.raises(CommandError):
+            call_command(
+                "check_lead_integration_health",
+                "--failed-threshold",
+                "1",
+            )
+
+
+@pytest.mark.django_db
+class TestCaptureTransactionRollback:
+    def test_complete_capture_rolls_back_if_form_success_event_fails(self):
+        from apps.landing.models import LeadCaptureIdempotencyKey, LeadIntegrationOutbox
+        from apps.landing.services.capture import CaptureService
+        from core.tracking.models import CaptureEvent
+        from tests.factories import CapturePageFactory, IdentityFactory
+
+        identity = IdentityFactory()
+        page = CapturePageFactory(slug="rollback-capture")
+
+        request = RequestFactory().post(
+            "/inscrever-rollback-capture/",
+            content_type="application/json",
+        )
+        request.session = {
+            "capture_slug": page.slug,
+            "last_page": f"/inscrever-{page.slug}/",
+        }
+        request.client_ip = None
+        request.geo_data = {}
+        request.device_data = None
+        request.device_profile = None
+        request.META["HTTP_USER_AGENT"] = "pytest"
+
+        data = {
+            "email": "rollback@example.com",
+            "phone": "+5511999887766",
+            "capture_token": "12121212-1212-4212-8212-121212121212",
+            "request_id": "req_rollback",
+            "visitor_id": "fp_rollback",
+        }
+        backend_config = {
+            "slug": page.slug,
+            "form": {"thank_you_url": f"/obrigado-{page.slug}/"},
+            "n8n": {"webhook_url": "https://n8n.example.com/webhook/test"},
+        }
+
+        with patch.object(
+            CaptureService,
+            "process_lead",
+            return_value={
+                "resolution": {},
+                "identity": identity,
+                "identity_id": identity.public_id,
+                "is_new": True,
+                "n8n_payload": {"E-mail": "rollback@example.com"},
+                "n8n_webhook_url": "https://n8n.example.com/webhook/test",
+            },
+        ):
+            with patch(
+                "apps.landing.services.capture.TrackingService.create_event",
+                side_effect=RuntimeError("event insert failed"),
+            ):
+                with pytest.raises(RuntimeError, match="event insert failed"):
+                    CaptureService.complete_capture(
+                        request=request,
+                        data=data,
+                        backend_config=backend_config,
+                        campaign_slug=page.slug,
+                        capture_token=data["capture_token"],
+                        capture_page_model=page,
+                        t_start=0.0,
+                    )
+
+        assert LeadCaptureIdempotencyKey.objects.count() == 0
+        assert LeadIntegrationOutbox.objects.count() == 0
+        assert (
+            CaptureEvent.objects.filter(
+                event_type=CaptureEvent.EventType.FORM_SUCCESS,
+                capture_token=data["capture_token"],
+            ).count()
+            == 0
+        )
+
+
+@pytest.mark.django_db
+class TestRepairLeadIntegrationPayloadsCommand:
+    def test_repair_n8n_payload_backfills_submission_id_and_identity(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory()
+        outbox = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            payload={
+                "webhook_url": "https://n8n.example.com/webhook/test",
+                "payload": {},
+            },
+            identity_public_id="",
+        )
+
+        call_command("repair_lead_integration_payloads")
+
+        outbox.refresh_from_db()
+        assert outbox.identity_public_id == submission.identity.public_id
+        assert outbox.payload["submission_id"] == submission.public_id
+
+    def test_repair_meta_payload_backfills_hashes_and_external_id(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory(
+            email_raw="repair@example.com", phone_raw="+5511999555000"
+        )
+        outbox = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            integration_type=LeadIntegrationOutbox.IntegrationType.META_CAPI,
+            payload={},
+            identity_public_id="",
+        )
+
+        call_command(
+            "repair_lead_integration_payloads", "--integration-type", "meta_capi"
+        )
+
+        outbox.refresh_from_db()
+        assert outbox.identity_public_id == submission.identity.public_id
+        assert outbox.payload["external_id"] == submission.identity.public_id
+        assert outbox.payload["email_hash"]
+        assert outbox.payload["phone_hash"]
+        assert outbox.payload["event_id"] == str(submission.capture_token)
+
+    def test_repair_payloads_dry_run_does_not_mutate(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory()
+        outbox = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            payload={
+                "webhook_url": "https://n8n.example.com/webhook/test",
+                "payload": {},
+            },
+            identity_public_id="",
+        )
+
+        call_command("repair_lead_integration_payloads", "--dry-run")
+
+        outbox.refresh_from_db()
+        assert outbox.identity_public_id == ""
+        assert "submission_id" not in outbox.payload
 
 
 # ── Thank You View ───────────────────────────────────────────────────

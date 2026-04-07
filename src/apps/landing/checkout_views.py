@@ -16,6 +16,7 @@ import json
 import logging
 from typing import Any
 
+from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
@@ -23,10 +24,14 @@ from apps.billing.services.billing_service import (
     BillingService,
     LineItem,
 )
-from apps.landing.campaigns import get_campaign, get_campaign_or_default
+from apps.landing.campaigns import get_campaign
 from core.inertia.helpers import inertia_render
 
 logger = logging.getLogger(__name__)
+
+
+def _legacy_json_fallback_enabled() -> bool:
+    return bool(getattr(settings, "LANDING_JSON_FALLBACK_ENABLED", True))
 
 
 def _parse_json_body(request: HttpRequest) -> dict[str, Any]:
@@ -88,7 +93,11 @@ def checkout_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
 
     Fallback: non-existent slugs redirect to home.
     """
-    campaign = get_campaign(campaign_slug)
+    from apps.launches.services import CapturePageService
+
+    campaign = CapturePageService.get_full_config(campaign_slug)
+    if campaign is None and _legacy_json_fallback_enabled():
+        campaign = get_campaign(campaign_slug)
     if campaign is None:
         from django.shortcuts import redirect
 

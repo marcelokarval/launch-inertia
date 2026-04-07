@@ -247,6 +247,79 @@ class CaptureEvent(BaseModel):
         return f"{self.event_type} @ {self.page_path} ({self.capture_token})"
 
 
+class CaptureIntent(BaseModel):
+    """Prelead intent captured before a final submit.
+
+    Stores partial email/phone hints and visitor context from blur/debounce
+    interactions without promoting these hints into final contact channels.
+    One intent row represents one page-load capture session (`capture_token`).
+    """
+
+    PUBLIC_ID_PREFIX = "cit"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        COMPLETED = "completed", "Completed"
+        ABANDONED = "abandoned", "Abandoned"
+
+    capture_token = models.UUIDField(
+        unique=True,
+        db_index=True,
+        help_text="UUID from the page load session.",
+    )
+    page_path = models.CharField(
+        max_length=500,
+        blank=True,
+        db_index=True,
+        help_text="Landing path observed when the intent was captured.",
+    )
+    capture_page = models.ForeignKey(
+        "launches.CapturePage",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="capture_intents",
+    )
+    fingerprint_identity = models.ForeignKey(
+        "contact_fingerprint.FingerprintIdentity",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="capture_intents",
+    )
+    identity = models.ForeignKey(
+        "contact_identity.Identity",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="capture_intents",
+    )
+    visitor_id = models.CharField(max_length=100, blank=True, db_index=True)
+    request_id = models.CharField(max_length=100, blank=True, db_index=True)
+    email_hint = models.CharField(max_length=255, blank=True)
+    phone_hint = models.CharField(max_length=255, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta(BaseModel.Meta):
+        db_table = "tracking_capture_intent"
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["status", "updated_at"]),
+            models.Index(fields=["capture_page", "status"]),
+            models.Index(fields=["identity", "status"]),
+            models.Index(fields=["visitor_id", "updated_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"CaptureIntent({self.capture_token}, {self.status})"
+
+
 # ── Unmanaged models for SQL views ──────────────────────────────────
 
 

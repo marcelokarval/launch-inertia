@@ -17,6 +17,8 @@ interface CaptureFormProps {
   fingerprintEndpoint?: string;
   /** Server-generated UUID linking events of the same page load session */
   captureToken: string;
+  /** CapturePage public_id when available from the backend */
+  capturePagePublicId?: string;
   /** Pre-fill data from session identity or capture-intent hints */
   prefill?: PrefillData;
   serverErrors?: Record<string, string>;
@@ -41,12 +43,17 @@ export default function CaptureForm({
   fingerprintApiKey,
   fingerprintEndpoint,
   captureToken,
+  capturePagePublicId,
   prefill,
   serverErrors,
 }: CaptureFormProps) {
   const hasSetUtm = useRef(false);
   const { visitorId, requestId, handleFingerprintResult } = useFingerprint();
-  const { handleEmailBlur, handlePhoneBlur } = useCaptureIntent({ captureToken });
+  const { handleEmailBlur, handlePhoneBlur } = useCaptureIntent({
+    captureToken,
+    visitorId,
+    requestId,
+  });
 
   const { data, setData, post, processing, errors } = useForm({
     email: prefill?.email ?? '',
@@ -54,6 +61,7 @@ export default function CaptureForm({
     visitor_id: '',
     request_id: '',
     capture_token: captureToken,
+    capture_page_public_id: capturePagePublicId ?? '',
     utm_source: '',
     utm_medium: '',
     utm_campaign: '',

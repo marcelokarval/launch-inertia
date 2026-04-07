@@ -20,26 +20,32 @@ from typing import Any, cast
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from core.inertia.helpers import inertia_render
 from core.shared.hashing import hash_email, hash_phone
 from core.tracking.models import CaptureEvent
-from core.tracking.services import DeviceProfileService, TrackingService
+from core.tracking.services import TrackingService
 from core.types import SameSiteType
 
 from apps.ads.models import CaptureSubmission
-from apps.ads.services.utm_parser import UTMParserService
+from apps.ads.services.utm_parser import UTMParserService  # compatibility for tests
 from apps.landing.campaigns import get_campaign, get_campaign_or_default
 from apps.landing.services.capture import CaptureService
-from apps.landing.tasks import send_to_n8n_task
+from apps.landing.services.page_config import LandingPageConfigService
 from apps.launches.services import CapturePageService
 
 logger = logging.getLogger(__name__)
 
 # Default campaign slug — used as fallback for non-existent slugs.
 DEFAULT_CAMPAIGN_SLUG = "wh-rc-v3"
+
+
+def _legacy_json_fallback_enabled() -> bool:
+    """Whether runtime JSON campaign fallback is currently allowed."""
+    return bool(getattr(settings, "LANDING_JSON_FALLBACK_ENABLED", True))
 
 
 def _track_redirect(request: HttpRequest, page_path: str) -> None:
@@ -61,6 +67,32 @@ def _track_redirect(request: HttpRequest, page_path: str) -> None:
     except Exception:
         # Tracking failure must never block a redirect
         logger.debug("Failed to track redirect for %s", page_path)
+
+
+def _track_page_view(
+    request: HttpRequest,
+    page_path: str,
+    page_category: CaptureEvent.PageCategory,
+) -> None:
+    """Track page_view event for config-driven landing pages.
+
+    Extracts the repeated tracking pattern from views into a helper.
+    Creates a capture token and fires a PAGE_VIEW event with the given
+    path and category.
+
+    Args:
+        request: The incoming HTTP request.
+        page_path: URL path for the event (e.g., "/lembrete-bf/").
+        page_category: CaptureEvent.PageCategory enum value.
+    """
+    capture_token = TrackingService.generate_capture_token()
+    TrackingService.create_event(
+        event_type=CaptureEvent.EventType.PAGE_VIEW,
+        capture_token=capture_token,
+        page_path=page_path,
+        page_category=page_category,
+        request=request,
+    )
 
 
 def _set_hashed_pii_cookies(
@@ -131,10 +163,11 @@ def _resolve_campaign_config(
         backend_config = CapturePageService.get_full_config(slug)
         return frontend_props, backend_config, page
 
-    # Fallback to JSON files (migration period)
-    json_config = get_campaign(slug)
-    if json_config is not None:
-        return json_config, json_config, None
+    # Fallback to JSON files (migration period, non-production by default)
+    if _legacy_json_fallback_enabled():
+        json_config = get_campaign(slug)
+        if json_config is not None:
+            return json_config, json_config, None
 
     return None, None, None
 
@@ -172,9 +205,12 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
         if campaign_slug != DEFAULT_CAMPAIGN_SLUG:
             return redirect(f"/inscrever-{DEFAULT_CAMPAIGN_SLUG}/")
         # Safety: if even the default doesn't exist, use generated defaults
-        default_config = get_campaign_or_default(campaign_slug)
-        frontend_props = default_config
-        backend_config = default_config
+        if _legacy_json_fallback_enabled():
+            default_config = get_campaign_or_default(campaign_slug)
+            frontend_props = default_config
+            backend_config = default_config
+        else:
+            return HttpResponse("Capture page not configured.", status=404)
 
     if request.method == "POST":
         return _handle_capture_post(
@@ -212,6 +248,7 @@ def capture_page(request: HttpRequest, campaign_slug: str) -> HttpResponse:
         frontend_props,
         campaign_slug,
         capture_token=capture_token,
+        capture_page_public_id=getattr(capture_page_model, "public_id", ""),
         identity_public_id=identity_public_id,
     )
 
@@ -259,6 +296,7 @@ def _render_capture_page(
     campaign_slug: str,
     *,
     capture_token: str = "",
+    capture_page_public_id: str = "",
     identity_public_id: str = "",
     errors: dict[str, str] | None = None,
 ) -> HttpResponse:
@@ -276,6 +314,9 @@ def _render_capture_page(
         "campaign": _build_campaign_props(campaign, campaign_slug),
         "capture_token": capture_token,
     }
+
+    if capture_page_public_id:
+        props["capture_page_public_id"] = capture_page_public_id
 
     # Session-based identity: always available from first page load
     if identity_public_id:
@@ -359,9 +400,8 @@ def _handle_capture_post(
     Re-renders page with errors on validation failure,
     or redirects to thank-you URL on success.
 
-    After identity resolution, parses UTMs via UTMParserService and
-    creates a CaptureSubmission (star schema fact table) with all
-    resolved dimension FKs.
+    On valid submit, delegates the orchestration to CaptureService.complete_capture()
+    so the DB-facing operations run through a single transactional service path.
 
     Args:
         frontend_props: Config for re-rendering on validation error.
@@ -408,127 +448,43 @@ def _handle_capture_post(
             frontend_props,
             campaign_slug,
             capture_token=capture_token,
+            capture_page_public_id=getattr(capture_page_model, "public_id", ""),
             identity_public_id=getattr(request, "identity_public_id", ""),
             errors=errors,
         )
 
-    # Extract form fields
-    email = (data.get("email") or "").strip().lower()
-    phone = (data.get("phone") or "").strip()
-    visitor_id = data.get("visitor_id") or data.get("fingerprint") or ""
-    request_id = data.get("request_id") or data.get("eventid") or ""
+    capture_page_public_id = (data.get("capture_page_public_id") or "").strip()
+    if capture_page_model is None and capture_page_public_id:
+        capture_page_model = CapturePageService.get_page(campaign_slug)
 
-    # Extract UTM data
-    utm_data: dict[str, str] = {
-        "utm_source": data.get("utm_source", ""),
-        "utm_medium": data.get("utm_medium", ""),
-        "utm_campaign": data.get("utm_campaign", ""),
-        "utm_content": data.get("utm_content", ""),
-        "utm_term": data.get("utm_term", ""),
-        "utm_id": data.get("utm_id", ""),
-    }
+    # Materialize legacy JSON-backed campaigns so successful submits always
+    # have a concrete CapturePage FK for CaptureSubmission.
+    if capture_page_model is None:
+        capture_page_model = CapturePageService.materialize_legacy_page(
+            campaign_slug,
+            backend_config,
+        )
 
-    # Extract ad tracking params (Meta CAPI, Voluum)
-    extra_ad_params: dict[str, str] = {
-        "fbclid": data.get("fbclid", ""),
-        "vk_ad_id": data.get("vk_ad_id", ""),
-        "vk_source": data.get("vk_source", ""),
-    }
-
-    page_url = request.build_absolute_uri()
-    referrer = request.META.get("HTTP_REFERER", "")
-
-    # Session-based identity: may already exist from IdentitySessionMiddleware
-    session_identity = getattr(request, "identity", None)
-
-    # Process the lead (identity resolution + attribution)
-    # Uses backend_config which includes n8n keys
-    # Passes session_identity so resolution can enrich it instead of creating new
-    result = CaptureService.process_lead(
-        email=email,
-        phone=phone,
-        visitor_id=visitor_id,
-        request_id=request_id,
-        utm_data=utm_data,
-        campaign_config=backend_config,
-        page_url=page_url,
-        referrer=referrer,
-        session_identity=session_identity,
-    )
-
-    # Track form success
-    TrackingService.create_event(
-        event_type=CaptureEvent.EventType.FORM_SUCCESS,
-        capture_token=capture_token,
-        page_path=page_path,
-        page_category=CaptureEvent.PageCategory.CAPTURE,
+    result = CaptureService.complete_capture(
         request=request,
-        capture_page=capture_page_model,
-        extra_data={"email_domain": email.split("@")[-1] if "@" in email else ""},
+        data=data,
+        backend_config=backend_config,
+        campaign_slug=campaign_slug,
+        capture_token=capture_token,
+        capture_page_model=capture_page_model,
+        t_start=t_start,
     )
-
-    # Bind anonymous events to resolved identity (retroactive)
     identity = result.get("identity")
-    if identity is not None:
-        TrackingService.bind_events_to_identity(
-            capture_token=capture_token,
-            identity=identity,
-            visitor_id=visitor_id,
-        )
+    submission = result.get("submission")
+    email = result.get("email", "")
+    phone = result.get("phone", "")
+    page_url = result.get("page_url", request.build_absolute_uri())
 
-    # Mark Django session as converted (extends TTL to 365d)
-    TrackingService.mark_session_converted(request, email=email)
-
-    # Update session identity_pk if resolution returned a different identity
-    # (e.g., merged with existing email-based identity)
-    if identity is not None and hasattr(request, "session"):
-        request.session["identity_pk"] = identity.pk
-        request.session["identity_id"] = identity.public_id
-
-    # Update Redis capture session status (short-lived, event correlation)
-    TrackingService.update_capture_session(
-        capture_token=capture_token,
-        updates={
-            "status": "converted",
-            "email_domain": email.split("@")[-1] if "@" in email else "",
-        },
-    )
-
-    # ── Create CaptureSubmission (star schema fact table) ─────────
-    submission = None
-    if identity is not None and capture_page_model is not None:
-        submission = _create_capture_submission(
-            identity=identity,
-            email_raw=data.get("email", ""),
-            phone_raw=data.get("phone", ""),
-            capture_page=capture_page_model,
-            utm_data=utm_data,
-            extra_ad_params=extra_ad_params,
-            capture_token=capture_token,
-            visitor_id=visitor_id,
-            request=request,
-            t_start=t_start,
-        )
-
-    # Fire N8N webhook asynchronously via Celery
-    n8n_webhook_url = result.get("n8n_webhook_url", "")
-    n8n_payload = result.get("n8n_payload", {})
-    if n8n_webhook_url:
-        submission_id = submission.public_id if submission else ""
-        send_to_n8n_task.delay(n8n_webhook_url, n8n_payload, submission_id)
-
-    # Dispatch Meta CAPI Lead event (async, never blocks redirect)
-    _dispatch_meta_capi_lead(
-        email=email,
-        phone=phone,
-        capture_token=capture_token,
-        page_url=page_url,
-        request=request,
-        identity_public_id=getattr(request, "identity_public_id", ""),
-    )
+    # External integrations are now enqueued through LeadIntegrationOutbox
+    # inside CaptureService.complete_capture(). The request path only redirects.
 
     # Redirect to thank-you page
-    thank_you_url = backend_config.get("form", {}).get(
+    thank_you_url = result.get("thank_you_url") or backend_config.get("form", {}).get(
         "thank_you_url",
         backend_config.get("thank_you", {}).get(
             "url", f"/obrigado-{backend_config.get('slug', campaign_slug)}/"
@@ -631,96 +587,19 @@ def _create_capture_submission(
     request: HttpRequest,
     t_start: float,
 ) -> CaptureSubmission | None:
-    """Parse UTMs and create a CaptureSubmission fact record.
-
-    Resilient: if parsing or submission creation fails, logs error
-    and returns None (never blocks the redirect).
-
-    Args:
-        identity: Resolved Identity instance.
-        email_raw: Raw email from form (before normalization).
-        phone_raw: Raw phone from form.
-        capture_page: CapturePage model instance.
-        utm_data: Standard UTM parameters.
-        extra_ad_params: fbclid, vk_ad_id, vk_source.
-        capture_token: UUID linking to CaptureEvents.
-        visitor_id: FingerprintJS visitorId.
-        request: HttpRequest (for device_profile, ip, geo).
-        t_start: time.monotonic() from start of POST handler.
-    """
-    try:
-        # Parse UTMs and resolve all dimension FKs
-        launch = getattr(capture_page, "launch", None)
-        parsed = UTMParserService.parse(
-            utm_data,
-            extra_ad_params,
-            launch=launch,
-        )
-
-        # Calculate server render time
-        server_render_time_ms = (time.monotonic() - t_start) * 1000
-
-        # Resolve device profile from request (VisitorMiddleware)
-        device_profile = DeviceProfileService.get_or_create_from_request(request)
-
-        # Extract network data from request
-        ip_address = getattr(request, "client_ip", None) or None
-        geo_data = getattr(request, "geo_data", {})
-
-        # Detect duplicate (same email + same launch)
-        is_duplicate = False
-        if launch is not None:
-            is_duplicate = CaptureSubmission.objects.filter(
-                email_raw__iexact=email_raw.strip(),
-                capture_page__launch=launch,
-                is_deleted=False,
-            ).exists()
-
-        # Parse capture_token to UUID (may be string from form)
-        try:
-            capture_token_uuid = uuid.UUID(capture_token)
-        except (ValueError, AttributeError):
-            capture_token_uuid = uuid.uuid4()
-
-        # Click ID: from parsed result or direct from extra_params
-        click_id = parsed.click_id or extra_ad_params.get("fbclid", "")
-
-        submission = CaptureSubmission.objects.create(
-            identity=identity,
-            email_raw=email_raw,
-            phone_raw=phone_raw,
-            capture_page=capture_page,
-            traffic_source=parsed.traffic_source,
-            ad_group=parsed.ad_group,
-            ad_creative=parsed.creative,
-            click_id=click_id,
-            visitor_id=visitor_id,
-            capture_token=capture_token_uuid,
-            device_profile=device_profile,
-            ip_address=ip_address,
-            geo_data=geo_data or {},
-            n8n_status="pending",
-            server_render_time_ms=server_render_time_ms,
-            is_duplicate=is_duplicate,
-            raw_utm_data={**utm_data, **extra_ad_params},
-        )
-
-        logger.info(
-            "CaptureSubmission created: %s (email=%s, page=%s, duplicate=%s)",
-            submission.public_id,
-            email_raw[:20],
-            capture_page.slug,
-            is_duplicate,
-        )
-        return submission
-
-    except Exception:
-        logger.exception(
-            "Failed to create CaptureSubmission (email=%s, page=%s)",
-            email_raw[:20],
-            getattr(capture_page, "slug", "?"),
-        )
-        return None
+    """Compatibility wrapper around CaptureService.create_capture_submission()."""
+    return CaptureService.create_capture_submission(
+        identity=identity,
+        email_raw=email_raw,
+        phone_raw=phone_raw,
+        capture_page=capture_page,
+        utm_data=utm_data,
+        extra_ad_params=extra_ad_params,
+        capture_token=capture_token,
+        visitor_id=visitor_id,
+        request=request,
+        t_start=t_start,
+    )
 
 
 # ── Support page configuration ────────────────────────────────────────
@@ -1162,10 +1041,9 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
 
     Actions:
         1. Store hints in Django session (for pre-fill on return)
-        2. Create ContactEmail/ContactPhone with lifecycle_status=pending
-        3. Upgrade Identity confidence score
-        4. Bind anonymous CaptureEvents to the identity retroactively
-        5. Record FORM_INTENT CaptureEvent for funnel analytics
+        2. Upsert a CaptureIntent prelead record
+        3. Bind anonymous CaptureEvents to the identity retroactively
+        4. Record FORM_INTENT CaptureEvent for funnel analytics
 
     Rate limited. @csrf_exempt — sendBeacon can't set headers.
     """
@@ -1174,6 +1052,8 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
         email_hint = (body.get("email_hint") or "").strip().lower()
         phone_hint = (body.get("phone_hint") or "").strip()
         capture_token = (body.get("capture_token") or "").strip()
+        visitor_id = (body.get("visitor_id") or "").strip()
+        request_id = (body.get("request_id") or "").strip()
 
         if not email_hint and not phone_hint:
             return JsonResponse({"status": "error", "reason": "no_hints"}, status=400)
@@ -1185,7 +1065,7 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
             if phone_hint:
                 request.session["phone_hint"] = phone_hint
 
-        # 2. Persist hints as ContactEmail/ContactPhone (pending)
+        # 2. Resolve current identity context (session identity remains anonymous until submit)
         identity = getattr(request, "identity", None)
         if identity is None and hasattr(request, "session"):
             # Fallback: recover identity from session PK
@@ -1202,7 +1082,15 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
                         "capture-intent: identity PK=%s not found", identity_pk
                     )
 
-        contacts_created = _persist_intent_contacts(identity, email_hint, phone_hint)
+        request.identity = identity  # type: ignore[attr-defined]
+        intent, intent_created = TrackingService.upsert_capture_intent(
+            request=request,
+            capture_token=capture_token,
+            email_hint=email_hint,
+            phone_hint=phone_hint,
+            visitor_id=visitor_id,
+            request_id=request_id,
+        )
 
         # 3. Bind anonymous events to identity retroactively
         events_bound = 0
@@ -1253,132 +1141,16 @@ def capture_intent(request: HttpRequest) -> HttpResponse:
         return JsonResponse(
             {
                 "status": "ok",
-                "contacts_created": contacts_created,
+                "intent_created": intent_created,
+                "intent_id": intent.public_id if intent else "",
                 "events_bound": events_bound,
-            }
+            },
+            status=202,
         )
 
     except Exception:
         logger.exception("capture-intent: unexpected error")
         return JsonResponse({"status": "error"}, status=500)
-
-
-def _persist_intent_contacts(
-    identity: Any,
-    email_hint: str,
-    phone_hint: str,
-) -> int:
-    """Create ContactEmail/ContactPhone from intent hints.
-
-    Creates records with lifecycle_status=pending linked to the identity.
-    Updates identity confidence score based on available PII:
-    - email only: +0.25 (0.05 → 0.30)
-    - phone only: +0.20 (0.05 → 0.25)
-    - both: +0.45 (0.05 → 0.50)
-
-    Uses get_or_create to avoid duplicates. If the email/phone already
-    exists (e.g., re-blurred), links it to the identity if unlinked.
-
-    Returns:
-        Number of new contacts created.
-    """
-    if identity is None:
-        return 0
-
-    created_count = 0
-    confidence_boost = 0.0
-
-    # Email hint → ContactEmail
-    if email_hint:
-        try:
-            from apps.contacts.email.models import ContactEmail
-
-            if ContactEmail.is_valid_email(email_hint):
-                contact_email, email_created = ContactEmail.objects.get_or_create(
-                    value=email_hint.lower().strip(),
-                    defaults={
-                        "identity": identity,
-                        "lifecycle_status": ContactEmail.PENDING,
-                        "original_value": email_hint,
-                    },
-                )
-                if email_created:
-                    created_count += 1
-                    confidence_boost += 0.25
-                    logger.info(
-                        "capture-intent: created ContactEmail %s for identity %s",
-                        contact_email.public_id,
-                        identity.public_id,
-                    )
-                elif not contact_email.identity_id:
-                    # Existing email without identity → link it
-                    contact_email.identity = identity
-                    contact_email.save(update_fields=["identity", "updated_at"])
-                    confidence_boost += 0.15
-                    logger.info(
-                        "capture-intent: linked existing ContactEmail %s to identity %s",
-                        contact_email.public_id,
-                        identity.public_id,
-                    )
-        except Exception:
-            logger.debug("capture-intent: failed to persist email hint", exc_info=True)
-
-    # Phone hint → ContactPhone
-    if phone_hint:
-        try:
-            from apps.contacts.phone.models import ContactPhone
-
-            digits = (
-                phone_hint.replace(" ", "")
-                .replace("-", "")
-                .replace("(", "")
-                .replace(")", "")
-            )
-            if len(digits.replace("+", "")) >= 8:
-                contact_phone, phone_created = ContactPhone.objects.get_or_create(
-                    value=phone_hint,
-                    defaults={
-                        "identity": identity,
-                        "original_value": phone_hint,
-                    },
-                )
-                if phone_created:
-                    created_count += 1
-                    confidence_boost += 0.20
-                    logger.info(
-                        "capture-intent: created ContactPhone %s for identity %s",
-                        contact_phone.public_id,
-                        identity.public_id,
-                    )
-                elif not contact_phone.identity_id:
-                    contact_phone.identity = identity
-                    contact_phone.save(update_fields=["identity", "updated_at"])
-                    confidence_boost += 0.10
-                    logger.info(
-                        "capture-intent: linked existing ContactPhone %s to identity %s",
-                        contact_phone.public_id,
-                        identity.public_id,
-                    )
-        except Exception:
-            logger.debug("capture-intent: failed to persist phone hint", exc_info=True)
-
-    # Update identity confidence score
-    if confidence_boost > 0:
-        try:
-            new_confidence = min(identity.confidence_score + confidence_boost, 1.0)
-            if new_confidence > identity.confidence_score:
-                identity.confidence_score = new_confidence
-                identity.save(update_fields=["confidence_score", "updated_at"])
-                logger.info(
-                    "capture-intent: identity %s confidence updated to %.2f (+%.2f)",
-                    identity.public_id,
-                    new_confidence,
-                    confidence_boost,
-                )
-        except Exception:
-            logger.debug("capture-intent: failed to update confidence", exc_info=True)
-
-    return created_count
 
 
 # ── AgreliFlix (CPL video lesson series) ──────────────────────────────
@@ -1561,26 +1333,92 @@ def agrelliflix_page(
 
 @require_GET
 def support_launch_page(request: HttpRequest) -> HttpResponse:
-    """Support page variant for active launches.
+    """Support page with video background and Chatwoot auto-open.
 
     URL: /suporte-launch/
 
-    Legacy: auto-opens Chatwoot with UTM context.
-    Currently: same as /suporte/ (shared support page).
+    Legacy: auto-opens Chatwoot with UTM context over a YouTube
+    video background. Has enrollment CTA at the bottom.
+
+    Config is site-wide (not per-campaign). Tracks page_view event.
     """
-    return support_page(request)
+    _track_page_view(request, "/suporte-launch/", CaptureEvent.PageCategory.SUPPORT)
+
+    config = LandingPageConfigService.get_support_launch_config()
+
+    return inertia_render(
+        request,
+        "SuporteLaunch/Index",
+        {"config": config},
+        app="landing",
+    )
 
 
 @require_GET
-def placeholder_redirect(request: HttpRequest) -> HttpResponse:
-    """Redirect placeholder for legacy routes not yet ported.
+def onboarding_page(request: HttpRequest) -> HttpResponse:
+    """Post-purchase onboarding page.
 
-    Used for: /lembrete-bf/, /recado-importante/, /onboarding/.
+    URL: /onboarding/
 
-    These are complex pages (sales funnels, post-purchase flows)
-    that will be implemented in later phases.
+    Shows a marquee header confirming purchase, instructional video,
+    and WhatsApp floating button. Content is config-driven.
 
-    Tracks page_view event for visitor journey attribution before redirect.
+    Legacy: frontend-landing-pages/app/onboarding/page.tsx (158 lines)
     """
-    _track_redirect(request, request.path)
-    return redirect("/")
+    _track_page_view(request, "/onboarding/", CaptureEvent.PageCategory.CONTENT)
+
+    config = LandingPageConfigService.get_onboarding_config()
+
+    return inertia_render(
+        request,
+        "Onboarding/Index",
+        {"config": config},
+        app="landing",
+    )
+
+
+@require_GET
+def lembrete_bf_page(request: HttpRequest) -> HttpResponse:
+    """Black Friday reminder page.
+
+    URL: /lembrete-bf/
+
+    Urgency-driven page with countdown timer, course cards, bonus tiers,
+    pricing comparison, and WhatsApp CTA. All content is config-driven.
+
+    Legacy: frontend-landing-pages/app/lembrete-bf/page.tsx (676 lines)
+    """
+    _track_page_view(request, "/lembrete-bf/", CaptureEvent.PageCategory.CONTENT)
+
+    config = LandingPageConfigService.get_lembrete_bf_config()
+
+    return inertia_render(
+        request,
+        "LembreteBF/Index",
+        {"config": config},
+        app="landing",
+    )
+
+
+@require_GET
+def recado_importante_page(request: HttpRequest) -> HttpResponse:
+    """Long-form sales page (VSL).
+
+    URL: /recado-importante/
+
+    Vertical sales letter with hero video, expert card, video testimonials,
+    course modules, bonuses, mega bonus, pricing reveal, and floating CTA.
+    All content is config-driven.
+
+    Legacy: frontend-landing-pages/app/recado-importante/ (~2,800 lines / 27 files)
+    """
+    _track_page_view(request, "/recado-importante/", CaptureEvent.PageCategory.CONTENT)
+
+    config = LandingPageConfigService.get_recado_importante_config()
+
+    return inertia_render(
+        request,
+        "RecadoImportante/Index",
+        {"config": config},
+        app="landing",
+    )

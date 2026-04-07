@@ -303,6 +303,22 @@ def dashboard_view(request):
 
 
 @login_required
+def delinquent_view(request):
+    """Standalone page shown when a user's subscription is delinquent."""
+    if not request.user.is_delinquent:
+        return redirect("identity:dashboard")
+
+    message = request.GET.get("message") or None
+    return inertia_render(
+        request,
+        "Delinquent",
+        {
+            "message": message,
+        },
+    )
+
+
+@login_required
 def profile_view(request):
     """User profile page."""
     user = request.user

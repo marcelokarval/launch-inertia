@@ -431,6 +431,10 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour="*/6"),  # Every 6 hours
         "kwargs": {"lookback_days": 7},
     },
+    "monitor-lead-integrations-health": {
+        "task": "landing.monitor_lead_integrations_health",
+        "schedule": crontab(minute="*/15"),  # Every 15 minutes
+    },
 }
 
 # =============================================================================
@@ -509,6 +513,13 @@ RATE_LIMIT_ENABLED = not flags.debug
 RATE_LIMIT_REQUESTS = 100
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_WHITELIST = ["127.0.0.1"] if flags.debug else []
+
+# Legacy landing JSON runtime fallback. Keep enabled in dev/test during
+# migration, but disable in production once CapturePage is the source of truth.
+LANDING_JSON_FALLBACK_ENABLED = flags.landing_json_fallback_enabled
+LEAD_OUTBOX_FAILED_THRESHOLD = flags.lead_outbox_failed_threshold
+LEAD_OUTBOX_PENDING_THRESHOLD = flags.lead_outbox_pending_threshold
+LEAD_OUTBOX_PENDING_MAX_AGE_MINUTES = flags.lead_outbox_pending_max_age_minutes
 
 # Security headers
 SECURITY_HEADERS_ENABLED = True
@@ -611,6 +622,13 @@ FINGERPRINT_API_KEY: str = os.getenv("FINGERPRINT_API_KEY", "")
 FINGERPRINT_ENDPOINT: str = os.getenv(
     "FINGERPRINT_ENDPOINT", "https://finger.arthuragrelli.com"
 )
+
+# =============================================================================
+# CHATWOOT
+# =============================================================================
+
+CHATWOOT_WEBSITE_TOKEN: str = os.getenv("CHATWOOT_WEBSITE_TOKEN", "")
+CHATWOOT_BASE_URL: str = os.getenv("CHATWOOT_BASE_URL", "https://app.chatwoot.com")
 
 
 def environment_callback(request):

@@ -59,7 +59,7 @@ dashboard_urlpatterns = [
     path("settings/profile/", views.profile_view, name="profile"),
     path("settings/security/", views.settings_security_view, name="settings-security"),
     # Delinquent: /app/delinquent/
-    path("delinquent/", views.dashboard_view, name="delinquent"),
+    path("delinquent/", views.delinquent_view, name="delinquent"),
 ]
 
 # Combined urlpatterns for backward compatibility with include()

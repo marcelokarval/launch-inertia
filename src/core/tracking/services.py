@@ -12,7 +12,7 @@ from typing import Any, Optional
 from django.core.cache import cache
 from django.http import HttpRequest
 
-from core.tracking.models import CaptureEvent, DeviceProfile
+from core.tracking.models import CaptureEvent, CaptureIntent, DeviceProfile
 
 logger = logging.getLogger(__name__)
 
@@ -355,6 +355,137 @@ class TrackingService:
             )
         except Exception:
             logger.debug("Failed to mark session as converted")
+
+    @classmethod
+    def upsert_capture_intent(
+        cls,
+        *,
+        request: HttpRequest,
+        capture_token: str,
+        email_hint: str = "",
+        phone_hint: str = "",
+        visitor_id: str = "",
+        request_id: str = "",
+    ) -> tuple[Optional[CaptureIntent], bool]:
+        """Create or update a prelead CaptureIntent for a page-load session."""
+        try:
+            capture_uuid = uuid.UUID(str(capture_token))
+        except (TypeError, ValueError, AttributeError):
+            return None, False
+
+        capture_slug = (
+            request.session.get("capture_slug", "")
+            if hasattr(request, "session")
+            else ""
+        )
+        capture_page = None
+        if capture_slug:
+            from apps.launches.services import CapturePageService
+
+            capture_page = CapturePageService.get_page(capture_slug)
+
+        referer = request.META.get("HTTP_REFERER", "")
+        page_path = (
+            request.session.get("last_page", "/")
+            if hasattr(request, "session")
+            else "/"
+        )
+        if referer:
+            from urllib.parse import urlparse
+
+            page_path = urlparse(referer).path or page_path
+
+        identity = getattr(request, "identity", None)
+        fingerprint_identity = getattr(request, "fingerprint_identity", None)
+        resolved_visitor_id = visitor_id or getattr(request, "visitor_id", "")
+
+        intent, created = CaptureIntent.objects.get_or_create(
+            capture_token=capture_uuid,
+            defaults={
+                "page_path": page_path,
+                "capture_page": capture_page,
+                "fingerprint_identity": fingerprint_identity,
+                "identity": identity,
+                "visitor_id": resolved_visitor_id,
+                "request_id": request_id,
+                "email_hint": email_hint,
+                "phone_hint": phone_hint,
+                "metadata": {"source": "capture-intent-beacon"},
+            },
+        )
+
+        if created:
+            return intent, True
+
+        update_fields: list[str] = []
+
+        if email_hint and intent.email_hint != email_hint:
+            intent.email_hint = email_hint
+            update_fields.append("email_hint")
+
+        if phone_hint and intent.phone_hint != phone_hint:
+            intent.phone_hint = phone_hint
+            update_fields.append("phone_hint")
+
+        if intent.identity_id is None and identity is not None:
+            intent.identity = identity
+            update_fields.append("identity")
+
+        if intent.fingerprint_identity_id is None and fingerprint_identity is not None:
+            intent.fingerprint_identity = fingerprint_identity
+            update_fields.append("fingerprint_identity")
+
+        if not intent.visitor_id and resolved_visitor_id:
+            intent.visitor_id = resolved_visitor_id
+            update_fields.append("visitor_id")
+
+        if not intent.request_id and request_id:
+            intent.request_id = request_id
+            update_fields.append("request_id")
+
+        if not intent.page_path and page_path:
+            intent.page_path = page_path
+            update_fields.append("page_path")
+
+        if intent.capture_page_id is None and capture_page is not None:
+            intent.capture_page = capture_page
+            update_fields.append("capture_page")
+
+        if update_fields:
+            intent.save(update_fields=update_fields + ["updated_at"])
+
+        return intent, False
+
+    @classmethod
+    def complete_capture_intent(
+        cls,
+        *,
+        capture_token: str,
+        identity: Any = None,
+        capture_page: Any = None,
+    ) -> int:
+        """Mark a pending CaptureIntent as completed after a valid submit."""
+        try:
+            capture_uuid = uuid.UUID(str(capture_token))
+        except (TypeError, ValueError, AttributeError):
+            return 0
+
+        from django.utils import timezone
+
+        update_kwargs: dict[str, Any] = {
+            "status": CaptureIntent.Status.COMPLETED,
+            "completed_at": timezone.now(),
+        }
+        if identity is not None:
+            update_kwargs["identity"] = identity
+        if capture_page is not None:
+            update_kwargs["capture_page"] = capture_page
+
+        return (
+            CaptureIntent.objects.filter(capture_token=capture_uuid)
+            .exclude(status=CaptureIntent.Status.COMPLETED)
+            .update(**update_kwargs)
+        )
 
     @classmethod
     def extract_utm_from_request(cls, request: HttpRequest) -> dict[str, str]:

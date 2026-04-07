@@ -13,6 +13,9 @@ from datetime import timedelta
 
 import pytest
 from django.core.cache import cache
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.test import override_settings
 from django.utils import timezone
 
 from apps.launches.models import CapturePage, Interest, Launch
@@ -465,6 +468,17 @@ class TestResolveConfig:
         assert backend is not None
         assert model is None  # No DB model for JSON fallback
 
+    @override_settings(LANDING_JSON_FALLBACK_ENABLED=False)
+    def test_resolve_json_fallback_disabled(self):
+        """When fallback is disabled, JSON-only slugs should not resolve."""
+        from apps.landing.views import _resolve_campaign_config
+
+        frontend, backend, model = _resolve_campaign_config("wh-rc-v3")
+
+        assert frontend is None
+        assert backend is None
+        assert model is None
+
     def test_resolve_none_for_missing(self):
         """Returns (None, None, None) when slug not in DB or JSON."""
         from apps.landing.views import _resolve_campaign_config
@@ -473,3 +487,97 @@ class TestResolveConfig:
         assert frontend is None
         assert backend is None
         assert model is None
+
+
+@pytest.mark.django_db
+class TestSyncLegacyCapturePagesCommand:
+    def test_sync_legacy_capture_pages_creates_capture_pages(self):
+        call_command("sync_legacy_capture_pages")
+
+        assert CapturePage.objects.filter(slug="wh-rc-v3").exists()
+        assert CapturePage.objects.filter(slug="insc-base").exists()
+        assert CapturePage.objects.filter(slug="lista-de-espera").exists()
+
+    def test_sync_legacy_capture_pages_skips_non_capture_by_default(self):
+        call_command("sync_legacy_capture_pages")
+
+        assert not CapturePage.objects.filter(slug="agrelliflix").exists()
+
+    def test_sync_legacy_capture_pages_is_idempotent(self):
+        call_command("sync_legacy_capture_pages")
+        count1 = CapturePage.objects.count()
+
+        call_command("sync_legacy_capture_pages")
+        count2 = CapturePage.objects.count()
+
+        assert count1 == count2
+
+
+@pytest.mark.django_db
+class TestCheckCapturePageReadinessCommand:
+    def test_readiness_reports_missing_slugs_without_strict(self):
+        # No sync yet, capture-like legacy pages should be reported missing.
+        call_command("check_capture_page_readiness")
+
+    def test_readiness_strict_fails_when_capture_pages_are_missing(self):
+        with pytest.raises(CommandError):
+            call_command("check_capture_page_readiness", "--strict")
+
+    def test_readiness_strict_passes_after_sync(self):
+        call_command("sync_legacy_capture_pages")
+        call_command("check_capture_page_readiness", "--strict")
+
+
+@pytest.mark.django_db
+class TestMaterializeLegacyPage:
+    """Tests for materializing JSON fallback campaigns into CapturePage rows."""
+
+    def setup_method(self):
+        cache.clear()
+
+    def test_materialize_json_campaign_creates_page_and_launch(self):
+        from apps.landing.campaigns import get_campaign
+
+        config = get_campaign("wh-rc-v3")
+        assert config is not None
+
+        interest = InterestFactory(slug="rc", name="Repasse")
+
+        page = CapturePageService.materialize_legacy_page("wh-rc-v3", config)
+
+        assert page.slug == "wh-rc-v3"
+        assert page.launch.launch_code == "WH0126"
+        assert page.interest_id == interest.id
+        assert page.config["meta"]["title"] == config["meta"]["title"]
+        assert page.n8n_webhook_url == config["n8n"]["webhook_url"]
+        assert page.n8n_list_id == config["n8n"]["list_id"]
+
+    def test_materialize_json_campaign_is_idempotent(self):
+        from apps.landing.campaigns import get_campaign
+
+        config = get_campaign("wh-rc-v3")
+        assert config is not None
+
+        page1 = CapturePageService.materialize_legacy_page("wh-rc-v3", config)
+        page2 = CapturePageService.materialize_legacy_page("wh-rc-v3", config)
+
+        assert page1.pk == page2.pk
+
+    def test_materialize_restores_soft_deleted_page(self):
+        launch = LaunchFactory(launch_code="WH0126")
+        page = CapturePageFactory(slug="wh-rc-v3", launch=launch)
+        page.delete()
+
+        materialized = CapturePageService.materialize_legacy_page(
+            "wh-rc-v3",
+            {
+                "slug": "wh-rc-v3",
+                "meta": {"title": "Restored Page"},
+                "headline": {"parts": []},
+                "form": {"button_text": "GO"},
+                "n8n": {"webhook_url": "https://n8n.example.com/webhook/test"},
+            },
+        )
+
+        assert materialized.pk == page.pk
+        assert materialized.is_deleted is False
