@@ -168,6 +168,10 @@ class LeadIntegrationOutboxMonitoringService:
         pending_max_age_minutes = pending_max_age_minutes or int(
             getattr(settings, "LEAD_OUTBOX_PENDING_MAX_AGE_MINUTES", 30)
         )
+        n8n_slo_minutes = int(getattr(settings, "LEAD_OUTBOX_N8N_SLO_MINUTES", 10))
+        meta_capi_slo_minutes = int(
+            getattr(settings, "LEAD_OUTBOX_META_CAPI_SLO_MINUTES", 15)
+        )
 
         now = timezone.now()
         pending_qs = LeadIntegrationOutbox.objects.filter(
@@ -181,6 +185,15 @@ class LeadIntegrationOutboxMonitoringService:
 
         stale_cutoff = now - timedelta(minutes=pending_max_age_minutes)
         stale_pending_qs = pending_qs.filter(created_at__lt=stale_cutoff)
+
+        n8n_overdue_count = pending_qs.filter(
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            created_at__lt=now - timedelta(minutes=n8n_slo_minutes),
+        ).count()
+        meta_capi_overdue_count = pending_qs.filter(
+            integration_type=LeadIntegrationOutbox.IntegrationType.META_CAPI,
+            created_at__lt=now - timedelta(minutes=meta_capi_slo_minutes),
+        ).count()
 
         failed_count = failed_qs.count()
         pending_count = pending_qs.count()
@@ -211,16 +224,29 @@ class LeadIntegrationOutboxMonitoringService:
                 "stale_pending_count="
                 f"{stale_pending_count} reached threshold={pending_threshold}"
             )
+        if n8n_overdue_count > 0:
+            reasons.append(
+                f"n8n_overdue_count={n8n_overdue_count} breached_slo={n8n_slo_minutes}m"
+            )
+        if meta_capi_overdue_count > 0:
+            reasons.append(
+                "meta_capi_overdue_count="
+                f"{meta_capi_overdue_count} breached_slo={meta_capi_slo_minutes}m"
+            )
 
         return {
             "healthy": len(reasons) == 0,
             "failed_threshold": failed_threshold,
             "pending_threshold": pending_threshold,
             "pending_max_age_minutes": pending_max_age_minutes,
+            "n8n_slo_minutes": n8n_slo_minutes,
+            "meta_capi_slo_minutes": meta_capi_slo_minutes,
             "failed_count": failed_count,
             "pending_count": pending_count,
             "processing_count": processing_count,
             "stale_pending_count": stale_pending_count,
+            "n8n_overdue_count": n8n_overdue_count,
+            "meta_capi_overdue_count": meta_capi_overdue_count,
             "oldest_pending_age_minutes": oldest_pending_age_minutes,
             "reasons": reasons,
             "checked_at": now.isoformat(),

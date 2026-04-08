@@ -18,6 +18,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
 from django.test import RequestFactory
+from django.utils import timezone
 
 from apps.landing.campaigns import get_campaign, get_campaign_or_default, _cache
 from apps.landing.services.capture import CaptureService
@@ -968,6 +969,41 @@ class TestLeadIntegrationHealth:
                 "--failed-threshold",
                 "1",
             )
+
+    def test_health_snapshot_flags_overdue_integrations_by_type(self):
+        from apps.landing.models import LeadIntegrationOutbox
+        from apps.landing.services.outbox import LeadIntegrationOutboxMonitoringService
+        from tests.factories import CaptureSubmissionFactory
+
+        submission = CaptureSubmissionFactory()
+        old_n8n = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+            integration_type=LeadIntegrationOutbox.IntegrationType.N8N,
+            status=LeadIntegrationOutbox.Status.PENDING,
+        )
+        old_meta = LeadIntegrationOutbox.objects.create(
+            capture_submission=submission,
+            capture_token="ffffffff-ffff-4fff-8fff-ffffffffffff",
+            integration_type=LeadIntegrationOutbox.IntegrationType.META_CAPI,
+            status=LeadIntegrationOutbox.Status.PENDING,
+        )
+        LeadIntegrationOutbox.objects.filter(pk=old_n8n.pk).update(
+            created_at=timezone.now() - timezone.timedelta(minutes=11)
+        )
+        LeadIntegrationOutbox.objects.filter(pk=old_meta.pk).update(
+            created_at=timezone.now() - timezone.timedelta(minutes=16)
+        )
+
+        snapshot = LeadIntegrationOutboxMonitoringService.get_health_snapshot(
+            failed_threshold=99,
+            pending_threshold=99,
+            pending_max_age_minutes=99,
+        )
+
+        assert snapshot["healthy"] is False
+        assert snapshot["n8n_overdue_count"] == 1
+        assert snapshot["meta_capi_overdue_count"] == 1
 
 
 @pytest.mark.django_db

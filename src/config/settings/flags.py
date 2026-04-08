@@ -215,6 +215,14 @@ class FeatureFlags:
     def lead_outbox_pending_max_age_minutes(self) -> int:
         return get_int_env("LEAD_OUTBOX_PENDING_MAX_AGE_MINUTES", default=30)
 
+    @property
+    def lead_outbox_n8n_slo_minutes(self) -> int:
+        return get_int_env("LEAD_OUTBOX_N8N_SLO_MINUTES", default=10)
+
+    @property
+    def lead_outbox_meta_capi_slo_minutes(self) -> int:
+        return get_int_env("LEAD_OUTBOX_META_CAPI_SLO_MINUTES", default=15)
+
 
 # Global instance
 flags = FeatureFlags()

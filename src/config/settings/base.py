@@ -520,6 +520,8 @@ LANDING_JSON_FALLBACK_ENABLED = flags.landing_json_fallback_enabled
 LEAD_OUTBOX_FAILED_THRESHOLD = flags.lead_outbox_failed_threshold
 LEAD_OUTBOX_PENDING_THRESHOLD = flags.lead_outbox_pending_threshold
 LEAD_OUTBOX_PENDING_MAX_AGE_MINUTES = flags.lead_outbox_pending_max_age_minutes
+LEAD_OUTBOX_N8N_SLO_MINUTES = flags.lead_outbox_n8n_slo_minutes
+LEAD_OUTBOX_META_CAPI_SLO_MINUTES = flags.lead_outbox_meta_capi_slo_minutes
 
 # Security headers
 SECURITY_HEADERS_ENABLED = True

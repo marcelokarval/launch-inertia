@@ -111,7 +111,14 @@ Checklist:
 - [x] definir SLI de entrega/saude minima da outbox
 - [x] alerta para crescimento de `failed` (health check + task periodica)
 - [x] alerta para `pending` acima da janela esperada (health check + threshold)
-- [ ] objetivo de tempo maximo por integracao
+- [x] objetivo de tempo maximo por integracao
+
+Objetivos atuais:
+
+- `n8n`: 10 minutos
+- `meta_capi`: 15 minutos
+
+Esses objetivos ja entram no `health snapshot` e passam a gerar `reasons` explicitas quando houver pending vencido por tipo de integracao.
 
 ## 7. Hardening de Testes
 
