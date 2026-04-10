@@ -61,8 +61,8 @@ launch-inertia/
 # Install uv (if not installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Sync dependencies (creates .venv automatically)
-uv sync
+# Sync backend dependencies (creates .venv automatically)
+cd backend && uv sync
 
 # Copy environment file
 cp .env.example .env
@@ -72,19 +72,19 @@ cp .env.example .env
 createdb launch_inertia
 
 # Run migrations
-uv run python manage.py migrate
+cd backend && uv run python manage.py migrate
 
 # Create superuser
-uv run python manage.py createsuperuser
+cd backend && uv run python manage.py createsuperuser
 
 # Run development server
-uv run python manage.py runserver
+cd backend && uv run python manage.py runserver
 ```
 
 ### Frontend Setup
 
 ```bash
-cd frontend
+cd frontends/dashboard
 
 # Install dependencies
 npm install
@@ -99,13 +99,13 @@ Open two terminals:
 
 ```bash
 # Terminal 1: Django
-uv run python manage.py runserver
+cd backend && uv run python manage.py runserver
 
 # Terminal 2: Vite
-cd frontend && npm run dev
+cd frontends/dashboard && npm run dev
 ```
 
-Visit http://localhost:8000
+Visit http://localhost:8844
 
 ## Features
 
@@ -141,64 +141,64 @@ Visit http://localhost:8000
 ### Package Management with uv
 
 ```bash
-# Sync all dependencies
-uv sync
+# Sync all backend dependencies
+cd backend && uv sync
 
 # Sync with dev dependencies
-uv sync --dev
+cd backend && uv sync --dev
 
 # Add a new dependency
-uv add package-name
+cd backend && uv add package-name
 
 # Add a dev dependency
-uv add --dev package-name
+cd backend && uv add --dev package-name
 
 # Remove a dependency
-uv remove package-name
+cd backend && uv remove package-name
 
 # Update all dependencies
-uv sync --upgrade
+cd backend && uv sync --upgrade
 ```
 
 ### Code Style
 
 ```bash
 # Format code
-uv run black src/
-uv run ruff check src/ --fix
+cd backend && uv run black src/
+cd backend && uv run ruff check src/ --fix
 
 # Type checking
-uv run mypy src/
+cd backend && uv run mypy src/
 
 # Run tests
-uv run pytest
+cd backend && uv run pytest
 ```
 
 ### Database Migrations
 
 ```bash
 # Create migration
-uv run python manage.py makemigrations
+cd backend && uv run python manage.py makemigrations
 
 # Apply migrations
-uv run python manage.py migrate
+cd backend && uv run python manage.py migrate
 ```
 
 ### Celery Workers
 
 ```bash
 # Start worker
-uv run celery -A infrastructure.tasks worker -l INFO
+cd backend && uv run celery -A infrastructure.tasks worker -l INFO
 
 # Start beat (scheduled tasks)
-uv run celery -A infrastructure.tasks beat -l INFO
+cd backend && uv run celery -A infrastructure.tasks beat -l INFO
 ```
 
 ### Django Shell
 
 ```bash
 # Interactive shell with IPython
-uv run python manage.py shell_plus
+cd backend && uv run python manage.py shell_plus
 ```
 
 ## Production
@@ -216,16 +216,16 @@ Set `DJANGO_ENV=production` and configure:
 ### Build Frontend
 
 ```bash
-cd frontend
-npm run build
+npm run build --workspace=@launch/dashboard
+npm run build --workspace=@launch/landing
 ```
 
-Static files will be output to `static/dist/`.
+Static files will be output under `backend/src/static/`.
 
 ### Collect Static
 
 ```bash
-uv run python manage.py collectstatic
+cd backend && uv run python manage.py collectstatic
 ```
 
 ### Production with uv

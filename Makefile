@@ -30,7 +30,7 @@ dev-full: ## Run Django + Dashboard + Landing + Celery (parallel)
 	wait
 
 dev-back: ## Run Django dev server (port 8844)
-	cd src && uv run python ../manage.py runserver 8844
+	cd backend && uv run python manage.py runserver 8844
 
 dev-dashboard: ## Run Dashboard Vite dev server (port 3344)
 	cd frontends/dashboard && npm run dev
@@ -43,7 +43,7 @@ dev-landing: ## Run Landing Vite dev server (port 3345)
 test: test-back test-front ## Run all tests
 
 test-back: ## Run Django/pytest tests
-	cd src && uv run python -m pytest
+	cd backend && uv run python -m pytest
 
 test-front: ## Run Dashboard Vitest frontend tests
 	cd frontends/dashboard && npx vitest run
@@ -56,29 +56,29 @@ lint: ## Run frontend linting + type check
 # ── Database ─────────────────────────────────────────────
 
 migrate: ## Run Django migrations
-	uv run python manage.py migrate
+	cd backend && uv run python manage.py migrate
 
 makemigrations: ## Create new migrations
-	uv run python manage.py makemigrations
+	cd backend && uv run python manage.py makemigrations
 
 # ── Django utilities ─────────────────────────────────────
 
 shell: ## Django shell
-	uv run python manage.py shell
+	cd backend && uv run python manage.py shell
 
 createsuperuser: ## Create admin superuser
-	uv run python manage.py createsuperuser
+	cd backend && uv run python manage.py createsuperuser
 
 collectstatic: ## Collect static files
-	uv run python manage.py collectstatic --noinput
+	cd backend && uv run python manage.py collectstatic --noinput
 
 # ── Celery ───────────────────────────────────────────────
 
 celery: ## Run Celery worker (all queues)
-	cd src && uv run celery -A infrastructure.tasks.celery worker -l info -Q celery,default --concurrency=2
+	cd backend && uv run celery -A infrastructure.tasks.celery worker -l info -Q celery,default --concurrency=2
 
 celery-beat: ## Run Celery beat scheduler
-	cd src && uv run celery -A infrastructure.tasks.celery beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+	cd backend && uv run celery -A infrastructure.tasks.celery beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
 celery-all: ## Run Celery worker + beat in parallel
 	@trap 'kill 0' EXIT; \
@@ -89,10 +89,10 @@ celery-all: ## Run Celery worker + beat in parallel
 # ── Setup ────────────────────────────────────────────────
 
 install: ## Install all dependencies (Python + Node workspaces)
-	uv pip install -e ".[dev]" && npm install
+	cd backend && uv pip install -e ".[dev]" && cd .. && npm install
 
 install-back: ## Install Python dependencies only
-	uv pip install -e ".[dev]"
+	cd backend && uv pip install -e ".[dev]"
 
 install-front: ## Install Node dependencies only (all workspaces)
 	npm install

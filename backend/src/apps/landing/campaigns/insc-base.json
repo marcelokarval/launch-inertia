@@ -1,0 +1,70 @@
+{
+  "slug": "insc-base",
+  "meta": {
+    "title": "Ganhe em Dólar Repassando Casas nos EUA | Arthur Agrelli",
+    "description": "Descubra como ganhar +$10mil por mês trabalhando do Brasil com o mercado imobiliário americano"
+  },
+  "headline": {
+    "parts": [
+      {"text": "Descubra como imigrantes brasileiros estão ", "type": "normal"},
+      {"text": "ganhando +$10mil por mês nos EUA", "type": "highlight", "color": "#eab308"},
+      {"text": " repassando casas ", "type": "normal"},
+      {"text": "sem tirar 1 centavo do bolso!", "type": "underline", "color": "#2563eb"}
+    ]
+  },
+  "subheadline": null,
+  "background_image": "/static/images/bg-all-black-w-flag-dark.jpg",
+  "highlight_color": "#eab308",
+  "badges": [
+    {"icon": "clock", "text": "⏰ 2 a 3 horas de trabalho por dia", "visible": true},
+    {"icon": "money", "text": "💰 $5mil a $15mil por repasse", "visible": true}
+  ],
+  "form": {
+    "button_text": "QUERO MUDAR DE VIDA AGORA",
+    "button_color": "bg-red-600",
+    "button_gradient": "",
+    "button_hover_gradient": "hover:bg-red-700",
+    "loading_text": "ENVIANDO...",
+    "thank_you_url": "/obrigado-insc-base/",
+    "glass_effect": true,
+    "border_color": "border-red-500/40",
+    "show_patriotic_effect": true,
+    "header": {
+      "enabled": false,
+      "title": "Inscreva-se gratuitamente",
+      "subtitle": "Preencha os campos abaixo para receber o acesso"
+    }
+  },
+  "trust_badge": {
+    "enabled": true,
+    "text": "Suas informações estão seguras",
+    "icon": "shield"
+  },
+  "social_proof": {
+    "enabled": true,
+    "value": "+5.000 alunos",
+    "label": "Mudando de vida nos EUA"
+  },
+  "thank_you": {
+    "headline": "NÃO FECHE ESTA PÁGINA!",
+    "subheadline": "Falta apenas um passo para garantir sua vaga.",
+    "whatsapp_group_link": "https://go.arthuragrelli.com/wpp-mestre-das-casas-baratas",
+    "whatsapp_button_text": "ENTRAR NO GRUPO VIP",
+    "countdown_minutes": 15,
+    "show_social_proof": true,
+    "social_proof_text": "247 pessoas entraram nos últimos 30 minutos",
+    "steps": [
+      {"label": "Cadastro", "completed": true},
+      {"label": "Confirmação", "completed": true},
+      {"label": "Grupo VIP", "completed": false}
+    ],
+    "progress_percentage": 66
+  },
+  "n8n": {
+    "webhook_url": "https://n8n.arthuragrelli.com/webhook/leads-lancamento-form",
+    "launch_code": "WH0126",
+    "list_id": "424",
+    "form_id": "754ef07d",
+    "form_name": "insc-base"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "authLayout": {
+    "features": {
+      "title": "Recursos Premium",
+      "subtitle": "Plataforma completa para gestao e orquestracao de lancamentos digitais",
+      "campaignManagement": {
+        "title": "Gestao de Campanhas",
+        "description": "Orquestre lancamentos completos com multiplas fases"
+      },
+      "analytics": {
+        "title": "Analytics Integrado",
+        "description": "Dashboards com metricas de todas as ferramentas conectadas"
+      },
+      "leadManagement": {
+        "title": "Gestao de Leads",
+        "description": "Captura, segmentacao e nurturing automatizado"
+      },
+      "automations": {
+        "title": "Automacoes Multi-API",
+        "description": "Integracao com Meta, Mautic, Evolution-API e mais"
+      }
+    },
+    "stats": {
+      "avgRoi": "ROI medio",
+      "launches": "Lancamentos",
+      "uptime": "Uptime"
+    }
+  },
+  "passwordInput": {
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Ocultar senha",
+    "strengthLabel": "Forca da senha:",
+    "strength": {
+      "weak": "Fraca",
+      "medium": "Media",
+      "strong": "Forte",
+      "veryStrong": "Muito Forte"
+    }
+  },
+  "themeToggle": {
+    "light": "Modo claro",
+    "dark": "Modo escuro",
+    "system": "Preferencia do sistema"
+  }
+}

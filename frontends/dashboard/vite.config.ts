@@ -42,7 +42,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../../src/static/dashboard',
+    outDir: '../../backend/src/static/dashboard',
     emptyOutDir: true,
     manifest: true,
     rollupOptions: {

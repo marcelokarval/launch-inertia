@@ -1,0 +1,460 @@
+{
+  "auth": {
+    "login": {
+      "pageTitle": "Login",
+      "welcomeBack": "Bem-vindo de volta",
+      "description": "Entre com suas credenciais para acessar o dashboard",
+      "emailLabel": "Email",
+      "emailPlaceholder": "seu@email.com",
+      "passwordLabel": "Senha",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Esqueceu a senha?",
+      "rememberMe": "Lembrar de mim",
+      "rememberMeHelp": "Seu login sera mantido por 30 dias",
+      "submitting": "Entrando...",
+      "submit": "Entrar no Dashboard",
+      "noAccount": "Nao tem uma conta?",
+      "signUp": "Cadastre-se",
+      "copyright": "© {{year}} BotREI Systems. Todos os direitos reservados."
+    },
+    "register": {
+      "pageTitle": "Cadastro",
+      "title": "Crie sua conta",
+      "subtitle": "Comece a gerenciar seus lancamentos com nossa plataforma",
+      "firstNameLabel": "Nome",
+      "firstNamePlaceholder": "Joao",
+      "lastNameLabel": "Sobrenome",
+      "lastNamePlaceholder": "Silva",
+      "emailLabel": "Email",
+      "emailPlaceholder": "voce@exemplo.com",
+      "passwordLabel": "Senha",
+      "confirmPasswordLabel": "Confirmar senha",
+      "termsAgree": "Eu concordo com os",
+      "termsOfService": "Termos de Servico",
+      "and": "e",
+      "privacyPolicy": "Politica de Privacidade",
+      "submitting": "Criando conta...",
+      "submit": "Criar conta",
+      "hasAccount": "Ja tem uma conta?",
+      "signIn": "Entrar"
+    },
+    "forgotPassword": {
+      "pageTitle": "Esqueceu a Senha",
+      "title": "Recuperar Senha",
+      "description": "Insira seu email para receber instrucoes de recuperacao",
+      "emailLabel": "Email",
+      "emailPlaceholder": "seu@email.com",
+      "submitting": "Enviando...",
+      "submit": "Enviar Link de Recuperacao",
+      "backToLogin": "Voltar para login"
+    },
+    "resetPassword": {
+      "pageTitle": "Redefinir Senha",
+      "title": "Definir nova senha",
+      "subtitle": "Digite sua nova senha abaixo",
+      "newPasswordLabel": "Nova senha",
+      "confirmPasswordLabel": "Confirmar nova senha",
+      "submitting": "Redefinindo...",
+      "submit": "Redefinir senha",
+      "backToLogin": "Voltar para login"
+    }
+  },
+  "onboarding": {
+    "steps": {
+      "email": "Email",
+      "terms": "Termos",
+      "profile": "Perfil",
+      "plan": "Plano"
+    },
+    "brand": "Launch",
+    "subtitle": "Complete a configuracao da sua conta",
+    "progress": "Passo {{current}} de {{total}}",
+    "verifyEmail": {
+      "pageTitle": "Verificar Email",
+      "title": "Verifique seu email",
+      "instruction": "Enviamos um codigo de 6 digitos para",
+      "submitting": "Verificando...",
+      "submit": "Verificar Email",
+      "resendCountdown": "Reenviar codigo em {{seconds}}s",
+      "resendPrompt": "Nao recebeu o codigo? Reenviar"
+    },
+    "legal": {
+      "pageTitle": "Acordos Legais",
+      "title": "Acordos Legais",
+      "instruction": "Por favor, revise e aceite os seguintes acordos para continuar.",
+      "termsTitle": "Termos de Uso",
+      "termsDescription": "Ao usar nosso servico, voce concorda com nossos termos de uso que descrevem seus direitos e responsabilidades.",
+      "readTerms": "Ler Termos de Uso completos",
+      "agreeTerms": "Eu concordo com os Termos de Uso",
+      "privacyTitle": "Politica de Privacidade",
+      "privacyDescription": "Levamos sua privacidade a serio. Saiba como coletamos, usamos e protegemos seus dados.",
+      "readPrivacy": "Ler Politica de Privacidade completa",
+      "agreePrivacy": "Eu concordo com a Politica de Privacidade",
+      "marketingLabel": "Gostaria de receber atualizacoes do produto e emails de marketing",
+      "marketingHelp": "Opcional. Voce pode cancelar a inscricao a qualquer momento.",
+      "submitting": "Salvando...",
+      "submit": "Aceitar e Continuar"
+    },
+    "profile": {
+      "pageTitle": "Completar Perfil",
+      "title": "Complete seu perfil",
+      "instruction": "Conte-nos um pouco sobre voce para personalizarmos sua experiencia.",
+      "firstNameLabel": "Nome",
+      "firstNamePlaceholder": "Joao",
+      "lastNameLabel": "Sobrenome",
+      "lastNamePlaceholder": "Silva",
+      "phoneLabel": "Telefone",
+      "phonePlaceholder": "(00) 00000-0000",
+      "companyLabel": "Empresa",
+      "companyPlaceholder": "Nome da sua empresa",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Conte-nos um pouco sobre voce...",
+      "submitting": "Salvando...",
+      "submit": "Salvar e Continuar"
+    },
+    "plan": {
+      "pageTitle": "Escolher Plano",
+      "title": "Escolha seu plano",
+      "instruction": "Selecione o plano que melhor atende suas necessidades. Voce pode mudar depois.",
+      "popular": "Popular",
+      "free": "Gratis",
+      "pricePerMonth": "/mes",
+      "submitting": "Configurando...",
+      "submitFree": "Comecar Gratuitamente",
+      "submitPlan": "Continuar com o Plano {{name}}",
+      "selected": "Selecionado",
+      "footer": "Voce pode mudar seu plano a qualquer momento em Configuracoes."
+    }
+  },
+  "dashboard": {
+    "pageTitle": "Dashboard",
+    "title": "Dashboard",
+    "welcome": "Bem-vindo de volta, {{name}}!",
+    "subtitle": "Veja o que esta acontecendo com sua conta hoje.",
+    "stats": {
+      "totalIdentities": "Total de Identidades",
+      "activeSubscriptions": "Assinaturas Ativas",
+      "unreadNotifications": "Notificacoes Nao Lidas",
+      "conversionRate": "Taxa de Conversao"
+    },
+    "quickActions": {
+      "title": "Acoes Rapidas",
+      "importIdentity": "Importar Identidade",
+      "manageBilling": "Gerenciar Faturamento",
+      "viewSettings": "Ver Configuracoes"
+    },
+    "analytics": {
+      "leadsCapturados": "Leads Capturados",
+      "taxaConversao": "Taxa de Conversao",
+      "visualizacoes": "Visualizacoes",
+      "lancamentosAtivos": "Lancamentos Ativos",
+      "vsPreviousWeek": "vs semana anterior",
+      "capturasDiarias": "Capturas Diarias",
+      "nenhumDadoCaptura": "Nenhum dado de captura ainda",
+      "funilCaptura": "Funil de Captura",
+      "conversao": "Conversao",
+      "errosFormulario": "Erros de formulario",
+      "topPaginasCaptura": "Top Paginas de Captura",
+      "pagina": "Pagina",
+      "lancamento": "Lancamento",
+      "dispositivos": "Dispositivos",
+      "semDados": "Sem dados",
+      "fontesTrafego": "Fontes de Trafego",
+      "capturasRecentes": "Capturas Recentes",
+      "nenhumaCapturaAinda": "Nenhuma captura ainda",
+      "views": "Views",
+      "unique": "Unicos",
+      "visitantesUnicos": "Visitantes Unicos",
+      "leads": "Leads",
+      "duplicate": "dup",
+      "timeAgo": {
+        "now": "agora",
+        "minutes": "{{count}}min",
+        "hours": "{{count}}h",
+        "days": "{{count}}d"
+      }
+    }
+  },
+  "identities": {
+    "index": {
+      "pageTitle": "Identidades",
+      "title": "Identidades",
+      "totalCount": "{{total}} identidades no total",
+      "importIdentity": "Importar Identidade",
+      "searchPlaceholder": "Buscar identidades...",
+      "table": {
+        "name": "Nome",
+        "displayName": "Nome de Exibicao",
+        "contact": "Contato",
+        "channels": "Canais",
+        "activity": "Atividade",
+        "pageViews": "Visualizacoes",
+        "totalEvents": "Total de eventos",
+        "status": "Status",
+        "tags": "Tags",
+        "lastSeen": "Ultima Atividade",
+        "actions": "Acoes",
+        "edit": "Editar",
+        "identity": "Identidade"
+      },
+      "anonymous": "Anonimo",
+      "noIdentity": "Sem identidade",
+      "emptyTitle": "Nenhuma identidade ainda",
+      "emptyDesc": "Comece a construir sua audiencia importando sua primeira identidade.",
+      "empty": "Nenhuma identidade encontrada.",
+      "addFirst": "Importe sua primeira identidade",
+      "pagination": {
+        "showing": "Mostrando {{from}} a {{to}} de {{total}} resultados",
+        "previous": "Anterior",
+        "next": "Proximo"
+      }
+    },
+    "create": {
+      "pageTitle": "Importar Identidade",
+      "title": "Importar Identidade",
+      "description": "Importe uma nova identidade a sua lista",
+      "displayNameLabel": "Nome de Exibicao",
+      "namePlaceholder": "Nome para exibicao",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@exemplo.com",
+      "phoneLabel": "Telefone",
+      "phonePlaceholder": "(00) 00000-0000",
+      "operatorNotesLabel": "Notas do Operador",
+      "operatorNotesPlaceholder": "Notas internas sobre esta identidade...",
+      "submitting": "Salvando...",
+      "submit": "Importar Identidade",
+      "cancel": "Cancelar"
+    },
+    "edit": {
+      "pageTitle": "Editar {{name}}",
+      "title": "Editar Identidade",
+      "description": "Atualize as informacoes de {{name}}",
+      "submitting": "Salvando...",
+      "submit": "Salvar Alteracoes",
+      "cancel": "Cancelar"
+    },
+    "show": {
+      "edit": "Editar",
+      "delete": "Excluir",
+      "emailLabel": "Email",
+      "phoneLabel": "Telefone",
+      "displayNameLabel": "Nome de Exibicao",
+      "operatorNotesLabel": "Notas do Operador",
+      "operatorNotesPlaceholder": "Notas internas sobre esta identidade...",
+      "createdAt": "Criado em",
+      "notesTitle": "Notas",
+      "identity": {
+        "noIdentity": "Sem identidade resolvida",
+        "noIdentityDesc": "Esta identidade ainda nao foi vinculada a uma identidade resolvida.",
+        "title": "Resolucao de Identidade",
+        "emails": "Emails",
+        "phones": "Telefones",
+        "devices": "Dispositivos",
+        "firstSource": "Primeira origem"
+      },
+      "channels": {
+        "noEmails": "Sem canais de email",
+        "noPhones": "Sem canais de telefone",
+        "knownDomains": "Dominios de email conhecidos da atividade no formulario",
+        "knownPrefixes": "Prefixos de telefone conhecidos da atividade no formulario"
+      },
+      "devices": {
+        "noDevices": "Nenhum dispositivo rastreado",
+        "primary": "Principal",
+        "fpConfidence": "Confianca FP"
+      },
+      "attributions": {
+        "noData": "Sem dados de atribuicao"
+      },
+      "timeline": {
+        "noEvents": "Nenhum evento registrado"
+      },
+      "tabs": {
+        "overview": "Visao Geral",
+        "emails": "Emails",
+        "phones": "Telefones",
+        "devices": "Dispositivos",
+        "attributions": "Atribuicao",
+        "timeline": "Timeline"
+      },
+      "overview": {
+        "activityStats": "Estatisticas de Atividade",
+        "pageViews": "Visualizacoes",
+        "formIntents": "Intencoes de Formulario",
+        "submissions": "Envios",
+        "totalEvents": "Total de Eventos",
+        "knownHints": "Pistas Conhecidas",
+        "emailDomains": "Dominios de email",
+        "phonePrefixes": "Prefixos de telefone",
+        "recentActivity": "Atividade Recente",
+        "noActivity": "Sem atividade recente",
+        "sessionHistory": "Historico de Sessoes",
+        "visitSessions": "Sessoes",
+        "uniquePages": "Paginas Unicas",
+        "daysActive": "Dias Ativos"
+      }
+    },
+    "hub": {
+      "subtitle": "Seu hub de inteligencia de audiencia",
+      "tabOverview": "Visao Geral",
+      "tabPeople": "Pessoas",
+      "tabEmails": "Emails",
+      "tabPhones": "Telefones",
+      "tabDevices": "Dispositivos",
+      "people": "Pessoas",
+      "emailChannels": "Emails",
+      "phoneChannels": "Telefones",
+      "devices": "Dispositivos",
+      "identified": "{{count}} identificados",
+      "domainHints": "{{count}} dominios detectados",
+      "prefixHints": "{{count}} prefixos detectados",
+      "totalEvents": "{{count}} eventos",
+      "recentActivity": "Atividade Recente",
+      "noActivity": "Nenhuma atividade ainda",
+      "attributionSources": "Fontes de Atribuicao",
+      "noSources": "Sem dados de atribuicao ainda",
+      "tags": "Tags",
+      "noTags": "Nenhuma tag criada ainda",
+      "emailCount": "{{count}} emails verificados",
+      "phoneCount": "{{count}} telefones verificados",
+      "deviceCount": "{{count}} perfis de dispositivo",
+      "email": "Email",
+      "phone": "Telefone",
+      "device": "Dispositivo",
+      "owner": "Proprietario",
+      "status": "Status",
+      "quality": "Qualidade",
+      "type": "Tipo",
+      "capabilities": "Capacidades",
+      "lastSeen": "Ultima Atividade",
+      "events": "Eventos",
+      "confidence": "Confianca",
+      "browser": "Navegador",
+      "domain": "Dominio",
+      "prefix": "Prefixo",
+      "seenBy": "Visto Por",
+      "identitiesCount": "identidades",
+      "identitiesLinked": "Identidades",
+      "domainHintsTitle": "Dominios Detectados (de intencoes de formulario)",
+      "prefixHintsTitle": "Prefixos Detectados (de intencoes de formulario)",
+      "noEmails": "Nenhum canal de email ainda",
+      "noPhones": "Nenhum canal de telefone ainda",
+      "noDevices": "Nenhum perfil de dispositivo ainda",
+      "fingerprintTitle": "Identidades FingerprintJS Pro",
+      "noFingerprints": "Sem registros FingerprintJS. Configure FINGERPRINT_API_KEY no .env."
+    },
+    "delete": {
+      "pageTitle": "Excluir {{name}}",
+      "title": "Excluir Identidade",
+      "confirm": "Tem certeza?",
+      "warning": "Voce esta prestes a excluir a identidade:",
+      "reversible": "Esta acao pode ser revertida pelo administrador do sistema.",
+      "cancel": "Cancelar",
+      "submitting": "Excluindo...",
+      "submit": "Sim, Excluir"
+    }
+  },
+  "billing": {
+    "index": {
+      "pageTitle": "Faturamento",
+      "title": "Faturamento",
+      "description": "Gerencie sua assinatura e historico de pagamentos",
+      "subscription": {
+        "title": "Assinatura Atual",
+        "active": "Ativa",
+        "planLabel": "Plano",
+        "defaultPlan": "Plano Padrao",
+        "nextBilling": "Proxima cobranca",
+        "manage": "Gerenciar no Stripe"
+      },
+      "noSubscription": "Voce ainda nao possui uma assinatura ativa",
+      "choosePlan": "Escolher um Plano",
+      "invoices": {
+        "title": "Historico de Faturas",
+        "paid": "Pago",
+        "empty": "Nenhuma fatura encontrada"
+      }
+    },
+    "success": {
+      "pageTitle": "Pagamento Confirmado",
+      "title": "Pagamento Confirmado!",
+      "description": "Obrigado por sua assinatura. Seu acesso ja esta ativo.",
+      "goToDashboard": "Ir para o Dashboard"
+    }
+  },
+  "notifications": {
+    "pageTitle": "Notificacoes",
+    "title": "Notificacoes",
+    "unreadCount": "{{count}} nao lida",
+    "unreadCount_plural": "{{count}} nao lidas",
+    "allRead": "Todas lidas",
+    "markAllRead": "Marcar todas como lidas",
+    "filters": {
+      "all": "Todas",
+      "unread": "Nao lidas",
+      "read": "Lidas"
+    },
+    "markAsRead": "Marcar como lida",
+    "empty": "Nenhuma notificacao encontrada",
+    "timeAgo": {
+      "minutes": "{{count}}m atras",
+      "hours": "{{count}}h atras",
+      "days": "{{count}}d atras"
+    }
+  },
+  "settings": {
+    "index": {
+      "pageTitle": "Configuracoes",
+      "title": "Configuracoes",
+      "description": "Gerencie sua conta e preferencias",
+      "nav": {
+        "profile": "Perfil",
+        "profileDesc": "Gerencie suas informacoes pessoais e foto de perfil",
+        "notifications": "Notificacoes",
+        "notificationsDesc": "Configure suas preferencias de notificacao",
+        "billing": "Faturamento",
+        "billingDesc": "Gerencie sua assinatura e metodos de pagamento",
+        "security": "Seguranca",
+        "securityDesc": "Altere sua senha e configure autenticacao"
+      }
+    },
+    "profile": {
+      "pageTitle": "Perfil",
+      "title": "Meu Perfil",
+      "description": "Atualize suas informacoes pessoais",
+      "firstNameLabel": "Nome",
+      "lastNameLabel": "Sobrenome",
+      "phoneLabel": "Telefone",
+      "phonePlaceholder": "(00) 00000-0000",
+      "stateLabel": "Estado",
+      "cityLabel": "Cidade",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Conte-nos um pouco sobre voce...",
+      "submitting": "Salvando...",
+      "submit": "Salvar Alteracoes"
+    },
+    "security": {
+      "pageTitle": "Configuracoes de Seguranca",
+      "title": "Seguranca",
+      "description": "Gerencie sua senha e seguranca da conta",
+      "changePassword": {
+        "title": "Alterar senha",
+        "description": "Atualize sua senha para manter sua conta segura",
+        "currentLabel": "Senha atual",
+        "newLabel": "Nova senha",
+        "confirmLabel": "Confirmar nova senha",
+        "submitting": "Atualizando...",
+        "submit": "Atualizar senha"
+      }
+    }
+  },
+  "delinquent": {
+    "pageTitle": "Problema no Pagamento",
+    "title": "Problema no Pagamento",
+    "defaultMessage": "Ha um problema com seu metodo de pagamento. Por favor, atualize suas informacoes de faturamento para continuar usando a plataforma.",
+    "goToBilling": "Ir para Portal de Faturamento",
+    "logout": "Sair",
+    "needHelp": "Precisa de ajuda?",
+    "contactSupport": "Contate o suporte"
+  }
+}

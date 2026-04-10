@@ -1,0 +1,1 @@
+import{j as r}from"./vendor-agrelliflix-CKK4Znkx.js";import{L as t}from"./LegalLayout-DtnCMVj6.js";import{P as i}from"./PrivacyContent-DDcDnO45.js";import"./vendor-inertia-CziEuhbh.js";import"./Section-Ckb0BkEC.js";function n(){return r.jsx(t,{title:"Privacy Policy",version:"Version 2.0 — US Privacy Policy",lastUpdated:"February 2026",children:r.jsx(i,{})})}export{n as default};

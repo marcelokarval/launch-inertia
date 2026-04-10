@@ -1,0 +1,41 @@
+{
+  "brand": {
+    "name": "Launch",
+    "version": "v2.0",
+    "copyright": "© {{year}} BotREI Systems. All rights reserved."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "identities": "Identities",
+    "billing": "Billing",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "confirm": "Confirm",
+    "dismiss": "Dismiss",
+    "loading": "Loading..."
+  },
+  "validation": {
+    "required": "Required field",
+    "email": "Invalid email",
+    "minLength": "Minimum {{count}} characters",
+    "maxLength": "Maximum {{count}} characters",
+    "passwordMatch": "Passwords don't match"
+  },
+  "empty": {
+    "noData": "No data found",
+    "noResults": "No results found"
+  }
+}

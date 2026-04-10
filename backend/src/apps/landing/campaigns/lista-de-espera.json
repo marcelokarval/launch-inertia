@@ -1,0 +1,73 @@
+{
+  "slug": "lista-de-espera",
+  "meta": {
+    "title": "Lista de Espera Black Friday 2026 | Arthur Agrelli",
+    "description": "Não perca a próxima Black Friday! Entre na lista de espera e seja o primeiro avisado sobre nossa próxima oferta."
+  },
+  "headline": {
+    "parts": [
+      {"text": "Perdeu a ", "type": "normal"},
+      {"text": "Black Friday 2025?", "type": "highlight", "color": "#eab308"},
+      {"text": " Entre na lista de espera e seja ", "type": "normal"},
+      {"text": "o primeiro avisado", "type": "highlight", "color": "#22c55e"},
+      {"text": " sobre nossa próxima oferta!", "type": "normal"}
+    ]
+  },
+  "subheadline": null,
+  "background_image": "/static/images/bg-all-black-w-flag-dark.jpg",
+  "highlight_color": "#eab308",
+  "badges": [
+    {"icon": "bell", "text": "🔔 Seja avisado com antecedência", "visible": true},
+    {"icon": "money", "text": "💰 Acesso prioritário às ofertas", "visible": true},
+    {"icon": "gift", "text": "🎁 Descontos exclusivos para lista", "visible": true}
+  ],
+  "form": {
+    "button_text": "QUERO SER AVISADO!",
+    "button_color": "bg-yellow-500",
+    "button_gradient": "",
+    "button_hover_gradient": "hover:bg-yellow-600",
+    "loading_text": "CADASTRANDO...",
+    "thank_you_url": "/obrigado-lista-de-espera/",
+    "glass_effect": true,
+    "border_color": "border-yellow-500/40",
+    "header": {
+      "enabled": true,
+      "title": "📧 Entre na Lista de Espera VIP",
+      "subtitle": "Preencha abaixo e seja o primeiro a saber da próxima Black Friday"
+    }
+  },
+  "trust_badge": {
+    "enabled": true,
+    "text": "🔒 Seus dados estão seguros conosco",
+    "icon": "shield"
+  },
+  "social_proof": {
+    "enabled": true,
+    "value": "+2.000 pessoas",
+    "label": "Já estão na lista de espera",
+    "sublabel": "Não fique de fora da próxima!"
+  },
+  "thank_you": {
+    "headline": "Você está na lista! 🎉",
+    "subheadline": "Parabéns! Você garantiu seu lugar na lista VIP.",
+    "whatsapp_group_link": "",
+    "whatsapp_button_text": "",
+    "countdown_minutes": 0,
+    "show_social_proof": false,
+    "social_proof_text": "",
+    "steps": [
+      {"label": "Cadastro", "completed": true},
+      {"label": "Lista VIP", "completed": true},
+      {"label": "Aguardando BF", "completed": false}
+    ],
+    "progress_percentage": 66,
+    "custom_message": "Quando abrirmos as vagas da próxima Black Friday, você será o primeiro a saber. Fique de olho no seu email!"
+  },
+  "n8n": {
+    "webhook_url": "https://n8n-editor.arthuragrelli.com/webhook/lista-de-espera",
+    "launch_code": "",
+    "list_id": "",
+    "form_id": "",
+    "form_name": "lista-de-espera"
+  }
+}

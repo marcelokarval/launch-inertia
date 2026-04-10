@@ -36,7 +36,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../../src/static/landing',
+    outDir: '../../backend/src/static/landing',
     emptyOutDir: true,
     manifest: true,
     rollupOptions: {
