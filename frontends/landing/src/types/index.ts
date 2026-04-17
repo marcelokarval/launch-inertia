@@ -209,6 +209,29 @@ export interface CreateSessionResponse {
   sessionId: string;
 }
 
+/** Response from POST /checkout/create-customer/ */
+export interface CreateCustomerResponse {
+  customerId: string;
+  email: string;
+  phone: string | null;
+  name: string | null;
+}
+
+/** Response from POST /checkout/create-subscription/ */
+export interface CreateSubscriptionResponse {
+  subscriptionId: string;
+  clientSecret: string;
+  secretType: 'payment' | 'setup';
+  status: string;
+}
+
+/** Response from POST /checkout/create-payment-intent/ */
+export interface CreatePaymentIntentResponse {
+  paymentIntentId: string;
+  clientSecret: string;
+  status: string;
+}
+
 /** Response from GET /checkout/session-status/ */
 export interface SessionStatusResponse {
   id: string;
