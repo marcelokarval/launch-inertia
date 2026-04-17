@@ -40,6 +40,9 @@ docs/
 ### Process
 - `process/implementation-plan.md`
 - `process/landing-parity-plan.md`
+- `process/accelerate-multi-agent-team-os.md`
+- `process/accelerate-subagent-handoff-templates.md`
+- `process/accelerate-stack-team-matrix.md`
 
 ### Archive
 - `archive/ecosystem-suggestions.md`

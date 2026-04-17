@@ -1,242 +1,289 @@
 # Launch Inertia
 
-Full-stack Django + Inertia.js + React application for managing contacts, billing, and notifications.
+Full-stack Django + Inertia.js + React platform centered on lead capture, identity resolution, landing flows, checkout, billing, and operator-facing dashboards.
+
+## Current Phase
+
+The repository is in a more advanced state than the original bootstrap docs suggested.
+
+Current highlights:
+
+- backend reorganized under `backend/`
+- multiple frontends under `frontends/`
+- root-level internal docs consolidated under `docs/`
+- Docusaurus-style feature docs under `frontends/docusaurus/docs/`
+- lead capture flow hardened end-to-end with:
+  - anonymous session identity on first visit
+  - delayed fingerprint association
+  - explicit prelead model (`CaptureIntent`)
+  - transactional submit path (`CaptureService.complete_capture()`)
+  - guaranteed `CaptureSubmission`
+  - durable outbox for external integrations
+  - submit idempotency
+  - admin visibility, health checks, repair and requeue tooling
+
+## Repository Layout
+
+```text
+launch-inertia/
+├── backend/                      # Django backend project
+│   ├── manage.py
+│   ├── pyproject.toml
+│   ├── src/
+│   │   ├── apps/
+│   │   │   ├── identity/
+│   │   │   ├── contacts/
+│   │   │   ├── landing/
+│   │   │   ├── billing/
+│   │   │   ├── launches/
+│   │   │   ├── ads/
+│   │   │   └── notifications/
+│   │   ├── config/
+│   │   ├── core/
+│   │   ├── infrastructure/
+│   │   └── tests/
+│   ├── templates/
+│   ├── static/
+│   └── media/
+├── frontends/
+│   ├── dashboard/               # Operator / private app
+│   ├── landing/                 # Public funnel / checkout / content app
+│   └── docusaurus/              # Feature-oriented docs source
+├── docs/                        # Internal architecture / process / runbooks
+├── Makefile
+└── README.md
+```
 
 ## Tech Stack
 
 ### Backend
-- **Django 5.1+** - Web framework
-- **Inertia.js** - Server-side rendering adapter
-- **PostgreSQL** - Database
-- **Redis** - Cache & Celery broker
-- **Celery** - Background tasks
-- **Django Channels** - WebSocket support
-- **uv** - Fast Python package manager
+- Django 6.x
+- Inertia Django
+- PostgreSQL
+- Redis
+- Celery
+- Channels / Daphne
+- Stripe / dj-stripe
+- django-unfold
+- uv
 
 ### Frontend
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **shadcn/ui** - Component library
+- React 19
+- TypeScript
+- Vite 7
+- Tailwind CSS 4
+- HeroUI on dashboard
+- Stripe React SDK on landing checkout surfaces
 
-## Project Structure
+## Core Runtime Concepts
 
-```
-launch-inertia/
-├── src/                          # Django backend
-│   ├── config/                   # Django configuration
-│   │   └── settings/             # Split settings (base/dev/prod)
-│   ├── core/                     # Core infrastructure
-│   │   ├── shared/               # Base models, mixins, managers
-│   │   └── inertia/              # Inertia.js helpers
-│   ├── apps/                     # Business domains
-│   │   ├── identity/             # Users, auth, profiles
-│   │   ├── contacts/             # CRM
-│   │   ├── billing/              # Stripe integration
-│   │   └── notifications/        # Multi-channel notifications
-│   └── infrastructure/           # Cache, email, tasks, monitoring
-├── frontend/                     # React + Vite
-│   └── src/
-│       ├── pages/                # Inertia page components
-│       ├── layouts/              # Layout components
-│       └── components/           # Reusable components
-├── templates/                    # Django templates
-├── static/                       # Static files
-└── media/                        # User uploads
-```
+The platform distinguishes account identity from lead identity.
+
+- `identity.User`
+  Authenticated internal account for private/operator flows.
+
+- `contacts.identity.Identity`
+  Unified person/lead identity for capture and contact resolution.
+
+- `contacts.fingerprint.FingerprintIdentity`
+  FingerprintJS Pro `visitorId` record.
+
+- `core.tracking.CaptureEvent`
+  Runtime event timeline.
+
+- `core.tracking.CaptureIntent`
+  Prelead record created before final submit.
+
+- `ads.CaptureSubmission`
+  Fact record for a valid capture.
+
+- `landing.LeadIntegrationOutbox`
+  Durable async delivery for `n8n` and `meta_capi`.
+
+## Documentation Surfaces
+
+### Internal project docs
+- `docs/README.md`
+
+This area contains:
+- architecture notes
+- domain notes
+- runbooks
+- process docs
+- archives/history
+
+### Feature-oriented docs
+- `frontends/docusaurus/docs/intro.md`
+
+Important lead-capture docs live there, including:
+- workflow
+- to-be architecture
+- identity resolution runtime flow
+- identity gap analysis
+- rollout notes
+- hardening checklist
+- ADRs
 
 ## Quick Start
 
 ### Prerequisites
 - Python 3.12+
-- [uv](https://docs.astral.sh/uv/) - Fast Python package manager
 - Node.js 20+
 - PostgreSQL 15+
 - Redis 7+
+- `uv`
 
-### Backend Setup
+### Backend setup
 
 ```bash
-# Install uv (if not installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
+cd backend
+uv sync
 
-# Sync backend dependencies (creates .venv automatically)
-cd backend && uv sync
+# preferred local env location
+cp ../.env.example .env
 
-# Copy environment file
-cp .env.example .env
-# Edit .env with your settings
+# or keep using a root-level .env
+# the backend env loader supports backend/.env first,
+# then falls back to ../.env
 
-# Create database
-createdb launch_inertia
-
-# Run migrations
-cd backend && uv run python manage.py migrate
-
-# Create superuser
-cd backend && uv run python manage.py createsuperuser
-
-# Run development server
-cd backend && uv run python manage.py runserver
+uv run python manage.py migrate
+uv run python manage.py createsuperuser
+uv run python manage.py runserver 8844
 ```
 
-### Frontend Setup
+### Frontend setup
+
+From the repository root:
+
+```bash
+npm install
+```
+
+Dashboard dev server:
 
 ```bash
 cd frontends/dashboard
-
-# Install dependencies
-npm install
-
-# Run development server
 npm run dev
 ```
 
-### Running Both
-
-Open two terminals:
+Landing dev server:
 
 ```bash
-# Terminal 1: Django
-cd backend && uv run python manage.py runserver
-
-# Terminal 2: Vite
-cd frontends/dashboard && npm run dev
+cd frontends/landing
+npm run dev
 ```
 
-Visit http://localhost:8844
+## Common Commands
 
-## Features
-
-### Identity (Authentication)
-- Email-based authentication
-- Email verification
-- Two-factor authentication (TOTP)
-- Profile management
-- Account security (lockout, password reset)
-
-### Contacts (CRM)
-- Contact management with custom fields
-- Tags and categorization
-- Lead scoring
-- Multiple emails/phones per contact
-- Notes and activity log
-- Import/export
-
-### Billing (Stripe)
-- Subscription management
-- Checkout sessions
-- Customer portal
-- Webhook handling
-
-### Notifications
-- Multi-channel (in-app, email, push)
-- Real-time via WebSocket
-- Templates with variables
-- Read/unread tracking
-
-## Development
-
-### Package Management with uv
+Use the `Makefile` from the repository root.
 
 ```bash
-# Sync all backend dependencies
-cd backend && uv sync
-
-# Sync with dev dependencies
-cd backend && uv sync --dev
-
-# Add a new dependency
-cd backend && uv add package-name
-
-# Add a dev dependency
-cd backend && uv add --dev package-name
-
-# Remove a dependency
-cd backend && uv remove package-name
-
-# Update all dependencies
-cd backend && uv sync --upgrade
+make install         # backend + frontend dependencies
+make dev             # backend + dashboard
+make dev-full        # backend + dashboard + landing + celery + beat
+make test            # backend + frontend tests
+make test-back       # backend pytest
+make migrate         # Django migrate
+make makemigrations  # create migrations
+make celery          # worker
+make celery-beat     # beat scheduler
 ```
 
-### Code Style
+## Frontend Builds
 
-```bash
-# Format code
-cd backend && uv run black src/
-cd backend && uv run ruff check src/ --fix
-
-# Type checking
-cd backend && uv run mypy src/
-
-# Run tests
-cd backend && uv run pytest
-```
-
-### Database Migrations
-
-```bash
-# Create migration
-cd backend && uv run python manage.py makemigrations
-
-# Apply migrations
-cd backend && uv run python manage.py migrate
-```
-
-### Celery Workers
-
-```bash
-# Start worker
-cd backend && uv run celery -A infrastructure.tasks worker -l INFO
-
-# Start beat (scheduled tasks)
-cd backend && uv run celery -A infrastructure.tasks beat -l INFO
-```
-
-### Django Shell
-
-```bash
-# Interactive shell with IPython
-cd backend && uv run python manage.py shell_plus
-```
-
-## Production
-
-### Environment Variables
-
-Set `DJANGO_ENV=production` and configure:
-- `SECRET_KEY` - Strong random key
-- `ALLOWED_HOSTS` - Your domain
-- `CSRF_TRUSTED_ORIGINS` - Your domain with https
-- Database and Redis URLs
-- Stripe live keys
-- AWS credentials for SES and S3
-
-### Build Frontend
+From the repository root:
 
 ```bash
 npm run build --workspace=@launch/dashboard
 npm run build --workspace=@launch/landing
 ```
 
-Static files will be output under `backend/src/static/`.
+The generated assets are written to:
 
-### Collect Static
+- `backend/src/static/dashboard/`
+- `backend/src/static/landing/`
+
+## Validation Commands
+
+### Backend
 
 ```bash
-cd backend && uv run python manage.py collectstatic
+cd backend
+uv run python manage.py check
+uv run pytest
 ```
 
-### Production with uv
+### Focused capture stack regression
 
 ```bash
-# Install only production dependencies
-uv sync --no-dev
-
-# Run with gunicorn
-uv run gunicorn config.wsgi:application --bind 0.0.0.0:8000
+cd backend
+uv run pytest \
+  src/tests/test_capture.py \
+  src/tests/test_checkout.py \
+  src/tests/test_launches.py \
+  src/tests/test_landing_admin.py \
+  src/tests/test_ads.py \
+  src/tests/test_tracking.py \
+  src/tests/test_meta_capi.py -q
 ```
+
+## Operational Tooling Added For Lead Capture
+
+These commands are useful once the system is running.
+
+```bash
+cd backend
+
+# Sync legacy JSON capture pages into DB-backed CapturePage rows
+uv run python manage.py sync_legacy_capture_pages --dry-run
+uv run python manage.py sync_legacy_capture_pages
+
+# Check if capture runtime is ready to run without JSON fallback
+uv run python manage.py check_capture_page_readiness --strict
+
+# Health check for outbox delivery
+uv run python manage.py check_lead_integration_health
+
+# Requeue failed integrations
+uv run python manage.py requeue_failed_lead_integrations --dry-run
+uv run python manage.py requeue_failed_lead_integrations --integration-type n8n
+
+# Repair incomplete outbox payloads from persisted submission facts
+uv run python manage.py repair_lead_integration_payloads --dry-run
+```
+
+## Runtime Notes
+
+### Legacy JSON fallback
+
+Capture runtime can still use legacy JSON configs when enabled:
+
+- `LANDING_JSON_FALLBACK_ENABLED=True`
+
+Production should converge to DB-backed `CapturePage` records and disable fallback once readiness passes.
+
+### Outbox SLOs
+
+Defaults:
+
+- `LEAD_OUTBOX_N8N_SLO_MINUTES=10`
+- `LEAD_OUTBOX_META_CAPI_SLO_MINUTES=15`
+
+## Project Status Guidance
+
+If you are trying to understand the lead capture domain first, read in this order:
+
+1. `frontends/docusaurus/docs/lead-capture-workflow.md`
+2. `frontends/docusaurus/docs/identity-resolution-runtime-flow.md`
+3. `frontends/docusaurus/docs/identity-resolution-gap-analysis.md`
+4. `frontends/docusaurus/docs/lead-capture-production-hardening.md`
+5. `frontends/docusaurus/docs/lead-capture-rollout-no-json-fallback.md`
+
+If you are trying to understand internal architecture and process:
+
+1. `docs/README.md`
+2. `docs/architecture/`
+3. `docs/process/`
 
 ## License
 

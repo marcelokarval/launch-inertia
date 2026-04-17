@@ -19,6 +19,8 @@ Documentos iniciados:
 
 - [Workflow Completo de Captura](./lead-capture-workflow.md)
 - [Fluxo To-Be Ideal de Captura](./lead-capture-workflow-to-be.md)
+- [Identity Resolution Runtime Flow](./identity-resolution-runtime-flow.md)
+- [Identity Resolution Gap Analysis](./identity-resolution-gap-analysis.md)
 - [Checklist de Hardening para Producao](./lead-capture-production-hardening.md)
 - [Rollout Sem JSON Fallback](./lead-capture-rollout-no-json-fallback.md)
 - [ADR Index](./adr/README.md)
