@@ -4,7 +4,6 @@ Inertia.js middleware collection.
 Includes:
 - InertiaJsonParserMiddleware: Parses JSON request body into request.data
 - InertiaShareMiddleware: Shares common data with all Inertia pages
-- SetupStatusMiddleware: Redirects incomplete users to onboarding
 - DelinquentMiddleware: Restricts access for delinquent billing users
 """
 
@@ -98,7 +97,6 @@ class InertiaShareMiddleware:
     _DASHBOARD_PREFIXES: tuple[str, ...] = (
         "/app/",
         "/auth/",
-        "/onboarding/",
     )
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
@@ -222,95 +220,20 @@ class _DashboardOnlyMiddleware:
     """Base class for middleware that only applies to dashboard routes.
 
     Landing pages (public routes) are never subject to dashboard guards
-    like onboarding or billing checks. This base class provides the
-    path-matching logic shared by SetupStatusMiddleware and
-    DelinquentMiddleware.
+    like billing checks. This base class provides the path-matching logic
+    for dashboard-only middleware.
 
     A route is considered a dashboard route if it starts with one of
     DASHBOARD_PREFIXES. All other routes are skipped automatically.
     """
 
     # Only /app/ prefix triggers guard checks.
-    # Landing pages, admin, static, auth, onboarding are always allowed through.
+    # Landing pages, admin, static, and auth are always allowed through.
     DASHBOARD_PREFIXES = ("/app/",)
 
     def _is_dashboard_route(self, path: str) -> bool:
         """Return True if this path belongs to the dashboard frontend."""
         return any(path.startswith(prefix) for prefix in self.DASHBOARD_PREFIXES)
-
-
-class SetupStatusMiddleware(_DashboardOnlyMiddleware):
-    """
-    Middleware that redirects users with incomplete onboarding to the
-    appropriate onboarding step.
-
-    Only applies to dashboard routes (authenticated area). Landing pages
-    and other public routes are never intercepted.
-
-    Exempt paths within dashboard scope:
-    - /auth/, /onboarding/, /api/, /accounts/
-
-    Fails open: if an exception occurs during status checking, the
-    request is allowed through (with error logged).
-    """
-
-    EXEMPT_PREFIXES = (
-        "/static/",
-        "/auth/",
-        "/onboarding/",
-        "/api/",
-        "/accounts/",
-        "/admin/",
-        "/stripe/",
-        "/media/",
-    )
-
-    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
-        self.get_response = get_response
-
-    def __call__(self, request: HttpRequest) -> HttpResponse:
-        # Only check authenticated, non-staff users
-        if not request.user.is_authenticated:
-            return self.get_response(request)
-
-        user = cast(User, request.user)
-
-        if user.is_staff:
-            return self.get_response(request)
-
-        path = request.path
-
-        # Skip non-dashboard routes (landing pages, admin, static, etc.)
-        if not self._is_dashboard_route(path):
-            # Still check explicit exempt prefixes for dashboard-adjacent routes
-            if any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
-                return self.get_response(request)
-            # Non-dashboard, non-exempt: let through (public landing pages)
-            return self.get_response(request)
-
-        # Check if path is exempt within dashboard scope
-        if any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
-            return self.get_response(request)
-
-        # Check setup status - fail open on errors
-        try:
-            from apps.identity.services import SetupStatusService
-
-            status = SetupStatusService.get_setup_status(user)
-
-            if not status.is_complete:
-                # Redirect to the appropriate onboarding step
-                redirect_url = status.redirect_url
-                if path != redirect_url:
-                    return HttpResponseRedirect(redirect_url)
-        except Exception:
-            logger.exception(
-                "SetupStatusMiddleware error for user %s - failing open",
-                user.email,
-            )
-
-        return self.get_response(request)
-
 
 class DelinquentMiddleware(_DashboardOnlyMiddleware):
     """

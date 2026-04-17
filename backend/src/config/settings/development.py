@@ -27,9 +27,7 @@ def _show_toolbar(request) -> bool:  # type: ignore[no-untyped-def]
         return True
     # Only show on dashboard and admin routes by default
     path = request.path
-    return path.startswith(
-        ("/app/", "/admin/", "/auth/", "/onboarding/", "/__debug__/")
-    )
+    return path.startswith(("/app/", "/admin/", "/auth/", "/__debug__/"))
 
 
 DEBUG_TOOLBAR_CONFIG = {

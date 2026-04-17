@@ -101,12 +101,6 @@ class User(PublicIDMixin, SoftDeleteMixin, MetadataMixin, AbstractUser):
         SUSPENDED = "suspended", "Suspended"
         LOCKED = "locked", "Locked"
 
-    # Setup/onboarding status
-    class SetupStatus(models.TextChoices):
-        INCOMPLETE = "incomplete", "Incomplete"
-        BASIC = "basic", "Basic Setup"
-        COMPLETE = "complete", "Complete"
-
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -121,14 +115,6 @@ class User(PublicIDMixin, SoftDeleteMixin, MetadataMixin, AbstractUser):
     # MFA support
     mfa_enabled = models.BooleanField(default=False)
     mfa_secret = models.CharField(max_length=32, blank=True)
-
-    # Setup/onboarding status
-    setup_status = models.CharField(
-        max_length=20,
-        choices=SetupStatus.choices,
-        default=SetupStatus.INCOMPLETE,
-        db_index=True,
-    )
 
     # Security tracking
     failed_login_attempts = models.PositiveIntegerField(default=0)
@@ -233,7 +219,6 @@ class User(PublicIDMixin, SoftDeleteMixin, MetadataMixin, AbstractUser):
             "first_name": self.first_name,
             "last_name": self.last_name,
             "status": self.status,
-            "setup_status": self.setup_status,
             "email_verified": self.email_verified,
             "mfa_enabled": self.mfa_enabled,
             "timezone": self.timezone,

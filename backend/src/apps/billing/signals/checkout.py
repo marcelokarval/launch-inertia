@@ -3,8 +3,7 @@ Signal receiver for checkout.session.completed webhook events.
 
 When a checkout session completes, we:
 1. Link the Stripe Customer to our User (via djstripe)
-2. Update the user's setup_status if they were on the onboarding plan selection step
-3. Create a notification for the user
+2. Create a notification for the user
 """
 
 import logging
@@ -49,13 +48,6 @@ def handle_checkout_session_completed(sender, event, **kwargs):
 
     # Link djstripe Customer to our User if not already linked
     _link_stripe_customer(user, session.get("customer"))
-
-    # Complete onboarding plan selection if still in onboarding
-    if user.setup_status != User.SetupStatus.COMPLETE:
-        from apps.identity.services import SetupStatusService
-
-        SetupStatusService.complete_plan_selection(user, plan="premium")
-        logger.info("Onboarding plan step completed for user=%s", user.public_id)
 
     # Create notification
     _create_payment_notification(

@@ -2,7 +2,7 @@
  * Shared OTP (One-Time Password) Input Component
  *
  * 6-digit code input with auto-focus, paste support, and backspace navigation.
- * Used by Auth/VerifyEmail and Onboarding/VerifyEmail.
+ * Used by Auth/VerifyEmail.
  *
  * ACCEPTED EXCEPTION: Uses native `<input>` instead of HeroUI Input.
  * Reason: HeroUI has no single-digit OTP input component. This component

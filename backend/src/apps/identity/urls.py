@@ -1,7 +1,6 @@
-"""
-Identity URL configuration.
+"""Identity URL configuration.
 
-Split into auth/onboarding (root level) and dashboard (under /app/).
+Split into auth (root level) and dashboard (under /app/).
 """
 
 from django.urls import path
@@ -24,32 +23,6 @@ auth_urlpatterns = [
     ),
 ]
 
-# ── Onboarding pages (pre-dashboard, NOT under /app/) ────────────
-onboarding_urlpatterns = [
-    path("onboarding/", views.onboarding_view, name="onboarding"),
-    path(
-        "onboarding/verify-email/",
-        views.onboarding_verify_email_view,
-        name="onboarding-verify-email",
-    ),
-    path(
-        "onboarding/resend-verification/",
-        views.resend_verification_view,
-        name="resend-verification",
-    ),
-    path("onboarding/legal/", views.onboarding_legal_view, name="onboarding-legal"),
-    path(
-        "onboarding/profile-completion/",
-        views.onboarding_profile_completion_view,
-        name="onboarding-profile-completion",
-    ),
-    path(
-        "onboarding/plan-selection/",
-        views.onboarding_plan_selection_view,
-        name="onboarding-plan-selection",
-    ),
-]
-
 # ── Dashboard pages (under /app/ via root urls.py) ───────────────
 dashboard_urlpatterns = [
     # Dashboard home: /app/
@@ -64,4 +37,4 @@ dashboard_urlpatterns = [
 
 # Combined urlpatterns for backward compatibility with include()
 # Root urls.py should use the specific lists instead.
-urlpatterns = auth_urlpatterns + onboarding_urlpatterns
+urlpatterns = auth_urlpatterns + dashboard_urlpatterns

@@ -6,7 +6,6 @@ All routes use Inertia.js for rendering React components.
 URL structure:
   /app/*           - Dashboard (authenticated, guarded by middleware)
   /auth/*          - Authentication (pre-login)
-  /onboarding/*    - Onboarding (pre-dashboard)
   /admin/          - Django Admin (staff only)
   /accounts/       - Django Allauth (Google OAuth)
   /stripe/         - djstripe webhooks
@@ -21,7 +20,6 @@ from django.urls import include, path
 from apps.identity.urls import (
     auth_urlpatterns,
     dashboard_urlpatterns,
-    onboarding_urlpatterns,
 )
 
 urlpatterns = [
@@ -29,8 +27,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Auth pages (pre-login) — /auth/*
     *auth_urlpatterns,
-    # Onboarding pages (pre-dashboard) — /onboarding/*
-    *onboarding_urlpatterns,
     # Dashboard (authenticated) — /app/*
     path("app/", include((dashboard_urlpatterns, "identity"))),
     path("app/identities/", include("apps.contacts.urls")),

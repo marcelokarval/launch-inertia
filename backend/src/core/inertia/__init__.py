@@ -4,7 +4,6 @@ Inertia.js integration helpers for Django.
 
 from .middleware import (
     InertiaShareMiddleware,
-    SetupStatusMiddleware,
     DelinquentMiddleware,
 )
 from .helpers import (
@@ -18,7 +17,6 @@ from .helpers import (
 
 __all__ = [
     "InertiaShareMiddleware",
-    "SetupStatusMiddleware",
     "DelinquentMiddleware",
     "inertia_render",
     "flash",

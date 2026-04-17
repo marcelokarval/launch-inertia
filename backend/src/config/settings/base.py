@@ -140,7 +140,6 @@ MIDDLEWARE = [
     # Custom shared data
     "core.inertia.middleware.InertiaShareMiddleware",
     # Custom guards
-    "core.inertia.middleware.SetupStatusMiddleware",
     "core.inertia.middleware.DelinquentMiddleware",
     # Allauth (must be last)
     "allauth.account.middleware.AccountMiddleware",

@@ -23,7 +23,6 @@ class UserFactory(DjangoModelFactory):
     is_active = True
     email_verified = True
     status = "active"
-    setup_status = "complete"
 
     class Params:
         """Trait params for common variations."""
@@ -31,9 +30,6 @@ class UserFactory(DjangoModelFactory):
         unverified = factory.Trait(
             email_verified=False,
             status="pending",
-        )
-        incomplete_setup = factory.Trait(
-            setup_status="incomplete",
         )
         staff = factory.Trait(
             is_staff=True,

@@ -493,7 +493,7 @@ class TestExpandEndpoint:
 
     @pytest.fixture
     def staff_user(self):
-        """Staff user bypasses SetupStatusMiddleware."""
+        """Staff user for lifecycle expansion tests."""
         return UserFactory(email="staff_expand@test.com", staff=True)
 
     def test_expand_returns_json(self, client, staff_user):
@@ -532,7 +532,7 @@ class TestRecalculateEndpoint:
 
     @pytest.fixture
     def staff_user(self):
-        """Staff user bypasses SetupStatusMiddleware."""
+        """Staff user for lifecycle recalculation tests."""
         return UserFactory(email="staff_recalc@test.com", staff=True)
 
     def test_recalculate_returns_lifecycle(self, client, staff_user):

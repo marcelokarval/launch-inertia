@@ -1,7 +1,4 @@
-"""
-Unit tests for middleware: SetupStatusMiddleware, DelinquentMiddleware,
-InertiaShareMiddleware, VisitorMiddleware, IdentitySessionMiddleware.
-"""
+"""Unit tests for middleware helpers used by the private and public apps."""
 # pyright: reportAttributeAccessIssue=false, reportAssignmentType=false
 
 import json
@@ -13,73 +10,12 @@ from django.contrib.sessions.backends.db import SessionStore
 
 from apps.identity.models import User
 from core.inertia.middleware import (
-    SetupStatusMiddleware,
     DelinquentMiddleware,
     InertiaShareMiddleware,
 )
 from core.tracking.middleware import VisitorMiddleware
 from core.tracking.identity_middleware import IdentitySessionMiddleware
 from tests.factories import UserFactory, ProfileFactory
-
-
-class TestSetupStatusMiddleware:
-    """Tests for SetupStatusMiddleware."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.rf = RequestFactory()
-        self.get_response = MagicMock(return_value=MagicMock(status_code=200))
-        self.middleware = SetupStatusMiddleware(self.get_response)
-
-    def test_anonymous_user_passes_through(self, db):
-        request = self.rf.get("/app/")
-        request.user = AnonymousUser()
-        self.middleware(request)
-        self.get_response.assert_called_once_with(request)
-
-    def test_staff_user_passes_through(self, db):
-        user = UserFactory(email="staff@test.com", staff=True, incomplete_setup=True)
-        request = self.rf.get("/app/")
-        request.user = user
-        self.middleware(request)
-        self.get_response.assert_called_once_with(request)
-
-    def test_exempt_paths_pass_through(self, db):
-        user = UserFactory(email="exempt@test.com", incomplete_setup=True)
-        for path in ["/static/css/", "/auth/login/", "/onboarding/verify/", "/admin/"]:
-            request = self.rf.get(path)
-            request.user = user
-            self.middleware(request)
-        assert self.get_response.call_count == 4
-
-    @patch("apps.identity.services.SetupStatusService")
-    def test_complete_user_passes_through(self, mock_service_cls, db):
-        user = UserFactory(email="complete@test.com", setup_status="complete")
-        mock_status = MagicMock()
-        mock_status.is_complete = True
-        mock_status.redirect_url = "/app/"
-        mock_service_cls.get_setup_status.return_value = mock_status
-
-        request = self.rf.get("/app/")
-        request.user = user
-        self.middleware(request)
-        self.get_response.assert_called_once_with(request)
-
-    @patch("apps.identity.services.SetupStatusService")
-    def test_incomplete_user_redirected(self, mock_service_cls, db):
-        user = UserFactory(email="incomplete@test.com", incomplete_setup=True)
-        mock_status = MagicMock()
-        mock_status.is_complete = False
-        mock_status.redirect_url = "/onboarding/verify-email/"
-        mock_service_cls.get_setup_status.return_value = mock_status
-
-        request = self.rf.get("/app/")
-        request.user = user
-
-        response = self.middleware(request)
-        assert response.status_code == 302
-        assert response.url == "/onboarding/verify-email/"
-
 
 class TestDelinquentMiddleware:
     """Tests for DelinquentMiddleware."""
@@ -149,21 +85,13 @@ class TestDelinquentView:
         user = UserFactory(email="delinquent-view@test.com")
         client.force_login(user)
 
-        mock_status = MagicMock()
-        mock_status.is_complete = True
-        mock_status.redirect_url = "/app/"
-
-        with patch(
-            "apps.identity.services.SetupStatusService.get_setup_status",
-            return_value=mock_status,
+        with patch.object(
+            type(user),
+            "is_delinquent",
+            new_callable=PropertyMock,
+            return_value=True,
         ):
-            with patch.object(
-                type(user),
-                "is_delinquent",
-                new_callable=PropertyMock,
-                return_value=True,
-            ):
-                response = client.get("/app/delinquent/", HTTP_X_INERTIA="true")
+            response = client.get("/app/delinquent/", HTTP_X_INERTIA="true")
 
         assert response.status_code == 200
         assert response["X-Inertia"] == "true"
@@ -175,21 +103,13 @@ class TestDelinquentView:
         user = UserFactory(email="healthy-view@test.com")
         client.force_login(user)
 
-        mock_status = MagicMock()
-        mock_status.is_complete = True
-        mock_status.redirect_url = "/app/"
-
-        with patch(
-            "apps.identity.services.SetupStatusService.get_setup_status",
-            return_value=mock_status,
+        with patch.object(
+            type(user),
+            "is_delinquent",
+            new_callable=PropertyMock,
+            return_value=False,
         ):
-            with patch.object(
-                type(user),
-                "is_delinquent",
-                new_callable=PropertyMock,
-                return_value=False,
-            ):
-                response = client.get("/app/delinquent/")
+            response = client.get("/app/delinquent/")
 
         assert response.status_code == 302
         assert response.url == "/app/"
@@ -300,23 +220,6 @@ class TestInertiaShareMiddleware:
         auth_data = auth_func()
         # Auth routes use full auth lambda (anonymous → null user)
         assert auth_data["user"] is None
-
-    @patch("core.inertia.middleware.share")
-    def test_onboarding_route_shares_full_data(self, mock_share, db):
-        """Onboarding routes (/onboarding/*) get full shared data."""
-        user = UserFactory(email="onboard@test.com")
-        request = self.rf.get("/onboarding/verify-email/")
-        request.user = user
-
-        self.middleware(request)
-
-        mock_share.assert_called_once()
-        call_kwargs = mock_share.call_args
-        auth_func = call_kwargs.kwargs["auth"]
-        auth_data = auth_func()
-        assert auth_data["user"] is not None
-        assert auth_data["user"]["email"] == "onboard@test.com"
-
 
 class TestVisitorMiddlewareSkipLogic:
     """Tests for VisitorMiddleware skip/short-circuit logic."""
