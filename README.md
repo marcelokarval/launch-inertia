@@ -104,6 +104,7 @@ The platform distinguishes account identity from lead identity.
 
 ### Internal project docs
 - `docs/README.md`
+- `docs/runbooks/project-onboarding.md`
 
 This area contains:
 - architecture notes
@@ -114,6 +115,10 @@ This area contains:
 
 ### Feature-oriented docs
 - `frontends/docusaurus/docs/intro.md`
+
+Release history:
+
+- `CHANGELOG.md`
 
 Important lead-capture docs live there, including:
 - workflow

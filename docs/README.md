@@ -36,6 +36,7 @@ docs/
 
 ### Runbooks
 - `runbooks/local-development.md`
+- `runbooks/project-onboarding.md`
 
 ### Process
 - `process/implementation-plan.md`
