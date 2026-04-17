@@ -1,1 +1,0 @@
-import{j as t}from"./vendor-agrelliflix-CKK4Znkx.js";function n({title:e,children:s}){return t.jsxs("section",{children:[t.jsx("h3",{className:"mb-2 text-lg font-semibold text-white",children:e}),s]})}export{n as S};

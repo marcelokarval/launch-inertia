@@ -1,1 +1,0 @@
-import{h as o}from"./vendor-inertia-CsYP2wSq.js";function c(r){const e=o(r.initialData);return{...e,handleChange:t=>s=>{e.setData(t,s)},submit:t=>{t?.preventDefault();const s=r.method||"post";e[s](r.url,{forceFormData:!0,preserveScroll:r.preserveScroll??!0,onSuccess:r.onSuccess,onError:r.onError})},isSubmitting:e.processing}}export{c as u};

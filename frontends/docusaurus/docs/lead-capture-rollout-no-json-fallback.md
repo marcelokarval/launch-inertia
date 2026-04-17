@@ -22,22 +22,22 @@ Executar o sunset do fallback JSON do runtime de capture/checkout com um procedi
 ╔══════════════════════════════════════════════════════════════════════╗
 ║ 1. AUDITAR LEGADO                                                   ║
 ╠══════════════════════════════════════════════════════════════════════╣
-║ uv run python manage.py check_capture_page_readiness                ║
+║ cd backend && uv run python manage.py check_capture_page_readiness  ║
 ╚══════════════════════════════════════════════════════════════════════╝
                               │
                               ▼
 ╔══════════════════════════════════════════════════════════════════════╗
 ║ 2. SINCRONIZAR CAPTURE PAGES FALTANTES                              ║
 ╠══════════════════════════════════════════════════════════════════════╣
-║ uv run python manage.py sync_legacy_capture_pages --dry-run         ║
-║ uv run python manage.py sync_legacy_capture_pages                   ║
+║ cd backend && uv run python manage.py sync_legacy_capture_pages --dry-run ║
+║ cd backend && uv run python manage.py sync_legacy_capture_pages     ║
 ╚══════════════════════════════════════════════════════════════════════╝
                               │
                               ▼
 ╔══════════════════════════════════════════════════════════════════════╗
 ║ 3. VALIDAR READINESS EM MODO ESTRITO                                ║
 ╠══════════════════════════════════════════════════════════════════════╣
-║ uv run python manage.py check_capture_page_readiness --strict       ║
+║ cd backend && uv run python manage.py check_capture_page_readiness --strict ║
 ╚══════════════════════════════════════════════════════════════════════╝
                               │
                               ▼
@@ -51,7 +51,7 @@ Executar o sunset do fallback JSON do runtime de capture/checkout com um procedi
 ╔══════════════════════════════════════════════════════════════════════╗
 ║ 5. MONITORAR HEALTH DA OUTBOX E FLUXO DE CAPTURA                    ║
 ╠══════════════════════════════════════════════════════════════════════╣
-║ uv run python manage.py check_lead_integration_health               ║
+║ cd backend && uv run python manage.py check_lead_integration_health ║
 ╚══════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -59,10 +59,10 @@ Executar o sunset do fallback JSON do runtime de capture/checkout com um procedi
 
 Sequencia recomendada em staging:
 
-1. `uv run python manage.py check_capture_page_readiness`
-2. `uv run python manage.py sync_legacy_capture_pages --dry-run`
-3. `uv run python manage.py sync_legacy_capture_pages`
-4. `uv run python manage.py check_capture_page_readiness --strict`
+1. `cd backend && uv run python manage.py check_capture_page_readiness`
+2. `cd backend && uv run python manage.py sync_legacy_capture_pages --dry-run`
+3. `cd backend && uv run python manage.py sync_legacy_capture_pages`
+4. `cd backend && uv run python manage.py check_capture_page_readiness --strict`
 5. setar `LANDING_JSON_FALLBACK_ENABLED=False`
 6. subir a aplicacao
 7. validar manualmente:
@@ -88,12 +88,12 @@ Sequencia recomendada em producao:
 ## Comandos Utiles
 
 ```bash
-uv run python manage.py check_capture_page_readiness
-uv run python manage.py check_capture_page_readiness --strict
-uv run python manage.py sync_legacy_capture_pages --dry-run
-uv run python manage.py sync_legacy_capture_pages
-uv run python manage.py check_lead_integration_health
-uv run python manage.py requeue_failed_lead_integrations --dry-run
+cd backend && uv run python manage.py check_capture_page_readiness
+cd backend && uv run python manage.py check_capture_page_readiness --strict
+cd backend && uv run python manage.py sync_legacy_capture_pages --dry-run
+cd backend && uv run python manage.py sync_legacy_capture_pages
+cd backend && uv run python manage.py check_lead_integration_health
+cd backend && uv run python manage.py requeue_failed_lead_integrations --dry-run
 ```
 
 ## Criterio de Go/No-Go

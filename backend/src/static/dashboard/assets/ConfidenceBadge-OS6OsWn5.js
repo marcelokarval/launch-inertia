@@ -1,1 +1,0 @@
-import{j as e,d as a}from"./vendor-heroui-DyLF3gYC.js";import{S as i}from"./shield-V7kAVp1V.js";function c({score:n}){const s=Math.round(n*100),r=s>=70?"success":s>=40?"warning":"danger";return e.jsx(a,{color:r,variant:"soft",size:"sm",children:e.jsxs("span",{className:"inline-flex items-center gap-1",children:[e.jsx(i,{className:"w-3.5 h-3.5"}),s,"%"]})})}export{c as C};

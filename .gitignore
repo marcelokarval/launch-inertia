@@ -73,6 +73,12 @@ static/dashboard/
 static/landing/
 src/static/dashboard/
 src/static/landing/
+backend/src/static/dashboard/
+backend/src/static/landing/
+
+# Tooling / scratch artifacts
+.kilocodeworkflows/
+screenshots/
 
 # Legacy reference (Next.js landing pages — consultation only, not part of this repo)
 frontend-landing-pages/
